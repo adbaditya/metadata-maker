@@ -277,3 +277,34 @@ input[type="number"] {
 #code {
 	display: block;
 }
+
+.preview-container {
+    display: inline-block;
+    margin: 10px;
+    text-align: center;
+    vertical-align: top;
+}
+
+.file-name {
+    font-size: 12px;
+    margin-top: 5px;
+    word-break: break-all;
+    max-width: 200px;
+}
+
+#image-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+#upload-progress {
+    margin: 15px 0;
+    color: #666;
+}
+
+textarea {
+    min-height: 120px;
+    resize: vertical;
+}
