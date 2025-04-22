@@ -394,7 +394,7 @@ async function preFetchFromAI() {
                 : (metadata.publisher || '');
 
             document.getElementById('year').value = metadata.publicationDate || '';
-            document.getElementById('synopsis-text').value = metadata.synopsisOfBook || '';
+            document.getElementById('notes').value = metadata.synopsisOfBook || '';
 
             if (metadata.authors?.length > 0) {
                 document.getElementById('family_name').value = metadata.authors[0].familyName || '';
