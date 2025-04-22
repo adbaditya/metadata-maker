@@ -18,15 +18,15 @@ function get(name) {
 function generateInstitutionInfo() {
 	var output = {
 		//040 $a, 040 $c
-		marc: 'UIU',
+		marc: 'VCU',
 		mods: {
-			physicalLocation: 'University of Illinois at Urbana-Champaign, Library',
-			recordContentSource: 'UIU'
+			physicalLocation: 'Art & Design Library',
+			recordContentSource: 'D@A'
 		},
 		//"seller" info
 		html: {
-			url: 'http://id.loc.gov/authorities/names/n79066210',
-			name: 'University of Illinois at Urbana-Champaign'
+			url: 'http://id.loc.gov/authorities/names/qadovcu',
+			name: 'Virginia Commonwealth University, Qatar'
 		}
 	};
 
