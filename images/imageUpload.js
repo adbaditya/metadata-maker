@@ -274,6 +274,8 @@ async function uploadViaWorker(files) {
 async function preFetchFromAI() {
     const title = document.getElementById('title').value;
     const isbn = document.getElementById('isbn').value;
+    let family_name = document.getElementById('family_name').value;
+    let given_name = document.getElementById('given_name').value;
 
     if (!title && !isbn) {
         console.log('Please enter either a title or ISBN');
@@ -286,7 +288,12 @@ async function preFetchFromAI() {
         // If we have a title but no ISBN, try Perplexity first
         if (title && !isbn) {
             console.log('Title-only search, trying Perplexity first...');
-            const perplexityData = await fetchFromPerplexity(title);
+            let searchQuery = title;
+            if (family_name || given_name) {
+                const authorName = [given_name, family_name].filter(Boolean).join(' ');
+                searchQuery = `${title} by ${authorName}`;
+            }
+            const perplexityData = await fetchFromPerplexity(searchQuery);
             if (perplexityData && perplexityData.choices?.[0]?.message?.content) {
                 try {
                     // Parse the JSON string from the content

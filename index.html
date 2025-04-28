@@ -146,7 +146,7 @@
 			<div id="subtitle-block">
 				<label for="subtitle" class="heading">Subtitle</label><label for="subtitle" class="insert insert_normal" onClick='insertMenu("subtitle");'>Insert Diacritics</label><br>
 				<div id="insert-subtitle"></div>
-				<input type="text" required id="subtitle" class="conditional">
+				<input type="text"s id="subtitle" class="conditional">
 				<label title="Record the subtitle if one exists"><span class="question-mark">?</span></label><br>
 				<span class="unlisted">Unlisted</span><input type="checkbox" id="subtitle_listed" class="listed">
 			</div>
@@ -162,11 +162,37 @@
 				<div id="insert-translit_subtitle" class="hidden translit translit-title"></div>
 				<input type="text" id="translit_subtitle" class="hidden translit translit-title">
 			</div>
+			
+			<div id="author-block">
+				<label for="author" class="heading">Names</label><label for="family_name" class="insert insert_family_name" onClick='insertMenu("family_name");'>Insert Diacritics</label><label for="given_name" class="insert insert_given_name" onClick='insertMenu("given_name");'>Insert Diacritics</label><br>
+				<div id="insert-family_name"></div><div id="insert-given_name"></div>
+				<input type="text" class="author conditional translit-listen" required id="family_name" placeholder="Last Name">, 
+				<input type="text" class="author conditional translit-listen" required id="given_name" placeholder="First Name">
+				<select name="role" id="role">
+					<option value="art">artist</option>
+					<option selected value="aut">author</option>
+					<option value="ctb">contributor</option>
+					<option value="edt">editor</option>
+					<option value="ill">illustrator</option>
+					<option value="trl">translator</option>
+				</select>
+				<label title="Enter the name of authors, editors, illustrators, etc. listed on the piece and select the appropriate role from the drop down menu. Authors should be listed first."><span class="question-mark">?</span></label>
+				<input type="button" value="+" id="add-author" onClick="addAuthor();">
+				<br>
+				<span class="unlisted">Unlisted</span><input type="checkbox" id="author_listed" class="listed">
+
+				<div id="translit-family_name-block" class="translit-family_name-block translit-block translit-author hidden">
+					<label for="translit_family_name" class="hidden translit heading translit-family_name">Transliterated name</label><label for="translit_family_name" class="insert insert_family_name hidden translit translit-family_name" onClick='insertMenu("translit_family_name");'>Insert Diacritics</label><label for="translit_given_name" class="insert insert_given_name hidden translit translit-family_name" onClick='insertMenu("translit_given_name");'>Insert Diacritics</label><br>
+					<div id="insert-translit_family_name"></div><div id="insert-translit_given_name" class="insert-given_name"></div>
+					<input type="text" id="translit_family_name" class="hidden translit translit-family_name" placeholder="Transliterated Family Name"><span class="hidden translit-family_name">, </span>
+					<input type="text" id="translit_given_name" class="hidden translit translit-family_name" placeholder="Transliterated Given Name">
+				</div>
+			</div>
 
 			<div id="isbn-block" class="standard-block">
 				<label for="isbn" class="heading">ISBN</label><br>
 				<input type="text" required id="isbn" class="conditional">
-				<label title="Record an ISBN, if present. Do not record hyphens. If multiple ISBNs are present, record only one. E.g., 9781234567890 or 1234567890"><span class="question-mark">?</span></label><br>
+				<label title="Record an ISBN, if present. Do not record hyphens. If multiple ISBNs are present, record only one. E.g., 9781234567890 or 1234567890. If book doesn't have an ISBN, use the Title Field to pass the Author name along with book title for better results or you can use the Author Name field as well."><span class="question-mark">?</span></label><br>
 				<span class="unlisted">Unlisted</span><input type="checkbox" id="isbn_listed" class="listed">
 			</div>
 
@@ -684,32 +710,6 @@
 				</select>
 			</div>
 
-			<div id="author-block">
-				<label for="author" class="heading">Names</label><label for="family_name" class="insert insert_family_name" onClick='insertMenu("family_name");'>Insert Diacritics</label><label for="given_name" class="insert insert_given_name" onClick='insertMenu("given_name");'>Insert Diacritics</label><br>
-				<div id="insert-family_name"></div><div id="insert-given_name"></div>
-				<input type="text" class="author conditional translit-listen" required id="family_name" placeholder="Family Name">, 
-				<input type="text" class="author conditional translit-listen" required id="given_name" placeholder="Given Name">
-				<select name="role" id="role">
-					<option value="art">artist</option>
-					<option selected value="aut">author</option>
-					<option value="ctb">contributor</option>
-					<option value="edt">editor</option>
-					<option value="ill">illustrator</option>
-					<option value="trl">translator</option>
-				</select>
-				<label title="Enter the name of authors, editors, illustrators, etc. listed on the piece and select the appropriate role from the drop down menu. Authors should be listed first."><span class="question-mark">?</span></label>
-				<input type="button" value="+" id="add-author" onClick="addAuthor();">
-				<br>
-				<span class="unlisted">Unlisted</span><input type="checkbox" id="author_listed" class="listed">
-
-				<div id="translit-family_name-block" class="translit-family_name-block translit-block translit-author hidden">
-					<label for="translit_family_name" class="hidden translit heading translit-family_name">Transliterated name</label><label for="translit_family_name" class="insert insert_family_name hidden translit translit-family_name" onClick='insertMenu("translit_family_name");'>Insert Diacritics</label><label for="translit_given_name" class="insert insert_given_name hidden translit translit-family_name" onClick='insertMenu("translit_given_name");'>Insert Diacritics</label><br>
-					<div id="insert-translit_family_name"></div><div id="insert-translit_given_name" class="insert-given_name"></div>
-					<input type="text" id="translit_family_name" class="hidden translit translit-family_name" placeholder="Transliterated Family Name"><span class="hidden translit-family_name">, </span>
-					<input type="text" id="translit_given_name" class="hidden translit translit-family_name" placeholder="Transliterated Given Name">
-				</div>
-			</div>
-
 			<div id="publisher-block" class="standard-block">
 				<label for="publisher" class="heading">Name of publisher</label><label for="publisher" class="insert insert_normal" onClick='insertMenu("publisher");'>Insert Diacritics</label><br>
 				<div id="insert-publisher"></div>
@@ -1197,20 +1197,110 @@
 		<script src="metadatamaker/submitForm.js"></script>
 		<script src="images/imageUpload.js"></script>
 		<script>
-			document.addEventListener('DOMContentLoaded', function() {
+			document.addEventListener("DOMContentLoaded", function () {
 				// Find the button and attach the event listener
-				const ocrButton = document.getElementById('ocrSearch');
+				const ocrButton = document.getElementById("ocrSearch");
 				if (ocrButton) {
-					ocrButton.addEventListener('click', function() {
-						if (typeof ocrSearch === 'function') {
+					ocrButton.addEventListener("click", function () {
+						if (typeof ocrSearch === "function") {
 							ocrSearch();
 						} else {
-							console.error('ocrSearch function not available');
+							console.error("ocrSearch function not available");
 						}
 					});
 				}
 			});
-			</script>
+		</script>
+		<script>
+			// Add this CSS to your stylesheet
+			const style = document.createElement("style");
+			style.textContent = `
+		.custom-alert {
+		    display: none;
+		    position: fixed;
+		    top: 50%;
+		    left: 50%;
+		    transform: translate(-50%, -50%);
+		    background: white;
+		    padding: 20px;
+		    border-radius: 8px;
+		    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+		    z-index: 1000;
+		    max-width: 400px;
+		    text-align: center;
+		    animation: fadeIn 0.3s ease-in-out;
+		}
+
+		.custom-alert-backdrop {
+		    display: none;
+		    position: fixed;
+		    top: 0;
+		    left: 0;
+		    width: 100%;
+		    height: 100%;
+		    background: rgba(0,0,0,0.5);
+		    z-index: 999;
+		}
+
+		.close-btn {
+		    display: block;
+		    margin-top: 15px;
+		    padding: 8px 20px;
+		    background: #007bff;
+		    color: white;
+		    border: none;
+		    border-radius: 4px;
+		    cursor: pointer;
+		}
+
+		.close-btn:hover {
+		    background: #0056b3;
+		}
+
+		@keyframes fadeIn {
+		    from { opacity: 0; }
+		    to { opacity: 1; }
+		}
+		`;
+			document.head.appendChild(style);
+
+			// Add this HTML to your document body
+			const alertHTML = `
+		<div class="custom-alert-backdrop"></div>
+		<div class="custom-alert">
+		    <p>If book doesn't have an ISBN, use the Title Field to pass the Author name along with book title for better results or you can use the Author Name field as well.</p>
+		    <button class="close-btn">OK</button>
+		</div>
+		`;
+			document.body.insertAdjacentHTML("beforeend", alertHTML);
+
+			// Add this JavaScript
+			document.addEventListener("DOMContentLoaded", function () {
+				const checkbox = document.getElementById("isbn_listed");
+				const alertBox = document.querySelector(".custom-alert");
+				const backdrop = document.querySelector(".custom-alert-backdrop");
+				const closeBtn = document.querySelector(".close-btn");
+
+				function showAlert() {
+					alertBox.style.display = "block";
+					backdrop.style.display = "block";
+				}
+
+				function hideAlert() {
+					alertBox.style.display = "none";
+					backdrop.style.display = "none";
+				}
+
+				checkbox.addEventListener("change", function () {
+					if (this.checked) {
+						showAlert();
+					}
+				});
+
+				closeBtn.addEventListener("click", hideAlert);
+				backdrop.addEventListener("click", hideAlert);
+			});
+		</script>
 	</div>
 </body>
 
