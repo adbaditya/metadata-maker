@@ -356,7 +356,7 @@ async function preFetchFromAI() {
                             messages: [
                                 {
                                     "role": "system",
-                                    "content": "You are a helpful assistant that provides book metadata in JSON format. Use the provided Open Library data when available to ensure accuracy. Only return data that you are certain is accurate. If any information is unavailable or uncertain, use null for that field. For arrays of places or publishers, provide them as arrays but ensure they are deduplicated. For dates, provide them in YYYY format. For countries, provide the full country name (e.g., 'Netherlands' instead of 'ne'). Always include these exact fields: title, subtitle, isbn, edition, language, publisher, authors (array of objects with familyName and givenName), placeOfPublication, publicationCountry, publicationDate, copyrightDate, numberOfPages, synopsisOfBook."
+                                    "content": "You are a helpful assistant that provides book metadata in JSON format. Use the provided Open Library data when available to ensure accuracy. Only return data that you are certain is accurate. If any information is unavailable or uncertain, use null for that field. For arrays of places or publishers, provide them as arrays but ensure they are deduplicated. For dates, provide them in YYYY format. For countries, provide the full country name (e.g., 'Netherlands' instead of 'ne'). Always include these exact fields: title, subtitle, isbn, edition, language, publisher, authors (array of objects with familyName and givenName), placeOfPublication, publicationCountry, publicationDate, copyrightDate, numberOfPages, dimensions, synopsisOfBook."
                                 },
                                 {
                                     "role": "user",
@@ -390,6 +390,7 @@ async function preFetchFromAI() {
             document.getElementById('edition').value = metadata.edition || '';
             document.getElementById('language').value = metadata.language || '';
             document.getElementById('pages').value = metadata.numberOfPages || '';
+            document.getElementById('dimensions').value = metadata.dimensions || '';
             document.getElementById('subtitle').value = metadata.subtitle || '';
 
             document.getElementById('place').value = Array.isArray(metadata.placeOfPublication)
@@ -417,6 +418,43 @@ async function preFetchFromAI() {
                     }
                 });
             }
+            
+            // Add required attribute to the fields
+            const familyNameInput = document.getElementById("family_name");
+            const givenNameInput = document.getElementById("given_name");
+            const subtitleInput = document.getElementById("subtitle");
+
+            // Add required attribute
+            familyNameInput.setAttribute("required", "");
+            givenNameInput.setAttribute("required", "");
+            subtitleInput.setAttribute("required", "");
+
+            // Function to set initial border color based on value
+            const setInitialBorderColor = (input) => {
+                if (!input.value.trim()) {
+                    input.style.borderColor = "#ff4444";
+                    input.placeholder = input.placeholder + " *";
+                }
+            };
+
+            // Set initial states
+            setInitialBorderColor(familyNameInput);
+            setInitialBorderColor(givenNameInput);
+
+            // Add event listeners to handle input changes
+            const handleInput = (input) => {
+                input.addEventListener("input", function () {
+                    if (this.value.trim() !== "") {
+                        this.style.borderColor = ""; // Reset to default
+                    } else {
+                        this.style.borderColor = "#ff4444"; // Keep red if empty
+                    }
+                });
+            };
+
+            handleInput(familyNameInput);
+            handleInput(givenNameInput);
+            
         }
 
     } catch (error) {
@@ -450,6 +488,7 @@ async function fetchFromPerplexity(title) {
                     "publicationDate": "YYYY format",
                     "copyrightDate": "YYYY format or null",
                     "numberOfPages": Number of pages or null,
+                    "dimensions": "Dimensions of book in cm (Always the dimensions in this format 22.86 x 15.24 x 3.00) If it's in any other format than cm then convert it to cm. If no dimensions are found return an empty value",
                     "synopsisOfBook": Synopsis of the book
                     }
                     Use null for truly unknown values only after thorough searching. Only return the json and nothing else. Do not start with words json, just return the json and nothing else.`
@@ -560,6 +599,7 @@ function ocrSearch() {
                                     document.getElementById('edition').value = metadata.edition || '';
                                     document.getElementById('language').value = metadata.language || '';
                                     document.getElementById('pages').value = metadata.numberOfPages || '';
+                                    document.getElementById('dimensions').value = metadata.dimensions || '';
                                     document.getElementById('subtitle').value = metadata.subtitle || '';
             
                                     document.getElementById('place').value = Array.isArray(metadata.placeOfPublication)
