@@ -308,3 +308,11 @@ textarea {
     min-height: 120px;
     resize: vertical;
 }
+
+#author-block label.insert.insert_given_name {
+    margin-top: 15px;
+}
+
+button.close-btn {
+    margin: 0 auto;
+}

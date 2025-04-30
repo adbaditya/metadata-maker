@@ -271,6 +271,7 @@ async function uploadViaWorker(files) {
 }*/
 
 //v3 - with perplexity
+
 async function preFetchFromAI() {
     const title = document.getElementById('title').value;
     const isbn = document.getElementById('isbn').value;
@@ -279,6 +280,20 @@ async function preFetchFromAI() {
 
     if (!title && !isbn) {
         console.log('Please enter either a title or ISBN');
+        const noInputAlert = document.querySelector(".no-input-alert");
+        const noInputBackdrop = document.querySelector(".no-input-backdrop");
+        const noInputCloseBtn = noInputAlert.querySelector(".close-btn");
+
+        noInputAlert.style.display = "block";
+        noInputBackdrop.style.display = "block";
+
+        function hideNoInputAlert() {
+            noInputAlert.style.display = "none";
+            noInputBackdrop.style.display = "none";
+        }
+
+        noInputCloseBtn.addEventListener("click", hideNoInputAlert);
+        noInputBackdrop.addEventListener("click", hideNoInputAlert);
         return;
     }
 
@@ -471,11 +486,23 @@ async function fetchFromPerplexity(title) {
             },
             body: JSON.stringify({
                 query: `Find comprehensive book metadata for the book titled: "${title}". 
-                    Search publisher websites, library databases, and book retailer sites.
+                    Primary search sources (in order of priority):
+1. Amazon.com and Amazon.ae
+2. Ubuy.ae
+3. Barnes & Noble (barnesandnoble.com)
+4. Book Depository (bookdepository.com)
+5. Jamalon.com
+6. Noon.com books section
+
+Secondary sources if needed:
+- Publisher's official website
+- WorldCat.org
+- Goodreads.com
+- Google Books
                     For each field, explicitly state if you found the information or not.
                     Return the data in this exact JSON format: {
                     "title": "Full book title",
-                    "subtitle": "Book subtitle or null",
+                    "subtitle": "Alternative book title",
                     "isbn": "ISBN-13 or null",
                     "edition": "Edition information or null",
                     "language": "Language code (eng, fre, etc.) or null",
@@ -491,7 +518,17 @@ async function fetchFromPerplexity(title) {
                     "dimensions": "Dimensions of book in cm (Always the dimensions in this format 22.86 x 15.24 x 3.00) If it's in any other format than cm then convert it to cm. If no dimensions are found return an empty value",
                     "synopsisOfBook": Synopsis of the book
                     }
-                    Use null for truly unknown values only after thorough searching. Only return the json and nothing else. Do not start with words json, just return the json and nothing else.`
+                    Use null for truly unknown values only after thorough searching. Only return the json and nothing else. Do not start with words json, just return the json and nothing else.
+                    Search instructions:
+1. Start with Amazon.com/Amazon.ae listings
+2. Cross-reference with Ubuy.ae
+3. Check other primary sources in order
+4. Only use secondary sources if data is missing
+5. Include citation for each piece of information found
+6. Convert all measurements to centimeters
+7. Use null only when information cannot be found in ANY source listed
+Only return the json and nothing else. Do not start with words json, just return the json and nothing else.
+                    `
             })
         });
 
@@ -540,9 +577,12 @@ function ocrSearch() {
         const file = e.target.files[0];
         if (!file) return;
 
-        const formData = new FormData();
-        formData.append('image', file);
+        console.log('Original size:', file.size / 1024 / 1024, 'MB');
+    const compressedImage = await compressImage(file);
+    console.log('Compressed size:', compressedImage.size / 1024 / 1024, 'MB');
 
+        const formData = new FormData();
+        formData.append('image', compressedImage, file.name);
         try {
             console.log('Uploading image for OCR...');
             const progressDiv = document.getElementById('ocr-progress');
@@ -658,3 +698,52 @@ function ocrSearch() {
 
     fileInput.click();
 }
+
+function compressImage(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        
+        reader.onload = function(event) {
+            const img = new Image();
+            img.src = event.target.result;
+            
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Calculate new dimensions while maintaining aspect ratio
+                let width = img.width;
+                let height = img.height;
+                const maxDim = 2000; // Maximum dimension
+                
+                if (width > height && width > maxDim) {
+                    height *= maxDim / width;
+                    width = maxDim;
+                } else if (height > maxDim) {
+                    width *= maxDim / height;
+                    height = maxDim;
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Draw and compress
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Convert to blob with compression
+                canvas.toBlob((blob) => {
+                    resolve(blob);
+                }, 'image/jpeg', 0.7); // Adjust quality (0.7 = 70% quality)
+            };
+            
+            img.onerror = function(error) {
+                reject(error);
+            };
+        };
+        
+        reader.onerror = function(error) {
+            reject(error);
+        };
+    });
+} 

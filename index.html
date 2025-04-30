@@ -46,55 +46,9 @@
 				<img src="arrow2.svg" id="arrow">
 				<div id="version_menu" class="hidden">
 					<ul id="version_menu_content">
-						<a class="dropdown" href="/dataset/">
+						<a class="dropdown" href="/">
 							<li id="dataset">
-								Data Sets
-							</li>
-						</a>
-						<a class="dropdown" href="/ebooks/">
-							<li id="ebooks">
-								E-Books
-							</li>
-						</a>
-						<a class="dropdown" href="/govdocs/">
-							<li id="govdocs">
-								Government Documents
-							</li>
-						</a>
-						<a class="dropdown" href="/maps/">
-							<li id="maps">
-								Maps
-							</li>
-						</a>
-						<a class="dropdown" href="/microfilms/">
-							<li id="microfilms">
-								Microfilms
-							</li>
-						</a>
-						<a class="dropdown" onClick="return false;" href="/">
-							<li id="monographs" class="current_version">
-								Monographs
-								<span id="checkmark">&#10003;</span>
-							</li>
-						</a>
-						<a class="dropdown" href="/monoviaf/">
-							<li id="monoviaf">
-								Monograph (LD)
-							</li>
-						</a>
-						<a class="dropdown" href="/scores/">
-							<li id="scores">
-								Scores
-							</li>
-						</a>
-						<a class="dropdown" href="/serials/">
-							<li id="serials">
-								Serials
-							</li>
-						</a>
-						<a class="dropdown" href="/theses/">
-							<li id="theses">
-								Theses & Dissertations
+								IMS
 							</li>
 						</a>
 					</ul>
@@ -192,17 +146,21 @@
 			<div id="isbn-block" class="standard-block">
 				<label for="isbn" class="heading">ISBN</label><br>
 				<input type="text" required id="isbn" class="conditional">
-				<label title="Record an ISBN, if present. Do not record hyphens. If multiple ISBNs are present, record only one. E.g., 9781234567890 or 1234567890. If book doesn't have an ISBN, use the Title Field to pass the Author name along with book title for better results or you can use the Author Name field as well."><span class="question-mark">?</span></label><br>
-				<span class="unlisted">Unlisted</span><input type="checkbox" id="isbn_listed" class="listed">
+				<label title="Record an ISBN, if present. Do not record hyphens. If multiple ISBNs are present, record only one. E.g., 9781234567890 or 1234567890. If book doesn't have an ISBN, use the Title Field to pass the Author name along with book title for better results or you can use the Author Name field as well.">
+					<span class="question-mark">?</span>
+				</label>
+				<i class="info-icon" title="Record an ISBN, if present. Do not record hyphens. If multiple ISBNs are present, record only one. E.g., 9781234567890 or 1234567890. If book doesn't have an ISBN, use the Title Field to pass the Author name along with book title for better results or you can use the Author Name field as well.">ⓘ</i><br>
+				<span class="unlisted">Unlisted</span>
+				<input type="checkbox" id="isbn_listed" class="listed">
 			</div>
 
 			<div>
-				<button onclick="preFetchFromAI()" id="preFetch">Pre-Fetch from AI</button>
+				<button type="button" onclick="preFetchFromAI()" id="preFetch">Pre-Fetch from AI</button>
 			</div>
 
 			<div style="margin-top: 30px;">
 				<div id="ocr-progress"></div>
-				<button onclick="ocrSearch()" id="ocrSearch">Search for book with an image</button>
+				<button type="button" onclick="ocrSearch()" id="ocrSearch">Search for book with an image</button>
 			</div>
 
 			<div id="edition-block" class="standard-block">
@@ -1215,92 +1173,94 @@
 			// Add this CSS to your stylesheet
 			const style = document.createElement("style");
 			style.textContent = `
-		.custom-alert {
-		    display: none;
-		    position: fixed;
-		    top: 50%;
-		    left: 50%;
-		    transform: translate(-50%, -50%);
-		    background: white;
-		    padding: 20px;
-		    border-radius: 8px;
-		    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-		    z-index: 1000;
-		    max-width: 400px;
-		    text-align: center;
-		    animation: fadeIn 0.3s ease-in-out;
-		}
-
-		.custom-alert-backdrop {
-		    display: none;
-		    position: fixed;
-		    top: 0;
-		    left: 0;
-		    width: 100%;
-		    height: 100%;
-		    background: rgba(0,0,0,0.5);
-		    z-index: 999;
-		}
-
-		.close-btn {
-		    display: block;
-		    margin-top: 15px;
-		    padding: 8px 20px;
-		    background: #007bff;
-		    color: white;
-		    border: none;
-		    border-radius: 4px;
-		    cursor: pointer;
-		}
-
-		.close-btn:hover {
-		    background: #0056b3;
-		}
-
-		@keyframes fadeIn {
-		    from { opacity: 0; }
-		    to { opacity: 1; }
-		}
-		`;
+		.custom-alert-common {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        max-width: 400px;
+        text-align: center;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    .custom-alert-backdrop-common {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+    }
+    .close-btn {
+        display: block;
+        margin-top: 15px;
+        padding: 8px 20px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .close-btn:hover {
+        background: #0056b3;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+`;
 			document.head.appendChild(style);
 
 			// Add this HTML to your document body
-			const alertHTML = `
-		<div class="custom-alert-backdrop"></div>
-		<div class="custom-alert">
-		    <p>If book doesn't have an ISBN, use the Title Field to pass the Author name along with book title for better results or you can use the Author Name field as well.</p>
-		    <button class="close-btn">OK</button>
-		</div>
-		`;
-			document.body.insertAdjacentHTML("beforeend", alertHTML);
+			const alertsHTML = `
+    <div class="custom-alert-backdrop-common isbn-unlisted-backdrop"></div>
+    <div class="custom-alert-common isbn-unlisted-alert">
+        <p>If book doesn't have an ISBN, use the Title Field to pass the Author name along with book title for better results or you can use the Author Name field as well.</p>
+        <button class="close-btn">OK</button>
+    </div>
+    <div class="custom-alert-backdrop-common no-input-backdrop"></div>
+    <div class="custom-alert-common no-input-alert">
+        <p>Please enter either a Title or ISBN to search for book metadata.</p>
+        <button class="close-btn">OK</button>
+    </div>
+`;
+document.body.insertAdjacentHTML("beforeend", alertsHTML);
+
 
 			// Add this JavaScript
 			document.addEventListener("DOMContentLoaded", function () {
-				const checkbox = document.getElementById("isbn_listed");
-				const alertBox = document.querySelector(".custom-alert");
-				const backdrop = document.querySelector(".custom-alert-backdrop");
-				const closeBtn = document.querySelector(".close-btn");
+    const checkbox = document.getElementById("isbn_listed");
+    const isbnUnlistedAlert = document.querySelector(".isbn-unlisted-alert");
+    const isbnUnlistedBackdrop = document.querySelector(".isbn-unlisted-backdrop");
+    const isbnUnlistedCloseBtn = isbnUnlistedAlert.querySelector(".close-btn");
 
-				function showAlert() {
-					alertBox.style.display = "block";
-					backdrop.style.display = "block";
-				}
+    function showIsbnUnlistedAlert() {
+        isbnUnlistedAlert.style.display = "block";
+        isbnUnlistedBackdrop.style.display = "block";
+    }
 
-				function hideAlert() {
-					alertBox.style.display = "none";
-					backdrop.style.display = "none";
-				}
+    function hideIsbnUnlistedAlert() {
+        isbnUnlistedAlert.style.display = "none";
+        isbnUnlistedBackdrop.style.display = "none";
+    }
 
-				checkbox.addEventListener("change", function () {
-					if (this.checked) {
-						showAlert();
-					}
-				});
+    checkbox.addEventListener("change", function () {
+        if (this.checked) {
+            showIsbnUnlistedAlert();
+        }
+    });
 
-				closeBtn.addEventListener("click", hideAlert);
-				backdrop.addEventListener("click", hideAlert);
-			});
-		</script>
+    isbnUnlistedCloseBtn.addEventListener("click", hideIsbnUnlistedAlert);
+    isbnUnlistedBackdrop.addEventListener("click", hideIsbnUnlistedAlert);
+});
+</script>
 	</div>
 </body>
 
