@@ -2,13 +2,14 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<title>AI Integrated Metadata Maker</title>
+	<title>Metadata Maker for E-Books</title>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
 	<script src="webshim/js-webshim/minified/polyfiller.js"></script>
 	<script src="assignFAST/assignFASTExample.js"></script>
 	<script src="assignFAST/assignFASTGadget.js"></script>
 	<script src="assignFAST/assignFASTComplete.js"></script>
+	<script src="metadatamaker/bisac.js"></script>
 
 	<link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css" rel="stylesheet">
 	<link href="https://jqueryui.com/jquery-wp-content/themes/jqueryui.com/style.css" rel="stylesheet">
@@ -32,23 +33,23 @@
 <body>
 	<div id="top_navigation">
 		<div id="insert" class="noselect" onClick="toggleInsertMenu()">
-			Special Characters
+			Insert
 			<img src="arrow2.svg" id="insert_arrow">
 		</div>
 		<div id="version_title" class="noselect">
 			<div id="version_static">
-				AI Integrated Metadata Maker for
+				Metadata Maker for
 			</div>
 			<div id="version_selector" onClick="toggleVersionMenu()">
-				<div id="version_name" value="monographs">
-					Monographs
+				<div id="version_name" value="ebooks">
+					IMS
 				</div>
 				<img src="arrow2.svg" id="arrow">
 				<div id="version_menu" class="hidden">
 					<ul id="version_menu_content">
-						<a class="dropdown" href="/">
+						<a class="dropdown" href="/dataset/">
 							<li id="dataset">
-								IMS
+								Mongographs
 							</li>
 						</a>
 					</ul>
@@ -61,9 +62,6 @@
 				<div id="institution_name"></div>
 			</div>
 			<img src="arrow2.svg" id="institution_arrow">
-		</div>
-		<div id="how_to_use" class="noselect" onclick="openInstructionsModal()">
-			Template Instructions
 		</div>
 		<div id="global-insert-menu" class="hidden">
 			<div class="menu_line">
@@ -79,88 +77,57 @@
 	</div>
 	<form id="institution_menu" class="hidden">
 		<label for="marc_code">MARC code or the name of the organization</label><br>
-		<input type="text" id="marc_code" placeholder="VCU"></input><br>
+		<input type="text" id="marc_code" placeholder="UIU"></input><br>
 		<label for="physicalLocation">Physical Location</label><br>
-		<input type="text" id="physicalLocation" placeholder="Art & Design Library"></input><br>
+		<input type="text" id="physicalLocation" placeholder="University of Illinois at Urbana-Champaign, Library"></input><br>
 		<label for="recordContentSource">Record Content Source</label><br>
-		<input type="text" id="recordContentSource" placeholder="D@A"></input><br>
+		<input type="text" id="recordContentSource" placeholder="UIU"></input><br>
 		<label for="lcno">Organization's LC Authority Number</label><br>
-		<input type="text" id="lcno" placeholder="qadovcu"></input><br>
-		<label for="org_name" placeholder="qadovcu">Organization's Name</label><br>
-		<input type="text" id="org_name" placeholder="Virginia Commonwealth University School of the Arts in Qatar"></input><br>
+		<input type="text" id="lcno" placeholder="n79066210"></input><br>
+		<label for="org_name">Organization's Name</label><br>
+		<input type="text" id="org_name"></input><br>
 		<input type="submit" id="submit_institution_info" value="Change Institution"></input>
 	</form>
-	
+	<div id="warning_system">
+		<noscript>WARNING: JavaScript is not enabled on this browser. This page requires JavaScript to function correctly.</noscript>
+		<!--Allow Safari and older versions of IE to behave as if they implement HTML5's 'required' attribute-->
+		<script>jQuery.webshims.polyfill('forms');</script>
+		<script src="metadatamaker/checkServer.js"></script>
+	</div>
 	<div id="content">
 		<form id="marc-maker">
-		<div id="title-block">
-			<label for="title" class="heading">Title<span class="required_marker">*</span></label><label for="title" class="insert insert_normal" onClick='insertMenu("title");'>Insert Diacritics</label><br>
-			<div id="insert-title"></div>
-			<input type="text" required id="title" class="required translit-listen">
-			<i class="info-icon" data-tooltip="If ISBN is not available, enter the Title and subtitle as seen on the title page in the field for 'Title' and enter the Author's first name and last name into the right fields. Click on AI Generate button.">ⓘ</i>
-		</div>
+			<div id="title-block">
+				<label for="title" class="heading">Title<span class="required_marker">*</span></label><label for="title" class="insert insert_normal" onClick='insertMenu("title");'>Insert Diacritics</label><br>
+				<div id="insert-title"></div>
+				<input type="text" required id="title" class="required translit-listen">
+				<label title="Record the title as it appears on the title page. If the title includes a subtitle, record only the main title here, and the subtitle in the next field."><span class="question-mark">?</span></label>
+			</div>
 
 			<div id="subtitle-block">
 				<label for="subtitle" class="heading">Subtitle</label><label for="subtitle" class="insert insert_normal" onClick='insertMenu("subtitle");'>Insert Diacritics</label><br>
 				<div id="insert-subtitle"></div>
-				<input type="text" id="subtitle" class="conditional">
+				<input type="text" required id="subtitle" class="conditional">
 				<label title="Record the subtitle if one exists"><span class="question-mark">?</span></label><br>
 				<span class="unlisted">Unlisted</span><input type="checkbox" id="subtitle_listed" class="listed">
 			</div>
 
 			<div id="translit-title-block" class="translit-title-block translit-block standard-translit-block translit-title hidden">
-				<label for="translit_title" class="hidden translit heading translit-title">Transliterated title</label><label for="translit_title" class="insert insert_normal hidden translit translit-title" style="left: -13px;" onClick='insertMenu("translit_title");'>Insert Diacritics</label><br>
+				<label for="translit_title" class="hidden translit heading translit-title">Transliterated title</label><label for="translit_title" class="insert insert_normal hidden translit translit-title" onClick='insertMenu("translit_title");'>Insert Diacritics</label><br>
 				<div id="insert-translit_title" class="hidden translit translit-title"></div>
 				<input type="text" id="translit_title" class="hidden translit translit-title">
 			</div>
 
 			<div id="translit-subtitle-block" class="translit-title-block translit-block standard-translit-block translit-title hidden">
-				<label for="translit_subtitle" class="hidden translit heading translit-title">Transliterated subtitle</label><label for="translit_subtitle" class="insert insert_normal hidden translit translit-title" onClick='insertMenu("translit_subtitle");'>Insert Diacritics</label><br>
+				<label for="translit_subtitle" class="hidden translit heading translit-title">Transliterated subtitle</label><label for="translit_subtitle" class="insert insert_normal hidden translit translit-title" style="left: -13px;" onClick='insertMenu("translit_subtitle");'>Insert Diacritics</label><br>
 				<div id="insert-translit_subtitle" class="hidden translit translit-title"></div>
 				<input type="text" id="translit_subtitle" class="hidden translit translit-title">
-			</div>
-			
-			<div id="author-block">
-				<label for="author" class="heading">Names</label><label for="family_name" class="insert insert_family_name" onClick='insertMenu("family_name");'>Insert Diacritics</label><label for="given_name" class="insert insert_given_name" onClick='insertMenu("given_name");'>Insert Diacritics</label><br>
-				<div id="insert-family_name"></div><div id="insert-given_name"></div>
-				<input type="text" class="author conditional translit-listen" id="family_name" placeholder="Last Name">, 
-				<input type="text" class="author conditional translit-listen" id="given_name" placeholder="First Name">
-				<select name="role" id="role">
-					<option value="art">artist</option>
-					<option selected value="aut">author</option>
-					<option value="ctb">contributor</option>
-					<option value="edt">editor</option>
-					<option value="ill">illustrator</option>
-					<option value="trl">translator</option>
-				</select>
-				<label title="Enter the name of authors, editors, illustrators, etc. listed on the piece and select the appropriate role from the drop down menu. Authors should be listed first."><span class="question-mark">?</span></label>
-				<input type="button" value="+" id="add-author" onClick="addAuthor();">
-				<br>
-				<span class="unlisted">Unlisted</span><input type="checkbox" id="author_listed" class="listed">
-
-				<div id="translit-family_name-block" class="translit-family_name-block translit-block translit-author hidden">
-					<label for="translit_family_name" class="hidden translit heading translit-family_name">Transliterated name</label><label for="translit_family_name" class="insert insert_family_name hidden translit translit-family_name" onClick='insertMenu("translit_family_name");'>Insert Diacritics</label><label for="translit_given_name" class="insert insert_given_name hidden translit translit-family_name" onClick='insertMenu("translit_given_name");'>Insert Diacritics</label><br>
-					<div id="insert-translit_family_name"></div><div id="insert-translit_given_name" class="insert-given_name"></div>
-					<input type="text" id="translit_family_name" class="hidden translit translit-family_name" placeholder="Transliterated Family Name"><span class="hidden translit-family_name">, </span>
-					<input type="text" id="translit_given_name" class="hidden translit translit-family_name" placeholder="Transliterated Given Name">
-				</div>
 			</div>
 
 			<div id="isbn-block" class="standard-block">
 				<label for="isbn" class="heading">ISBN</label><br>
 				<input type="text" required id="isbn" class="conditional">
-				<i class="info-icon" data-tooltip="Enter ISBN, (only one)13 digits or 10 digits if available, and click on AI Generate button to retrieve information on the resource.">ⓘ</i><br>
-				<span class="unlisted">Unlisted</span>
-				<input type="checkbox" id="isbn_listed" class="listed">
-			</div>
-
-			<div>
-				<button type="button" onclick="preFetchFromAI()" id="preFetch">AI Generate</button>
-			</div>
-
-			<div style="margin-top: 10px;">
-				<div id="ocr-progress"></div>
-				<button type="button" onclick="ocrSearch()" id="ocrSearch">Select images for OCR Search</button>
+				<label title="Record an ISBN, if present. Do not record hyphens. If multiple ISBNs are present, record only one. E.g., 9781234567890 or 1234567890"><span class="question-mark">?</span></label><br>
+				<span class="unlisted">Unlisted</span><input type="checkbox" id="isbn_listed" class="listed">
 			</div>
 
 			<div id="edition-block" class="standard-block">
@@ -668,6 +635,32 @@
 				</select>
 			</div>
 
+			<div id="author-block">
+				<label for="author" class="heading">Names</label><label for="family_name" class="insert insert_family_name" onClick='insertMenu("family_name");'>Insert Diacritics</label><label for="given_name" class="insert insert_given_name" onClick='insertMenu("given_name");'>Insert Diacritics</label><br>
+				<div id="insert-family_name"></div><div id="insert-given_name"></div>
+				<input type="text" class="author conditional translit-listen" required id="family_name" placeholder="Family Name">, 
+				<input type="text" class="author conditional translit-listen" required id="given_name" placeholder="Given Name">
+				<select name="role" id="role">
+					<option value="art">artist</option>
+					<option selected value="aut">author</option>
+					<option value="ctb">contributor</option>
+					<option value="edt">editor</option>
+					<option value="ill">illustrator</option>
+					<option value="trl">translator</option>
+				</select>
+				<label title="Enter the name of authors, editors, illustrators, etc. listed on the piece and select the appropriate role from the drop down menu. Authors should be listed first."><span class="question-mark">?</span></label>
+				<input type="button" value="+" id="add-author" onClick="addAuthor();">
+				<br>
+				<span class="unlisted">Unlisted</span><input type="checkbox" id="author_listed" class="listed">
+
+				<div id="translit-family_name-block" class="translit-family_name-block translit-block translit-author hidden">
+					<label for="translit_family_name" class="hidden translit heading translit-family_name">Transliterated name</label><label for="translit_family_name" class="insert insert_family_name hidden translit translit-family_name" onClick='insertMenu("translit_family_name");'>Insert Diacritics</label><label for="translit_given_name" class="insert insert_given_name hidden translit translit-family_name" onClick='insertMenu("translit_given_name");'>Insert Diacritics</label><br>
+					<div id="insert-translit_family_name"></div><div id="insert-translit_given_name" class="insert-given_name"></div>
+					<input type="text" id="translit_family_name" class="hidden translit translit-family_name" placeholder="Transliterated Family Name"><span class="hidden translit-family_name">, </span>
+					<input type="text" id="translit_given_name" class="hidden translit translit-family_name" placeholder="Transliterated Given Name">
+				</div>
+			</div>
+
 			<div id="publisher-block" class="standard-block">
 				<label for="publisher" class="heading">Name of publisher</label><label for="publisher" class="insert insert_normal" onClick='insertMenu("publisher");'>Insert Diacritics</label><br>
 				<div id="insert-publisher"></div>
@@ -680,6 +673,12 @@
 				<label for="translit_publisher" class="hidden translit heading translit-publisher">Transliterated publisher</label><label for="translit_publisher" class="insert insert_normal hidden translit translit-publisher" onClick='insertMenu("translit_publisher");'>Insert Diacritics</label><br>
 				<div id="insert-translit_publisher" class="hidden translit translit-publisher"></div>
 				<input type="text" id="translit_publisher" class="hidden translit translit-publisher">
+			</div>
+
+			<div id="web-url-block" class="standard-block">
+				<label for="web-url" class="heading">Web URL<span class="required_marker">*</span></label><label for="web-url" class="insert insert_normal" onClick='insertMenu("web-url");'>Insert Diacritics</label><br>
+				<div id="insert-web-url"></div>
+				http://<input type="text" required id="web-url">
 			</div>
 
 			<div id="place-block" class="standard-block">
@@ -1051,24 +1050,6 @@
 				<span class="unlisted">Unlisted</span><input type="checkbox" id="cyear_listed" class="listed">
 			</div>
 
-			<div id="pages-block" class="standard-block">
-				<label for="number" class="heading">Number of</label>
-				<select name="vorp" id="vorp">
-					<option selected value="pages">pages</option>
-					<option value="volumes">volumes</option>
-				</select><br>
-				<input type="text" required id="pages" class="conditional">
-				<label title="Record the number of pages in each numbered sequence. E.g., 356 or xii, 254. Record the number from the last numbered page, and do not include unnumbered pages. 
-	If a multi-volume set, do not record the number of pages, but instead record the number of physical volumes, E.g., 4"><span class="question-mark">?</span></label><br>
-				<span class="unlisted">Unpaged</span><input type="checkbox" id="pages_listed" class="listed">
-			</div>
-
-			<div id="dimensions-block" class="standard-block">
-				<label for="dimensions" class="heading">Dimensions<span class="required_marker">*</span></label><br>
-				<input type="text" required id="dimensions" class="required"> cm
-				<label title="Record the height of the piece in cm. Always round up, so that if a piece measures 25.1 cm, record 26 cm"><span class="question-mark">?</span></label>
-			</div>
-
 			<div id="literature-block" class="standard-block">
 				<label for="literature" class="heading">Is this item literature?</label><br>
 				<input type="radio" name="literature" id="literature-yes" value="yes">Yes
@@ -1096,6 +1077,69 @@
 				<input type="radio" name="illustrations" id="illustrations-no" value="no">No
 			</div>
 
+			<div id="subject_headings">
+				<label for="root-subject0" class="heading">BISAC Subject Heading</label> <input type="button" value="+" id="add-subject" onclick="addSubject();"><br>
+				<div id="subject0-block" class="subject-block">
+					<div id="verification0" class="verification unverified">Invalid Subject Heading <span style="color: red;">&#x2717;</span></div>
+					<select id="root-subject0" class="root-subject">
+						<option selected value=""></option>
+						<option>ANTIQUES & COLLECTIBLES</option>
+						<option>ARCHITECTURE</option>
+						<option>ART</option>
+						<option>BIBLES</option>
+						<option>BIOGRAPHY & AUTOBIOGRAPHY</option>
+						<option>BODY, MIND & SPIRIT</option>
+						<option>BUSINESS & ECONOMICS</option>
+						<option>COMICS & GRAPHIC NOVELS</option>
+						<option>COMPUTERS</option>
+						<option>COOKING</option>
+						<option>CRAFTS & HOBBIES</option>
+						<option>DESIGN</option>
+						<option>DRAMA</option>
+						<option>EDUCATION</option>
+						<option>FAMILY & RELATIONSHIPS</option>
+						<option>FICTION</option>
+						<option>FOREIGN LANGUAGE STUDY</option>
+						<option>GAMES</option>
+						<option>GARDENING</option>
+						<option>HEALTH & FITNESS</option>
+						<option>HISTORY</option>
+						<option>HOUSE & HOME</option>
+						<option>HUMOR</option>
+						<option>JUVENILE FICTION</option>
+						<option>JUVENILE NONFICTION</option>
+						<option>LANGUAGE ARTS & DISCIPLINES</option>
+						<option>LAW</option>
+						<option>LITERARY COLLECTIONS</option>
+						<option>LITERARY CRITICISM</option>
+						<option>MATHEMATICS</option>
+						<option>MEDICAL</option>
+						<option>MUSIC</option>
+						<option>NATURE</option>
+						<option>PERFORMING ARTS</option>
+						<option>PETS</option>
+						<option>PHILOSOPHY</option>
+						<option>PHOTOGRAPHY</option>
+						<option>POETRY</option>
+						<option>POLITICAL SCIENCE</option>
+						<option>PSYCHOLOGY</option>
+						<option>REFERENCE</option>
+						<option>RELIGION</option>
+						<option>SCIENCE</option>
+						<option>SELF-HELP</option>
+						<option>SOCIAL SCIENCE</option>
+						<option>SPORTS & RECREATION</option>
+						<option>STUDY AIDS</option>
+						<option>TECHNOLOGY & ENGINEERING</option>
+						<option>TRANSPORTATION</option>
+						<option>TRAVEL</option>
+						<option>TRUE CRIME</option>
+						<option>YOUNG ADULT FICTION</option>
+						<option>YOUNG ADULT NONFICTION</option>
+					</select>
+				</div>
+			</div>
+
 			<div id="keywords" class="standard-block">
 				<label for="keywords" class="heading">Keywords<span class="required_marker">*</span></label><br>
 				<input type="text" class="fastID hidden" id="fastID0">
@@ -1105,17 +1149,8 @@
 				<input type="button" value="+" id="add-button" onClick="addKeyword();">
 			</div>
 
-			<div id="image-upload-block" class="standard-block">
-				<label for="image-upload" class="heading">Select images</label><br>
-				<input type="file" id="image-upload" accept="image/*,video/*" multiple>	
-				<button type="button" id="process-image-button" style="margin: 20px 0;" onclick="processImages()">Upload Images</button>
-				<div id="image-preview"></div>
-				<div id="upload-progress"></div>
-				<input type="hidden" id="image-data">
-			</div>
-
 			<div id="notes-block">
-				<label for="notes">Note Field:</label><br>
+				<label for="notes">Notes to the Cataloger</label><br>
 				<textarea id="notes"></textarea>
 			</div>
 
@@ -1129,12 +1164,12 @@
 				<input type="checkbox" id="MARC" class="filetype">MARC<br>
 				<input type="checkbox" id="MARCXML" class="filetype">MARCXML<br>
 				<input type="checkbox" id="MODS" class="filetype">MODS<br>
-				<input type="checkbox" id="BIBFRAME" class="filetype">BIBFRAME<br>
-				<input type="checkbox" id="HTML" class="filetype">HTML
+				<input type="checkbox" id="HTML" class="filetype">HTML<br>
+				<input type="checkbox" id="ONIX" class="filetype">ONIX
 			</div>
 
 			<div id="buttons" class="standard-block">
-				<input type="submit" value="Create" id="make">
+				<input type="submit" value="Make" id="make">
 				<input type="reset" value="Clear" id="Clear">
 			</div>
 
@@ -1143,169 +1178,17 @@
 			</div>
 		</form>
 		<div id="disclaimer">The Metadata Maker Project was funded by the University of Illinois at Urbana-Champaign Library's Innovation and Seed Funds.</div>
-		<div id="disclaimer2">AI Integration was supported by a grant from VCUarts Qatar.</div>
 		<div id="version">Version 1.1 – Updated on 11/10/2022</div>
-		<a id="code" href="https://github.com/UIUCLibrary/metadata-maker">GitHub</a></div>
-
-		<!-- Modal for AI Template instructions -->
-		<div class="instructions-modal-backdrop"></div>
-		<div class="instructions-modal">
-			<h3>Instructions to use AI enriched Template for Metadata creation</h3>
-			<div class="note">
-				<strong>Note:</strong> Instructions to use AI enriched Template for Metadata creation
-			</div>
-			<ul>
-				<li>Enter ISBN, (only one) 13 digits or 10 digits if available, and click on AI Generate button to retrieve information on the resource. <em>(note for i-icon)</em></li>
-				<li>If ISBN is not available, enter the Title and subtitle as seen on the title page in the field for 'Title' and enter the Author's first name and last name into the right fields. Click on AI Generate button. <em>(note for i-icon)</em></li>
-				<li>Verify the AI generated fields against the details of the physical item. Any blank fields can be completed manually. Check all boxes for the fields that will remain empty.</li>
-				<li>Use 'Search for book with an image' option to search by image of the item to be catalogued.</li>
-				<li>Keywords can be entered using the search terms from the predictive dropdown menu, which uses LOC FAST subject headings.</li>
-				<li>Use 'Select Images' field to add images to the record and upload images. A destination for image storage to be set if you wish the images to be stored on local network or a specific cloud storage. Refer to the Github files to learn more.</li>
-				<li>Save the record to your local computer or to a specific destination by checking the box for right desired format and click on 'Create' button.</li>
-				<li>Refer to the GitHub link below to download and make changes to the template as required.</li>
-			</ul>
-
-			<button class="instructions-close-btn">Close</button>
-		</div>
-
-		<script>
-			function openInstructionsModal() {
-				document.querySelector('.instructions-modal-backdrop').style.display = 'block';
-				document.querySelector('.instructions-modal').style.display = 'block';
-			}
-
-			function closeInstructionsModal() {
-				document.querySelector('.instructions-modal-backdrop').style.display = 'none';
-				document.querySelector('.instructions-modal').style.display = 'none';
-			}
-
-			// Close modal when clicking backdrop or close button
-			document.querySelector('.instructions-modal-backdrop').addEventListener('click', closeInstructionsModal);
-			document.querySelector('.instructions-close-btn').addEventListener('click', closeInstructionsModal);
-
-			// Close with Escape key
-			document.addEventListener('keydown', function(e) {
-				if (e.key === 'Escape') {
-					closeInstructionsModal();
-				}
-			});
-		</script>
+		<a id="code" href="https://github.com/UIUCLibrary/metadata-maker/tree/E-Books">GitHub</a></div>
 		
 		<script src="metadatamaker/generalInteractions.js"></script>
 		<script src="metadatamaker/topBar.js"></script>
+		<script src="metadatamaker/subjectHeadings.js"></script>
 		<script src="metadatamaker/downloadMARC.js"></script>
 		<script src="metadatamaker/downloadMODS.js"></script>
-		<script src="metadatamaker/downloadBIBFRAME.js"></script>
 		<script src="metadatamaker/downloadHTML.js"></script>
+		<script src="metadatamaker/downloadONIX.js"></script>
 		<script src="metadatamaker/submitForm.js"></script>
-		<script src="images/imageUpload.js"></script>
-		<script>
-			document.addEventListener("DOMContentLoaded", function () {
-				// Find the button and attach the event listener
-				const ocrButton = document.getElementById("ocrSearch");
-				if (ocrButton) {
-					ocrButton.addEventListener("click", function () {
-						if (typeof ocrSearch === "function") {
-							ocrSearch();
-						} else {
-							console.error("ocrSearch function not available");
-						}
-					});
-				}
-			});
-		</script>
-		<script>
-			// Add this CSS to your stylesheet
-			const style = document.createElement("style");
-			style.textContent = `
-		.custom-alert-common {
-        display: none;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 1000;
-        max-width: 400px;
-        text-align: center;
-        animation: fadeIn 0.3s ease-in-out;
-    }
-    .custom-alert-backdrop-common {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.5);
-        z-index: 999;
-    }
-    .close-btn {
-        display: block;
-        margin-top: 15px;
-        padding: 8px 20px;
-        background: #007bff;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-    .close-btn:hover {
-        background: #0056b3;
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-`;
-			document.head.appendChild(style);
-
-			// Add this HTML to your document body
-			const alertsHTML = `
-    <div class="custom-alert-backdrop-common isbn-unlisted-backdrop"></div>
-    <div class="custom-alert-common isbn-unlisted-alert">
-        <p>If book doesn't have an ISBN, use the Title Field to pass the Author name along with book title for better results or you can use the Author Name field as well.</p>
-        <button class="close-btn">OK</button>
-    </div>
-    <div class="custom-alert-backdrop-common no-input-backdrop"></div>
-    <div class="custom-alert-common no-input-alert">
-        <p>Please enter either a Title or ISBN to search for book metadata.</p>
-        <button class="close-btn">OK</button>
-    </div>
-`;
-document.body.insertAdjacentHTML("beforeend", alertsHTML);
-
-
-			// Add this JavaScript
-			document.addEventListener("DOMContentLoaded", function () {
-    const checkbox = document.getElementById("isbn_listed");
-    const isbnUnlistedAlert = document.querySelector(".isbn-unlisted-alert");
-    const isbnUnlistedBackdrop = document.querySelector(".isbn-unlisted-backdrop");
-    const isbnUnlistedCloseBtn = isbnUnlistedAlert.querySelector(".close-btn");
-
-    function showIsbnUnlistedAlert() {
-        isbnUnlistedAlert.style.display = "block";
-        isbnUnlistedBackdrop.style.display = "block";
-    }
-
-    function hideIsbnUnlistedAlert() {
-        isbnUnlistedAlert.style.display = "none";
-        isbnUnlistedBackdrop.style.display = "none";
-    }
-
-    checkbox.addEventListener("change", function () {
-        if (this.checked) {
-            showIsbnUnlistedAlert();
-        }
-    });
-
-    isbnUnlistedCloseBtn.addEventListener("click", hideIsbnUnlistedAlert);
-    isbnUnlistedBackdrop.addEventListener("click", hideIsbnUnlistedAlert);
-});
-</script>
 	</div>
 </body>
 

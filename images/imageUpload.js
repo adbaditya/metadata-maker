@@ -371,7 +371,7 @@ async function preFetchFromAI() {
                             messages: [
                                 {
                                     "role": "system",
-                                    "content": "You are a helpful assistant that provides book metadata in JSON format. Use the provided Open Library data when available to ensure accuracy. Only return data that you are certain is accurate. If any information is unavailable or uncertain, use null for that field. For arrays of places or publishers, provide them as arrays but ensure they are deduplicated. For dates, provide them in YYYY format. For countries, provide the full country name (e.g., 'Netherlands' instead of 'ne'). Always include these exact fields: title, subtitle, isbn, edition, language, publisher, authors (array of objects with familyName and givenName), placeOfPublication, publicationCountry, publicationDate, copyrightDate, numberOfPages, dimensions, synopsisOfBook."
+                                    "content": "You are a helpful assistant that provides book metadata in JSON format. Use the provided Open Library data when available to ensure accuracy. Only return data that you are certain is accurate. If any information is unavailable or uncertain, use null for that field. For arrays of places or publishers, provide them as arrays but ensure they are deduplicated. For dates, provide them in YYYY format. For countries, provide the full country name (e.g., 'Netherlands' instead of 'ne'). Always include these exact fields: title, subtitle, isbn, edition, language, publisher, authors (array of objects with familyName and givenName), placeOfPublication, publicationCountry, publicationDate, copyrightDate, numberOfPages, dimensions, synopsisOfBook. IMPORTANT: If title or subtitle contains non-English characters, provide transliterated versions in translit_title and translit_subtitle fields using Latin characters."
                                 },
                                 {
                                     "role": "user",
@@ -402,11 +402,30 @@ async function preFetchFromAI() {
             console.log('Final Metadata:', metadata);
             // Populate form fields
             document.getElementById('title').value = metadata.title || '';
+            document.getElementById('isbn').value = metadata.isbn || '';
             document.getElementById('edition').value = metadata.edition || '';
             document.getElementById('language').value = metadata.language || '';
             document.getElementById('pages').value = metadata.numberOfPages || '';
             document.getElementById('dimensions').value = metadata.dimensions || '';
             document.getElementById('subtitle').value = metadata.subtitle || '';
+
+            // NEW: Handle transliteration fields
+            const translitTitleField = document.getElementById('translit_title');
+            const translitSubtitleField = document.getElementById('translit_subtitle');
+
+            if (metadata.translit_title) {
+                translitTitleField.value = metadata.translit_title;
+                translitTitleField.style.display = 'inline-block';
+            } else {
+                translitTitleField.style.display = 'none';
+            }
+
+            if (metadata.translit_subtitle) {
+                translitSubtitleField.value = metadata.translit_subtitle;
+                translitSubtitleField.style.display = 'inline-block';
+            } else {
+                translitSubtitleField.style.display = 'none';
+            }
 
             document.getElementById('place').value = Array.isArray(metadata.placeOfPublication)
                 ? metadata.placeOfPublication[0]
@@ -502,7 +521,9 @@ Secondary sources if needed:
                     For each field, explicitly state if you found the information or not.
                     Return the data in this exact JSON format: {
                     "title": "Full book title",
+                    "translit_title": "Transliterated title if original is non-English, otherwise null",
                     "subtitle": "Alternative book title",
+                    "translit_subtitle": "Transliterated subtitle if original is non-English, otherwise null",
                     "isbn": "ISBN-13 or null",
                     "edition": "Edition information or null",
                     "language": "Language code (eng, fre, etc.) or null",
@@ -518,6 +539,9 @@ Secondary sources if needed:
                     "dimensions": "Dimensions of book in cm (Always the dimensions in this format 22.86 x 15.24 x 3.00) If it's in any other format than cm then convert it to cm. If no dimensions are found return an empty value",
                     "synopsisOfBook": Synopsis of the book
                     }
+                            IMPORTANT: If the title or subtitle contains non-English characters (Arabic, Chinese, Russian, etc.), provide both the original AND a transliterated version using Latin characters. For example:
+        - Original Arabic: "الأسود يليق بك" 
+        - Transliterated: "Al-Aswad Yaleeq Bik"
                     Use null for truly unknown values only after thorough searching. Only return the json and nothing else. Do not start with words json, just return the json and nothing else.
                     Search instructions:
 1. Start with Amazon.com/Amazon.ae listings
@@ -568,135 +592,409 @@ Only return the json and nothing else. Do not start with words json, just return
     }
 }
 
-function ocrSearch() {
+/*function ocrSearch() {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
+    fileInput.multiple = true; // Enable multiple file selection
 
     fileInput.onchange = async function (e) {
-        const file = e.target.files[0];
-        if (!file) return;
+        const files = Array.from(e.target.files); // Convert FileList to Array
+        if (!files || files.length === 0) return;
 
-        console.log('Original size:', file.size / 1024 / 1024, 'MB');
-    const compressedImage = await compressImage(file);
-    console.log('Compressed size:', compressedImage.size / 1024 / 1024, 'MB');
+        console.log(`Processing ${files.length} image(s)...`);
+        
+        const progressDiv = document.getElementById('ocr-progress');
+        if (progressDiv) {
+            progressDiv.innerHTML = `Processing ${files.length} image(s) with OCR...`;
+        }
 
-        const formData = new FormData();
-        formData.append('image', compressedImage, file.name);
-        try {
-            console.log('Uploading image for OCR...');
-            const progressDiv = document.getElementById('ocr-progress');
-            if (progressDiv) {
-                progressDiv.innerHTML = 'Processing image with OCR...';
-            }
+        let allExtractedText = ''; // Store text from all images
+        let processedCount = 0;
 
-            const response = await fetch('https://metadata-maker.adb-aditya.workers.dev/ocr', {
-                method: 'POST',
-                body: formData
-            });
+        // Process each image sequentially
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            console.log(`Processing image ${i + 1}/${files.length}:`, file.name);
+            console.log('Original size:', file.size / 1024 / 1024, 'MB');
 
-            const result = await response.json();
-            console.log('OCR Result:', result);
+            try {
+                const compressedImage = await compressImage(file);
+                console.log('Compressed size:', compressedImage.size / 1024 / 1024, 'MB');
 
-            if (result.success && result.result && result.result.ParsedResults) {
-                const extractedText = result.result.ParsedResults[0].ParsedText;
-                console.log('Extracted Text:', extractedText);
+                const formData = new FormData();
+                formData.append('image', compressedImage, file.name);
 
+                // Update progress
                 if (progressDiv) {
-                    progressDiv.innerHTML = 'OCR completed. Extracted text:';
+                    progressDiv.innerHTML = `Processing image ${i + 1}/${files.length}: ${file.name}...`;
+                }
+
+                const response = await fetch('https://metadata-maker.adb-aditya.workers.dev/ocr', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                console.log(`OCR Result for image ${i + 1}:`, result);
+
+                if (result.success && result.result && result.result.ParsedResults) {
+                    const extractedText = result.result.ParsedResults[0].ParsedText;
+                    console.log(`Extracted Text from image ${i + 1}:`, extractedText);
                     
-                    const textDisplay = document.createElement('div');
-                    textDisplay.style.maxHeight = '150px';
-                    textDisplay.style.overflow = 'auto';
-                    textDisplay.style.border = '1px solid #ccc';
-                    textDisplay.style.padding = '10px';
-                    textDisplay.style.marginTop = '10px';
-                    textDisplay.textContent = extractedText;
-                    
-                    progressDiv.appendChild(textDisplay);
-                    
-                    // Add a processing message
-                    const processingMsg = document.createElement('div');
-                    processingMsg.textContent = 'Analyzing text for book metadata...';
-                    processingMsg.style.marginTop = '10px';
-                    processingMsg.style.fontStyle = 'italic';
-                    progressDiv.appendChild(processingMsg);
-                    
-                    // Send to Perplexity for analysis
-                    fetchFromPerplexity(extractedText)
-                        .then(perplexityData => {
-                            if (perplexityData && perplexityData.choices?.[0]?.message?.content) {
-                                try {
-                                    // Parse the JSON string from the content
-                                    const metadata = JSON.parse(perplexityData.choices[0].message.content);
-                                    console.log('Book metadata from OCR:', metadata);
-                                    
-                                    // Update the processing message
-                                    processingMsg.textContent = 'Found book metadata!';
-                                    
-                                    // Populate form fields with the metadata
-                                    document.getElementById('title').value = metadata.title || '';
-                                    document.getElementById('edition').value = metadata.edition || '';
-                                    document.getElementById('language').value = metadata.language || '';
-                                    document.getElementById('pages').value = metadata.numberOfPages || '';
-                                    document.getElementById('dimensions').value = metadata.dimensions || '';
-                                    document.getElementById('subtitle').value = metadata.subtitle || '';
+                    // Combine text from all images with separators
+                    allExtractedText += `\n\n--- Text from ${file.name} ---\n${extractedText}`;
+                    processedCount++;
+                } else {
+                    console.error(`OCR failed for image ${i + 1}: ${file.name}`);
+                    allExtractedText += `\n\n--- Failed to extract text from ${file.name} ---\n`;
+                }
+
+            } catch (error) {
+                console.error(`Error processing image ${i + 1}:`, error);
+                allExtractedText += `\n\n--- Error processing ${file.name}: ${error.message} ---\n`;
+            }
+        }
+
+        // Display results after processing all images
+        if (progressDiv) {
+            progressDiv.innerHTML = `OCR completed for ${processedCount}/${files.length} image(s). Extracted text:`;
             
-                                    document.getElementById('place').value = Array.isArray(metadata.placeOfPublication)
-                                        ? metadata.placeOfPublication[0]
-                                        : (metadata.placeOfPublication || '');
+            const textDisplay = document.createElement('div');
+            textDisplay.style.maxHeight = '200px'; // Increased height for multiple images
+            textDisplay.style.overflow = 'auto';
+            textDisplay.style.border = '1px solid #ccc';
+            textDisplay.style.padding = '10px';
+            textDisplay.style.marginTop = '10px';
+            textDisplay.style.whiteSpace = 'pre-wrap'; // Preserve formatting
+            textDisplay.textContent = allExtractedText.trim();
             
-                                    document.getElementById('publisher').value = Array.isArray(metadata.publisher)
-                                        ? metadata.publisher[0]
-                                        : (metadata.publisher || '');
+            progressDiv.appendChild(textDisplay);
             
-                                    document.getElementById('year').value = metadata.publicationDate || '';
-                                    document.getElementById('notes').value = metadata.synopsisOfBook || '';
+            // Add a processing message
+            const processingMsg = document.createElement('div');
+            processingMsg.textContent = 'Analyzing combined text for book metadata...';
+            processingMsg.style.marginTop = '10px';
+            processingMsg.style.fontStyle = 'italic';
+            progressDiv.appendChild(processingMsg);
             
-                                    if (metadata.authors?.length > 0) {
-                                        document.getElementById('family_name').value = metadata.authors[0].familyName || '';
-                                        document.getElementById('given_name').value = metadata.authors[0].givenName || '';
-                                    }
-            
-                                    // Handle country dropdown
-                                    const countrySelect = document.querySelector('select[name="country"]');
-                                    if (countrySelect && metadata.publicationCountry) {
-                                        Array.from(countrySelect.options).forEach(option => {
-                                            if (option.text.toLowerCase() === metadata.publicationCountry.toLowerCase()) {
-                                                countrySelect.value = option.value;
-                                            }
-                                        });
-                                    }
-                                    
-                                } catch (error) {
-                                    console.error('Error parsing Perplexity content:', error);
-                                    processingMsg.textContent = 'Error parsing book metadata.';
+            // Send combined text to Perplexity for analysis
+            if (allExtractedText.trim()) {
+                fetchFromPerplexity(allExtractedText)
+                    .then(perplexityData => {
+                        if (perplexityData && perplexityData.choices?.[0]?.message?.content) {
+                            try {
+                                // Parse the JSON string from the content
+                                const metadata = JSON.parse(perplexityData.choices[0].message.content);
+                                console.log('Book metadata from combined OCR:', metadata);
+                                
+                                // Update the processing message
+                                processingMsg.textContent = 'Found book metadata from combined images!';
+                                
+                                // Populate form fields with the metadata
+                                document.getElementById('title').value = metadata.title || '';
+                                document.getElementById('edition').value = metadata.edition || '';
+                                document.getElementById('language').value = metadata.language || '';
+                                document.getElementById('pages').value = metadata.numberOfPages || '';
+                                document.getElementById('dimensions').value = metadata.dimensions || '';
+                                document.getElementById('subtitle').value = metadata.subtitle || '';
+        
+                                document.getElementById('place').value = Array.isArray(metadata.placeOfPublication)
+                                    ? metadata.placeOfPublication[0]
+                                    : (metadata.placeOfPublication || '');
+        
+                                document.getElementById('publisher').value = Array.isArray(metadata.publisher)
+                                    ? metadata.publisher[0]
+                                    : (metadata.publisher || '');
+        
+                                document.getElementById('year').value = metadata.publicationDate || '';
+                                document.getElementById('notes').value = metadata.synopsisOfBook || '';
+        
+                                if (metadata.authors?.length > 0) {
+                                    document.getElementById('family_name').value = metadata.authors[0].familyName || '';
+                                    document.getElementById('given_name').value = metadata.authors[0].givenName || '';
                                 }
-                            } else {
-                                processingMsg.textContent = 'Could not identify book metadata from the text.';
+        
+                                // Handle country dropdown
+                                const countrySelect = document.querySelector('select[name="country"]');
+                                if (countrySelect && metadata.publicationCountry) {
+                                    Array.from(countrySelect.options).forEach(option => {
+                                        if (option.text.toLowerCase() === metadata.publicationCountry.toLowerCase()) {
+                                            countrySelect.value = option.value;
+                                        }
+                                    });
+                                }
+                                
+                            } catch (error) {
+                                console.error('Error parsing Perplexity content:', error);
+                                processingMsg.textContent = 'Error parsing book metadata.';
                             }
-                        })
-                        .catch(error => {
-                            console.error('Error analyzing text with Perplexity:', error);
-                            processingMsg.textContent = 'Error analyzing text for book information.';
-                        });
-                }
+                        } else {
+                            processingMsg.textContent = 'Could not identify book metadata from the combined text.';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error analyzing combined text with Perplexity:', error);
+                        processingMsg.textContent = 'Error analyzing text for book information.';
+                    });
             } else {
-                console.error('OCR failed or no text extracted');
-                if (progressDiv) {
-                    progressDiv.innerHTML = 'OCR failed or no text extracted from image';
-                }
-            }
-        } catch (error) {
-            console.error('Error during OCR process:', error);
-            const progressDiv = document.getElementById('upload-progress');
-            if (progressDiv) {
-                progressDiv.innerHTML = `OCR error: ${error.message}`;
+                processingMsg.textContent = 'No text was successfully extracted from any image.';
             }
         }
     };
 
     fileInput.click();
+}*/
+
+function ocrSearch() {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.multiple = true;
+
+    fileInput.onchange = async function (e) {
+        const files = Array.from(e.target.files);
+        if (!files || files.length === 0) return;
+
+        console.log(`Processing ${files.length} image(s)...`);
+        
+        const progressDiv = document.getElementById('ocr-progress');
+        if (progressDiv) {
+            progressDiv.innerHTML = `Processing ${files.length} image(s) with OCR...`;
+        }
+
+        let allExtractedText = '';
+        let processedCount = 0;
+
+        // Process each image sequentially
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            console.log(`Processing image ${i + 1}/${files.length}:`, file.name);
+            console.log('Original size:', file.size / 1024 / 1024, 'MB');
+
+            try {
+                const compressedImage = await compressImage(file);
+                console.log('Compressed size:', compressedImage.size / 1024 / 1024, 'MB');
+
+                const formData = new FormData();
+                formData.append('image', compressedImage, file.name);
+
+                if (progressDiv) {
+                    progressDiv.innerHTML = `Processing image ${i + 1}/${files.length}: ${file.name}...`;
+                }
+
+                const response = await fetch('https://metadata-maker.adb-aditya.workers.dev/ocr', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                console.log(`OCR Result for image ${i + 1}:`, result);
+
+                if (result.success && result.result && result.result.ParsedResults) {
+                    const extractedText = result.result.ParsedResults[0].ParsedText;
+                    console.log(`Extracted Text from image ${i + 1}:`, extractedText);
+                    
+                    allExtractedText += `\n\n--- Text from ${file.name} ---\n${extractedText}`;
+                    processedCount++;
+                } else {
+                    console.error(`OCR failed for image ${i + 1}: ${file.name}`);
+                    allExtractedText += `\n\n--- Failed to extract text from ${file.name} ---\n`;
+                }
+
+            } catch (error) {
+                console.error(`Error processing image ${i + 1}:`, error);
+                allExtractedText += `\n\n--- Error processing ${file.name}: ${error.message} ---\n`;
+            }
+        }
+
+        // Display results after processing all images
+        if (progressDiv) {
+            progressDiv.innerHTML = `OCR completed for ${processedCount}/${files.length} image(s). Extracted text:`;
+            
+            const textDisplay = document.createElement('div');
+            textDisplay.style.maxHeight = '200px';
+            textDisplay.style.overflow = 'auto';
+            textDisplay.style.border = '1px solid #ccc';
+            textDisplay.style.padding = '10px';
+            textDisplay.style.marginTop = '10px';
+            textDisplay.style.whiteSpace = 'pre-wrap';
+            textDisplay.textContent = allExtractedText.trim();
+            
+            progressDiv.appendChild(textDisplay);
+            
+            // Store extracted text for later use
+            window.extractedOCRText = allExtractedText.trim();
+            
+            // Add instruction message and AI search button
+            const instructionMsg = document.createElement('div');
+            instructionMsg.innerHTML = `
+                <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border: 1px solid #b0d4f1; border-radius: 5px;">
+                    <p style="margin: 0 0 10px 0; font-weight: bold;">OCR text extracted successfully!</p>
+                    <p style="margin: 0 0 15px 0;">Please add ISBN, Author details, or Title if needed for more accurate results, then click the button below to generate metadata from AI:</p>
+                    <button id="ai-search-btn" style="
+                        background-color: #4CAF50; 
+                        color: white; 
+                        padding: 10px 20px; 
+                        border: none; 
+                        border-radius: 5px; 
+                        cursor: pointer; 
+                        font-size: 14px;
+                        font-weight: bold;
+                    ">🤖 Generate Metadata with AI</button>
+                </div>
+            `;
+            
+            progressDiv.appendChild(instructionMsg);
+            
+            // Add click handler for the AI search button
+            document.getElementById('ai-search-btn').onclick = function() {
+                generateMetadataWithAI();
+            };
+        }
+    };
+
+    fileInput.click();
+}
+
+// New function to handle AI metadata generation with user input
+function generateMetadataWithAI() {
+    const aiSearchBtn = document.getElementById('ai-search-btn');
+    const progressDiv = document.getElementById('ocr-progress');
+    
+    if (!window.extractedOCRText) {
+        alert('No OCR text available. Please upload and process images first.');
+        return;
+    }
+    
+    // Disable button and show processing
+    aiSearchBtn.disabled = true;
+    aiSearchBtn.innerHTML = '🔄 Generating Metadata...';
+    
+    // Get additional user inputs
+    const title = document.getElementById('title').value.trim();
+    const familyName = document.getElementById('family_name').value.trim();
+    const givenName = document.getElementById('given_name').value.trim();
+    const isbn = document.getElementById('isbn').value.trim();
+    
+    // Prepare enhanced query for AI
+    let enhancedQuery = window.extractedOCRText;
+    
+    // Add user-provided details if available
+    const additionalInfo = [];
+    if (title) additionalInfo.push(`Title: ${title}`);
+    if (familyName || givenName) {
+        const author = `${givenName} ${familyName}`.trim();
+        additionalInfo.push(`Author: ${author}`);
+    }
+    if (isbn) additionalInfo.push(`ISBN: ${isbn}`);
+    
+    if (additionalInfo.length > 0) {
+        enhancedQuery = `Additional provided information:\n${additionalInfo.join('\n')}\n\nExtracted OCR Text:\n${window.extractedOCRText}`;
+    }
+    
+    console.log('Enhanced query for AI:', enhancedQuery);
+    
+    // Add processing message
+    const processingMsg = document.createElement('div');
+    processingMsg.id = 'ai-processing-msg';
+    processingMsg.textContent = 'Analyzing text with additional details for book metadata...';
+    processingMsg.style.marginTop = '10px';
+    processingMsg.style.fontStyle = 'italic';
+    processingMsg.style.color = '#666';
+    
+    // Remove any existing processing message
+    const existingMsg = document.getElementById('ai-processing-msg');
+    if (existingMsg) existingMsg.remove();
+    
+    progressDiv.appendChild(processingMsg);
+    
+    // Send enhanced query to Perplexity for analysis
+    fetchFromPerplexity(enhancedQuery)
+        .then(perplexityData => {
+            if (perplexityData && perplexityData.choices?.[0]?.message?.content) {
+                try {
+                    const metadata = JSON.parse(perplexityData.choices[0].message.content);
+                    console.log('Book metadata from enhanced AI search:', metadata);
+                    
+                    processingMsg.textContent = '✅ Successfully generated book metadata with AI!';
+                    processingMsg.style.color = '#4CAF50';
+                    processingMsg.style.fontWeight = 'bold';
+                    
+                    // Populate form fields with the metadata
+                    document.getElementById('title').value = metadata.title || '';
+                    document.getElementById('isbn').value = metadata.isbn || '';
+                    document.getElementById('edition').value = metadata.edition || '';
+                    document.getElementById('language').value = metadata.language || '';
+                    document.getElementById('pages').value = metadata.numberOfPages || '';
+                    document.getElementById('dimensions').value = metadata.dimensions || '';
+                    document.getElementById('subtitle').value = metadata.subtitle || '';
+
+                    // NEW: Handle transliteration fields
+                    const translitTitleField = document.getElementById('translit_title');
+                    const translitSubtitleField = document.getElementById('translit_subtitle');
+
+                    if (metadata.translit_title) {
+                        translitTitleField.value = metadata.translit_title;
+                        translitTitleField.style.display = 'inline-block';
+                    } else {
+                        translitTitleField.style.display = 'none';
+                    }
+
+                    if (metadata.translit_subtitle) {
+                        translitSubtitleField.value = metadata.translit_subtitle;
+                        translitSubtitleField.style.display = 'inline-block';
+                    } else {
+                        translitSubtitleField.style.display = 'none';
+                    }
+
+
+                    document.getElementById('place').value = Array.isArray(metadata.placeOfPublication)
+                        ? metadata.placeOfPublication[0]
+                        : (metadata.placeOfPublication || '');
+
+                    document.getElementById('publisher').value = Array.isArray(metadata.publisher)
+                        ? metadata.publisher[0]
+                        : (metadata.publisher || '');
+
+                    document.getElementById('year').value = metadata.publicationDate || '';
+                    document.getElementById('notes').value = metadata.synopsisOfBook || '';
+
+                    if (metadata.authors?.length > 0) {
+                        document.getElementById('family_name').value = metadata.authors[0].familyName || '';
+                        document.getElementById('given_name').value = metadata.authors[0].givenName || '';
+                    }
+
+                    // Handle country dropdown
+                    const countrySelect = document.querySelector('select[name="country"]');
+                    if (countrySelect && metadata.publicationCountry) {
+                        Array.from(countrySelect.options).forEach(option => {
+                            if (option.text.toLowerCase() === metadata.publicationCountry.toLowerCase()) {
+                                countrySelect.value = option.value;
+                            }
+                        });
+                    }
+                    
+                } catch (error) {
+                    console.error('Error parsing Perplexity content:', error);
+                    processingMsg.textContent = '❌ Error parsing book metadata from AI response.';
+                    processingMsg.style.color = '#f44336';
+                }
+            } else {
+                processingMsg.textContent = '❌ Could not identify book metadata from the provided information.';
+                processingMsg.style.color = '#f44336';
+            }
+        })
+        .catch(error => {
+            console.error('Error analyzing text with Perplexity:', error);
+            processingMsg.textContent = '❌ Error connecting to AI service for metadata generation.';
+            processingMsg.style.color = '#f44336';
+        })
+        .finally(() => {
+            // Re-enable button
+            aiSearchBtn.disabled = false;
+            aiSearchBtn.innerHTML = '🤖 Generate Metadata with AI';
+        });
 }
 
 function compressImage(file) {
