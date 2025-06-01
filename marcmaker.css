@@ -426,3 +426,31 @@ button.close-btn {
 .info-icon:hover::after {
     opacity: 1;
 }
+
+span.question-mark {
+    display: none;
+}
+
+.aiButtons {
+	background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+	margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.ocrButtons {
+   background-color: #3498DB;
+   color: white;
+   padding: 10px 20px;
+   border: none;
+   border-radius: 5px;
+   cursor: pointer;
+   font-size: 14px;
+   margin-bottom: 10px;
+   font-weight: bold;
+}

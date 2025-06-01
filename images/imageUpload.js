@@ -17,22 +17,85 @@ function processImages() {
         const previewContainer = document.createElement('div');
         previewContainer.className = 'preview-container';
 
-        const img = document.createElement('img');
-        img.style.maxWidth = '200px';
-        img.style.margin = '10px';
+        // Check if file is video or image
+        const isVideo = file.type.startsWith('video/');
+        const isImage = file.type.startsWith('image/');
+
+        let mediaElement;
+
+        if (isVideo) {
+            // Create video element
+            mediaElement = document.createElement('video');
+            mediaElement.controls = true;
+            mediaElement.style.maxWidth = '200px';
+            mediaElement.style.maxHeight = '200px';
+            mediaElement.style.margin = '10px';
+            
+            // Add video icon indicator
+            const videoIcon = document.createElement('div');
+            videoIcon.innerHTML = '🎥 Video';
+            videoIcon.style.fontSize = '12px';
+            videoIcon.style.color = '#666';
+            videoIcon.style.marginBottom = '5px';
+            previewContainer.appendChild(videoIcon);
+            
+        } else if (isImage) {
+            // Create image element
+            mediaElement = document.createElement('img');
+            mediaElement.style.maxWidth = '200px';
+            mediaElement.style.maxHeight = '200px';
+            mediaElement.style.margin = '10px';
+            
+            // Add image icon indicator
+            const imageIcon = document.createElement('div');
+            imageIcon.innerHTML = '🖼️ Image';
+            imageIcon.style.fontSize = '12px';
+            imageIcon.style.color = '#666';
+            imageIcon.style.marginBottom = '5px';
+            previewContainer.appendChild(imageIcon);
+            
+        } else {
+            // Unknown file type
+            mediaElement = document.createElement('div');
+            mediaElement.innerHTML = `📄 ${file.type || 'Unknown file type'}`;
+            mediaElement.style.width = '200px';
+            mediaElement.style.height = '100px';
+            mediaElement.style.margin = '10px';
+            mediaElement.style.border = '2px dashed #ccc';
+            mediaElement.style.display = 'flex';
+            mediaElement.style.alignItems = 'center';
+            mediaElement.style.justifyContent = 'center';
+            mediaElement.style.fontSize = '14px';
+            mediaElement.style.color = '#666';
+        }
 
         const nameLabel = document.createElement('div');
         nameLabel.textContent = file.name;
         nameLabel.className = 'file-name';
+        nameLabel.style.fontSize = '12px';
+        nameLabel.style.color = '#333';
+        nameLabel.style.marginTop = '5px';
+        nameLabel.style.wordBreak = 'break-word';
 
-        const objectUrl = URL.createObjectURL(file);
-        img.src = objectUrl;
+        // Create object URL and set source
+        if (isVideo || isImage) {
+            const objectUrl = URL.createObjectURL(file);
+            mediaElement.src = objectUrl;
 
-        img.onload = () => {
-            URL.revokeObjectURL(objectUrl);
-        };
+            // Clean up object URL when element loads
+            mediaElement.onload = mediaElement.onloadeddata = () => {
+                URL.revokeObjectURL(objectUrl);
+            };
 
-        previewContainer.appendChild(img);
+            // Handle errors
+            mediaElement.onerror = () => {
+                console.error(`Failed to load ${isVideo ? 'video' : 'image'}:`, file.name);
+                mediaElement.style.border = '2px solid #ff4444';
+                mediaElement.alt = `Failed to load ${file.name}`;
+            };
+        }
+
+        previewContainer.appendChild(mediaElement);
         previewContainer.appendChild(nameLabel);
         previewDiv.appendChild(previewContainer);
     });
@@ -506,7 +569,7 @@ async function fetchFromPerplexity(title) {
             body: JSON.stringify({
                 query: `Find comprehensive book metadata for the book titled: "${title}". 
                     Primary search sources (in order of priority):
-1. Amazon.com and Amazon.ae
+1. Amazon.com / Amazon.ae / Amazon.in
 2. Ubuy.ae
 3. Barnes & Noble (barnesandnoble.com)
 4. Book Depository (bookdepository.com)
@@ -829,9 +892,9 @@ function ocrSearch() {
             // Add instruction message and AI search button
             const instructionMsg = document.createElement('div');
             instructionMsg.innerHTML = `
-                <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border: 1px solid #b0d4f1; border-radius: 5px;">
+                <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border: 1px solid #b0d4f1; border-radius: 5px; margin-bottom: 15px">
                     <p style="margin: 0 0 10px 0; font-weight: bold;">OCR text extracted successfully!</p>
-                    <p style="margin: 0 0 15px 0;">Please add ISBN, Author details, or Title if needed for more accurate results, then click the button below to generate metadata from AI:</p>
+                    <p style="margin: 0 0 15px 0;">Enter ISBN, Author (Last name,First name) or Title if needed for more accurate results, then click the button below to generate metadata with AI.</p>
                     <button id="ai-search-btn" style="
                         background-color: #4CAF50; 
                         color: white; 
@@ -842,6 +905,7 @@ function ocrSearch() {
                         font-size: 14px;
                         font-weight: bold;
                     ">🤖 Generate Metadata with AI</button>
+                    <i class="info-icon" data-tooltip="Use this option to search by image of the item to be catalogued. Enter ISBN, Author (Last name,First name) or Title if needed for more accurate results, then click the button below to generate metadata with AI">ⓘ</i>
                 </div>
             `;
             

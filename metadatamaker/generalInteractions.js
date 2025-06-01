@@ -14,11 +14,62 @@ $(document).ready(function() {
  *		associated name fields has non-roman characters, both the name transliteration 
  *		fields remain visible.
  */
+
+/*function isNonEnglish(text) {
+    // Check for any accented characters or non-ASCII
+    var hasAccents = /[àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ]/i.test(text);
+    var hasNonASCII = /[^\u0000-\u007F]/.test(text);
+    
+    // Check for French language patterns
+    var hasFrenchPatterns = /\b(d'une|d'un|l'|qu'|c'est|n'est|s'il|j'ai|m'a|t'a)\b/i.test(text);
+    
+    // Check for common French words
+    var hasFrenchWords = /\b(une|des|dans|avec|pour|sans|sous|entre|depuis|pendant|avant|après|chez|vers|contre|selon|durant|honneur|femme)\b/i.test(text);
+    
+    // Check for other language patterns (Spanish, German, etc.)
+    var hasSpanishWords = /\b(una|unas|con|para|sin|entre|desde|durante|antes|después|hacia|contra|según|niño|niña)\b/i.test(text);
+    var hasGermanWords = /\b(eine|einen|einer|eines|mit|für|ohne|zwischen|seit|während|vor|nach|zu|gegen|nach|straße|müller)\b/i.test(text);
+    
+    return hasAccents || hasNonASCII || hasFrenchPatterns || hasFrenchWords || hasSpanishWords || hasGermanWords;
+}*/
+
+function isNonEnglish(text) {
+    // Non-ASCII check first
+    if (/[^\u0000-\u007F]/.test(text)) return true;
+    
+    // Common English bigrams vs other languages
+    const englishBigrams = /\b(th|he|in|er|an|ed|nd|to|en|ti|es|or|te|of|be|have|and|for|are|but|not|you|all|can|had|was|one|our|out|day|get|has|him|his|how|its|new|now|old|see|two|way|who|boy|did|may|she|use|her|oil|sit|set)\b/gi;
+    const nonEnglishBigrams = /\b(le|la|de|du|des|les|un|une|et|ou|est|sur|avec|dans|pour|sans|sous|entre|der|die|das|den|dem|mit|für|von|zu|im|am|auf|bei|el|la|los|las|un|una|con|para|sin|entre|madame|bovary|quijote|soledad|espíritus|chocolate|parfum|leiden|steppenwolf)\b/gi;
+    
+    const englishMatches = (text.match(englishBigrams) || []).length;
+    const nonEnglishMatches = (text.match(nonEnglishBigrams) || []).length;
+    
+    // If no matches found in either, check for other patterns
+    if (englishMatches === 0 && nonEnglishMatches === 0) {
+        // Check for French contractions or patterns
+        return /\b(l'|d'|qu'|c')\w+|[àáâãäåæçèéêëìíîïñòóôõöøùúûüýÿ]/i.test(text);
+    }
+    
+    return nonEnglishMatches > englishMatches;
+}
+
 function toggleTranslit(id) {
+	var text = $("#"+id).val();
 	//Regex for everything outside the standard character set
+	//old nonroman commented for testing | languages like french it doesnt trigger the other translated fields in case of french
 	var nonroman = /[^\u0000-\u024F\u0263\u02B9\u02BA\u02DD\u0300\u0301\u0302\u0303\u0304\u0306\u0308\u0309\u030A\u030C\u0310\u0313\u0315\u0321\u0322\u0323\u0324\u0325\u0327\u0328\u032E\u0332\u0333\u0351\u0357\u0366\u03B1\u04D4\u04D5\u2020\u2070\u2074\u2075\u2076\u2077\u2078\u2079\u207A\u207B\u207D\u207E\u2080\u2081\u2082\u2083\u2084\u2085\u2086\u2087\u2088\u2089\u20AC\u220E\u2113\u01C2\u2117\u266D\u266F\uFE20\uFE21\uFE22\uFE23\u02C7\u0307\u208E\u208D\u208B\u208A]/;
+	//var nonroman = /[^\u0000-\u007F\u0020-\u007E]/;
 	//True if any of the characters in title is from a different alphabet
-	var needsTranslit = nonroman.test($("#"+id).val());
+	//commented to test the other function | french not working with current function
+	//var needsTranslit = nonroman.test($("#"+id).val());
+
+	//if results cause any confusion with the lang detection changes | only check with the nonroman and remove isNonEnglish funcion check
+	var needsTranslit = nonroman.test(text) || isNonEnglish(text);
+    
+    console.log("Text:", text);
+    console.log("Non-Roman:", nonroman.test(text));
+    console.log("Non-English:", isNonEnglish(text));
+    console.log("Needs Translit:", needsTranslit);
 
 	//The given name needed to be detected, but the visual changes are named after the family_name#
 	if (id.substring(0,5) === 'given') {

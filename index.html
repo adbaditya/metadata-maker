@@ -155,12 +155,12 @@
 			</div>
 
 			<div>
-				<button type="button" onclick="preFetchFromAI()" id="preFetch">AI Generate</button>
+				<button type="button" class="aiButtons" onclick="preFetchFromAI()" id="preFetch">🤖 Generate Metadata with AI</button>
 			</div>
 
 			<div style="margin-top: 10px;">
 				<div id="ocr-progress"></div>
-				<button type="button" onclick="ocrSearch()" id="ocrSearch">Select images for OCR Search</button>
+				<button type="button" class="ocrButtons" onclick="ocrSearch()" id="ocrSearch">🖼️ Select images for OCR Search</button>
 			</div>
 
 			<div id="edition-block" class="standard-block">
@@ -1108,7 +1108,7 @@
 			<div id="image-upload-block" class="standard-block">
 				<label for="image-upload" class="heading">Select images</label><br>
 				<input type="file" id="image-upload" accept="image/*,video/*" multiple>	
-				<button type="button" id="process-image-button" style="margin: 20px 0;" onclick="processImages()">Upload Images</button>
+				<button type="button" id="process-image-button" style="margin: 20px 0;" onclick="processImages()">Upload Image(s) / Video(s)</button>
 				<div id="image-preview"></div>
 				<div id="upload-progress"></div>
 				<input type="hidden" id="image-data">
@@ -1150,9 +1150,9 @@
 		<!-- Modal for AI Template instructions -->
 		<div class="instructions-modal-backdrop"></div>
 		<div class="instructions-modal">
-			<h3>Instructions to use AI enriched Template for Metadata creation</h3>
+			<h3>Instructions to use AI enriched template for metadata creation</h3>
 			<div class="note">
-				<strong>Note:</strong> Instructions to use AI enriched Template for Metadata creation
+				<strong>Note:</strong> Instructions to use AI enriched template for metadata creation
 			</div>
 			<ul>
 				<li>Enter ISBN, (only one) 13 digits or 10 digits if available, and click on AI Generate button to retrieve information on the resource. <em>(note for i-icon)</em></li>
@@ -1190,7 +1190,6 @@
 				}
 			});
 		</script>
-		
 		<script src="metadatamaker/generalInteractions.js"></script>
 		<script src="metadatamaker/topBar.js"></script>
 		<script src="metadatamaker/downloadMARC.js"></script>
