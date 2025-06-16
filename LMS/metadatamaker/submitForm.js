@@ -153,16 +153,9 @@ $("#marc-maker").submit(function(event) {
 	}
 
 	var recordObject = {
-		title: [
-			{
-				title: $("#title").val(),
-				subtitle: $("#subtitle").val()
-			},
-			{
-				title: $("#translit_title").val(),
-				subtitle: $("#translit_subtitle").val()
-			}
-		],
+		item_name: $("#item_name").val(),
+   		subtitle: $("#subtitle").val(),
+		serial_number: $("#serial_number").val(),
 		author: entry100[0],
 		publisher: $("#publisher").val(),
 		publication_year: $("#year").val(),

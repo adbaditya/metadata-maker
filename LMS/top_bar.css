@@ -9,7 +9,7 @@
 
 	font-family: 'Century Gothic', CenturyGothic, 'Raleway', AppleGothic, sans-serif;
 /*	text-align: center;*/
-	font-size: 30px;
+	font-size: 25px;
 	font-style: normal;
 	font-variant: normal;
 	font-weight: 500;
@@ -27,7 +27,7 @@
 	position: relative;
 	float: left;
 	font-family: 'Trebuchet MS', 'Lucida Grande', 'Lucida Sans Unicode', 'Lucida Sans', Tahoma, sans-serif;
-	font-size: 20px;
+	font-size: 15px;
 	padding-top: 11px;
 	padding-bottom: 11px;
 	padding-left: 12px;
@@ -51,6 +51,37 @@
 	box-shadow: 0px 1px 2px rgba(102, 102, 102, 0.3);
 	z-index: -1;
 	border-top: 1px solid #E8E9EB;
+}
+
+#how_to_use {
+    position: relative;
+    float: left;
+    font-family: 'Trebuchet MS', 'Lucida Grande', 'Lucida Sans Unicode', 'Lucida Sans', Tahoma, sans-serif;
+    font-size: 15px;
+    padding-top: 11px;
+    padding-bottom: 11px;
+    padding-left: 12px;
+    padding-right: 12px;
+    cursor: pointer;
+    
+    -webkit-transition: background-color 0.2s;
+    transition: background-color 0.2s;
+}
+
+#how_to_use:hover {
+    background-color: #E8E9EB;
+}
+
+#how_to_use::after {
+    content: "ℹ";
+    height: 16px;
+    width: 16px;
+    position: relative;
+    padding-top: 4px;
+    margin-left: 1px;
+    display: inline-block;
+    font-size: 13px;
+    opacity: 0.7;
 }
 
 .menu_line {

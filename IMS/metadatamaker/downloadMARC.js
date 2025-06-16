@@ -6,6 +6,7 @@
  *			- 'length' will output 4 digits
  *			- anything else will output 5 digits
  */
+console.log("fillManufacturer function loaded:", typeof fillManufacturer);
 var subfieldsbd = ["b","c","d"];
 function addZeros(content,type) {
 	var str = content.toString();
@@ -177,8 +178,7 @@ function fillISBN(record,head,fieldFunc,subfieldFunc) {
 function fillAuthor(record,head,fieldFunc,subfieldFunc) {
 	//Transliteration is in author_array[1], normal author input in author_array[0]
 	console.log("DownloadMARC");
-	console.log(record.author);
-	var latin_index = checkExists(record.author[1]['family']) ? 1 : 0;
+	//var latin_index = checkExists(record.author[1]['family']) ? 1 : 0;
 	var role_index = { 'art': 'artist', 'aut': 'author', 'ctb': 'contributor', 'edt': 'editor', 'ill': 'illustrator', 'trl': 'translator'}
 	var author_subfields;
 	var author_content = '';
@@ -350,57 +350,77 @@ function fillEdition(record,head,fieldFunc,subfieldFunc) {
 	}
 }
 
-function fillPublication(record,head,fieldFunc,subfieldFunc) {
-	var pub_subfields = [];
-	if (checkExists(record.publication_place)) {
-		if (checkExists(record.translit_place)) {
-			pub_subfields.push(subfieldFunc('a',record.translit_place + ' :'));
-		}
-		else {
-			pub_subfields.push(subfieldFunc('a',record.publication_place + ' :'));
-		}
-	}
-	else {
-		pub_subfields.push(subfieldFunc('a','[Place of publication not identified] :'));
-	}
+function fillManufacturer(record,head,fieldFunc,subfieldFunc) {
+    var manuf_subfields = [];
+    
+    if (checkExists(record.manufacturer_place)) {
+        if (checkExists(record.translit_manuf_place)) {
+            manuf_subfields.push(subfieldFunc('a',record.translit_manuf_place + ' :'));
+        }
+        else {
+            manuf_subfields.push(subfieldFunc('a',record.manufacturer_place + ' :'));
+        }
+    }
+    else {
+        manuf_subfields.push(subfieldFunc('a','[Place of manufacture not identified] :'));
+    }
 
-	if (checkExists(record.publisher)) {
-		if (checkExists(record.translit_publisher)) {
-			pub_subfields.push(subfieldFunc('b',record.translit_publisher + ','));
-		}
-		else {
-			pub_subfields.push(subfieldFunc('b',record.publisher + ','));
-		}
-	}
-	else {
-		pub_subfields.push(subfieldFunc('b','[publisher not identified],'));
-	}
+    if (checkExists(record.manufacturer)) {
+        if (checkExists(record.translit_manufacturer)) {
+            manuf_subfields.push(subfieldFunc('b',record.translit_manufacturer + ','));
+        }
+        else {
+            manuf_subfields.push(subfieldFunc('b',record.manufacturer + ','));
+        }
+    }
+    else {
+        manuf_subfields.push(subfieldFunc('b','[manufacturer not identified],'));
+    }
 
-	if (checkExists(record.publication_year)) {
-		pub_subfields.push(subfieldFunc('c',record.publication_year + '.'));
-	}
-	else if (checkExists(record.copyright_year)) {
-		pub_subfields.push(subfieldFunc('c','[' + record.copyright_year + ']'));
-	}
-	else {
-		pub_subfields.push(subfieldFunc('c','[date of publication not identified]'));
-	}
+    if (checkExists(record.manufacturer_year)) {
+        manuf_subfields.push(subfieldFunc('c',record.manufacturer_year + '.'));
+    }
+    else {
+        manuf_subfields.push(subfieldFunc('c','[date of manufacture not identified]'));
+    }
 
-	if (checkExists(record.translit_publisher)  || checkExists(record.translit_place)) {
-		pub_subfields.push(subfieldFunc('6','880-02'));
-	}
+    if (checkExists(record.translit_manufacturer) || checkExists(record.translit_manuf_place)) {
+        manuf_subfields.push(subfieldFunc('6','880-02'));
+    }
 
-	var pub = fieldFunc('264',' ','1',pub_subfields);
+    var manuf = fieldFunc('264',' ','0',manuf_subfields);
 
-	//MARC
-	if (head !== null) {
-		var pub_directory = createDirectory('264',pub,head);
-		return [pub_directory,pub];
-	}
-	//MARCXML
-	else {
-		return pub;
-	}
+    //MARC
+    if (head !== null) {
+        var manuf_directory = createDirectory('264',manuf,head);
+        return [manuf_directory,manuf];
+    }
+    //MARCXML
+    else {
+        return manuf;
+    }
+}
+
+function fillSerial(record,head,fieldFunc,subfieldFunc) {
+    if (checkExists(record.serial)) {
+        var serial = fieldFunc('024','7',' ',[
+            subfieldFunc('a',record.serial),
+            subfieldFunc('2','local')
+        ]);
+
+        //MARC
+        if (head !== null) {
+            var serial_directory = createDirectory('024',serial,head);
+            return [serial_directory,serial];
+        }
+        //MARCXML
+        else {
+            return serial;
+        }
+    }
+    else {
+        return head !== null ? ['',''] : '';
+    }
 }
 
 function fillCopyright(record,head,fieldFunc,subfieldFunc) {
@@ -422,37 +442,36 @@ function fillCopyright(record,head,fieldFunc,subfieldFunc) {
 	}
 }
 
-function fillPhysical (record,head,fieldFunc,subfieldFunc) {
-	var physical_subfields = [];
+function fillPhysical(record,head,fieldFunc,subfieldFunc) {
+    var physical_subfields = [];
 
-	if (record.pages === '0' || record.unpaged || (record.volume_or_page === 'volumes' && record.pages === '1')) {
-		var pages_string = '1 volume (unpaged)';
-	}
-	else if (record.pages === '1') {
-		var pages_string = '1 page';
-	}
-	else {
-		var pages_string = record.pages + ' ' + record.volume_or_page;
-	}
+    if (record.pages === '0' || record.unpaged || !checkExists(record.pieces)) {
+        var pieces_string = '1 piece';  // Since you only have "pieces" now
+    }
+    else if (record.pages === '1') {
+        var pieces_string = '1 piece';
+    }
+    else {
+        var pieces_string = record.pages + ' pieces';
+    }
 
-	if (checkExists(record.illustrations_yes) && record.illustrations_yes == true) {
-		physical_subfields.push(subfieldFunc('a',pages_string + ' :'),subfieldFunc('b','illustrations ;'));
-	}
-	else {
-		physical_subfields.push(subfieldFunc('a',pages_string + ' ;'));
-	}
-	physical_subfields.push(subfieldFunc('c',record.dimensions + ' cm'));
-	var physical = fieldFunc('300',' ',' ',physical_subfields);
+    physical_subfields.push(subfieldFunc('a',pieces_string + ' ;'));
 
-	//MARC
-	if (head !== null) {
-		var physical_directory = createDirectory('300',physical,head);
-		return [physical_directory,physical];
-	}
-	//MARCXML
-	else {
-		return physical;
-	}
+    if (checkExists(record.dimensions)) {
+        physical_subfields.push(subfieldFunc('c',record.dimensions + ' cm'));
+    }
+
+    var physical = fieldFunc('300',' ',' ',physical_subfields);
+
+    //MARC
+    if (head !== null) {
+        var physical_directory = createDirectory('300',physical,head);
+        return [physical_directory,physical];
+    }
+    //MARCXML
+    else {
+        return physical;
+    }
 }
 
 function fillNotes(record,head,fieldFunc,subfieldFunc) {
@@ -474,7 +493,7 @@ function fillNotes(record,head,fieldFunc,subfieldFunc) {
 	}
 }
 
-function fillKeywords(record,head,fieldFunc,subfieldFunc) {
+/*function fillKeywords(record,head,fieldFunc,subfieldFunc) {
 	var keywords_content = '';
 	var keywords_directory = '';
 	for (var c = 0; c < record.keywords.length; c++) {
@@ -513,7 +532,102 @@ function fillKeywords(record,head,fieldFunc,subfieldFunc) {
 	else {
 		return keywords_content;
 	}
+}*/
+
+function fillKeywords(record,head,fieldFunc,subfieldFunc) {
+	var tag = '653';
+
+	var keywords_content = '';
+	var keywords_directory = '';
+	for (var c = 0; c < record.keywords.length; c++) {
+		if (record.keywords[c] !== '') {
+			var new_content = fieldFunc(tag,' ',' ',[subfieldFunc('a',record.keywords[c])]);
+			keywords_content += new_content;
+
+			//MARC
+			if (head !== null) {
+				var new_directory = createDirectory(tag,new_content,head);
+				head += getByteLength(new_content);
+				keywords_directory += new_directory;
+			}
+		}
+	}
+
+	return returnMultipleEntries(keywords_directory,keywords_content,head);
 }
+
+//Return the results based on which download function was called
+function returnMultipleEntries(directory,content,head) {
+	//MARC
+	if (head !== null) {
+		return [directory,content,head];
+	}
+	//MARCXML
+	else {
+		return content;
+	}
+}
+
+function handleSpecialFAST(full_string,check,separating_character,second_field,FAST_subfield,subfieldFunc) {
+	var separator = full_string.lastIndexOf(separating_character);
+	if (separator != check) {
+		separator++;
+		if (separating_character == '/') {
+			var first = full_string.substring(0,separator-1);
+		}
+		else {
+			var first = full_string.substring(0,separator);
+		}
+		var second = full_string.substring(separator).trim();
+		FAST_subfield.push(subfieldFunc('a',first));
+		FAST_subfield.push(subfieldFunc(second_field,second));
+	}
+	else {
+		FAST_subfield.push(subfieldFunc('a',full_string));
+	}
+}
+
+function fillFAST(record,head,fieldFunc,subfieldFunc) {
+	if (checkExists(record.fast)) {
+		var FAST = '';
+		var FAST_directory = '';
+		for (var i = 0; i < record.fast.length; i++) {
+			var contentType = record.fast[i][2].substring(1);
+			var FAST_subfield = [];
+			if (contentType == '00') {
+				handleSpecialFAST(record.fast[i][0],record.fast[i][0].indexOf(','),',','d',FAST_subfield,subfieldFunc);
+			}
+			else if (contentType == '30') {
+				handleSpecialFAST(record.fast[i][0],-1,'.','p',FAST_subfield,subfieldFunc);
+			}
+			else if (contentType == '51') {
+				handleSpecialFAST(record.fast[i][0],-1,'/','z',FAST_subfield,subfieldFunc);
+			}
+			else {
+				FAST_subfield.push(subfieldFunc('a',record.fast[i][0]));
+			}
+
+			FAST_subfield.push(subfieldFunc('2','fast'));
+			FAST_subfield.push(subfieldFunc('0','(OCoLC)' + record.fast[i][1]));
+
+			var new_content = fieldFunc('6' + contentType,record.fast[i][3],'7',FAST_subfield);
+			FAST += new_content;
+
+			//MARC
+			if (head !== null) {
+				var new_directory = createDirectory('6' + contentType,new_content,head);
+				head += getByteLength(new_content);
+				FAST_directory += new_directory;
+			}
+		}
+
+		return returnMultipleEntries(FAST_directory,FAST,head);
+	}
+	else {
+		return head !== null ? ['','',head] : '';
+	}
+}
+
 function fillAdditionalAuthors(record,head,fieldFunc,subfieldFunc) {
 	if (checkExists(record.additional_authors)) {
 		var authors = '';
@@ -777,27 +891,18 @@ function downloadMARC(record,institution_info) {
 	var controlfield008_directory = createDirectory('008',controlfield008_content,head);
 	head += controlfield008_content.length;
 
-	var isbn = fillISBN(record,head,createContentFill,createSubfield);
-	head += isbn[1].length;
-
 	var default1_content = createContent('  ',[createSubfield('a',institution_info['marc']),createSubfield('b','eng'),createSubfield('e','rda'),createSubfield('c',institution_info['marc'])]);
 	var default1_directory = createDirectory('040',default1_content,head);
 	head += default1_content.length;
 
-	var author = fillAuthor(record,head,createContentFill,createSubfield);
-	head += getByteLength(author[1]);
-
 	var title = fillTitle(record,head,createContentFill,createSubfield);
 	head += getByteLength(title[1]);
 
-	var edition = fillEdition(record,head,createContentFill,createSubfield);
-	head += getByteLength(edition[1]);
+	var manuf = fillManufacturer(record,head,createContentFill,createSubfield);
+	head += getByteLength(manuf[1]);
 
-	var pub = fillPublication(record,head,createContentFill,createSubfield);
-	head += getByteLength(pub[1]);
-
-	var copyright = fillCopyright(record,head,createContentFill,createSubfield);
-	head += getByteLength(copyright[1]);
+	var serial = fillSerial(record,head,createContentFill,createSubfield);
+	head += getByteLength(serial[1]);
 
 	var physical = fillPhysical(record,head,createContentFill,createSubfield);
 	head += getByteLength(physical[1]);
@@ -820,25 +925,16 @@ function downloadMARC(record,institution_info) {
 	var keywords = fillKeywords(record,head,createContentFill,createSubfield);
 	head = keywords[2];
 
-	var additional_authors = fillAdditionalAuthors(record,head,createContentFill,createSubfield);
-	head = additional_authors[2];
+	var fast = fillFAST(record,head,createContentFill,createSubfield);
+	head = fast[2];
 
 	var title880 = fillTranslitTitle(record,head,createContentFill,createSubfield);
 	head += getByteLength(title880[1]);
 
-	var publisher880 = fillTranslitPublisher(record,head,createContentFill,createSubfield);
-	head += getByteLength(publisher880[1]);
-
-	var author880 = fillTranslitAuthor(record,head,createContentFill,createSubfield);
-	head += getByteLength(author880[1]);
-
-	var authors880 = fillTranslitAdditionalAuthors(record,head,createContentFill,createSubfield);
-	head = authors880[2];
-
 	var end = String.fromCharCode(30) + String.fromCharCode(29);
-	var text = timestamp_directory + controlfield008_directory + isbn[0] + default1_directory + author[0] + title[0] + edition[0] + pub[0] + copyright[0] + physical[0] + default2_directory + default3_directory + default4_directory + notes[0] + keywords[0] + additional_authors[0] + title880[0] + publisher880[0] + author880[0] + authors880[0] + timestamp_content + controlfield008_content + isbn[1] + default1_content + author[1] + title[1] + edition[1] + pub[1] + copyright[1] + physical[1] + default2_content + default3_content + default4_content + notes[1] + keywords[1] + additional_authors[1] + title880[1] + publisher880[1] + author880[1] + authors880[1] + end;
+	var text = timestamp_directory + controlfield008_directory + default1_directory + title[0] + manuf[0] + serial[0] + physical[0] + default2_directory + default3_directory + default4_directory + notes[0] + keywords[0] + title880[0] + timestamp_content + controlfield008_content + default1_content + title[1] + manuf[1] + serial[1] + physical[1] + default2_content + default3_content + default4_content + notes[1] + keywords[1] + title880[1] + end;
 	var leader_len = getByteLength(text) + 24;
-	var directory_len = 25 + timestamp_directory.length + controlfield008_directory.length + isbn[0].length + default1_directory.length + author[0].length + title[0].length + edition[0].length + pub[0].length + copyright[0].length + physical[0].length + default2_directory.length + default3_directory.length + default4_directory.length + notes[0].length + keywords[0].length + additional_authors[0].length + title880[0].length + publisher880[0].length + author880[0].length + authors880[0].length;
+	var directory_len = 25 + timestamp_directory.length + controlfield008_directory.length + default1_directory.length + title[0].length + manuf[0].length + serial[0].length + physical[0].length + default2_directory.length + default3_directory.length + default4_directory.length + notes[0].length + keywords[0].length + title880[0].length;
 	var leader = addZeros(leader_len,'leader') + 'nam a22' + addZeros(directory_len,'leader') + 'ki 4500';
 	text = leader + text;
 	downloadFile(text,'mrc');
@@ -857,23 +953,24 @@ function downloadXML(record,institution_info) {
 	controlfield008 = '  <controlfield tag="008">' + controlfield008 + '</controlfield>\n'
 	
 	var default1 = createMARCXMLField('040',' ',' ',[createMARCXMLSubfield('a','UIU'),createMARCXMLSubfield('b','eng'),createMARCXMLSubfield('e','rda'),createMARCXMLSubfield('c','UIU')]);
-	var isbn = fillISBN(record,null,createMARCXMLField,createMARCXMLSubfield);
-	var author = fillAuthor(record,null,createMARCXMLField,createMARCXMLSubfield);
+	//var isbn = fillISBN(record,null,createMARCXMLField,createMARCXMLSubfield);
+	//var author = fillAuthor(record,null,createMARCXMLField,createMARCXMLSubfield);
 	var title = fillTitle(record,null,createMARCXMLField,createMARCXMLSubfield);
-	var edition = fillEdition(record,null,createMARCXMLField,createMARCXMLSubfield);
-	var publication = fillPublication(record,null,createMARCXMLField,createMARCXMLSubfield);
-	var copyright = fillCopyright(record,null,createMARCXMLField,createMARCXMLSubfield);
+	//var edition = fillEdition(record,null,createMARCXMLField,createMARCXMLSubfield);
+	var manufacturer = fillManufacturer(record,null,createMARCXMLField,createMARCXMLSubfield);
+	var serial = fillSerial(record,null,createMARCXMLField,createMARCXMLSubfield);
+	//var copyright = fillCopyright(record,null,createMARCXMLField,createMARCXMLSubfield);
 	var physical = fillPhysical(record,null,createMARCXMLField,createMARCXMLSubfield);
 	var default2 = createMARCXMLField('336',' ',' ',[createMARCXMLSubfield('a','text'),createMARCXMLSubfield('b','txt'),createMARCXMLSubfield('2','rdacontent')]) + createMARCXMLField('337',' ',' ',[createMARCXMLSubfield('a','unmediated'),createMARCXMLSubfield('b','n'),createMARCXMLSubfield('2','rdamedia')]) + createMARCXMLField('338',' ',' ',[createMARCXMLSubfield('a','volume'),createMARCXMLSubfield('b','nc'),createMARCXMLSubfield('2','rdacarrier')]);
 	var notes = fillNotes(record,null,createMARCXMLField,createMARCXMLSubfield);
 	var keywords = fillKeywords(record,null,createMARCXMLField,createMARCXMLSubfield);
-	var additional_authors = fillAdditionalAuthors(record,null,createMARCXMLField,createMARCXMLSubfield);
-	var title880 = fillTranslitTitle(record,null,createMARCXMLField,createMARCXMLSubfield);
-	var publisher880 = fillTranslitPublisher(record,null,createMARCXMLField,createMARCXMLSubfield);
-	var author880 = fillTranslitAuthor(record,null,createMARCXMLField,createMARCXMLSubfield);
-	var authors880 = fillTranslitAdditionalAuthors(record,null,createMARCXMLField,createMARCXMLSubfield);
+	//var additional_authors = fillAdditionalAuthors(record,null,createMARCXMLField,createMARCXMLSubfield);
+	//var title880 = fillTranslitTitle(record,null,createMARCXMLField,createMARCXMLSubfield);
+	//var publisher880 = fillTranslitPublisher(record,null,createMARCXMLField,createMARCXMLSubfield);
+	//var author880 = fillTranslitAuthor(record,null,createMARCXMLField,createMARCXMLSubfield);
+	//var authors880 = fillTranslitAdditionalAuthors(record,null,createMARCXMLField,createMARCXMLSubfield);
 	var endText ='</record>\n';
 
-	var text = startText + timestamp + controlfield008 + isbn + default1 + author + title + edition + publication + copyright + physical + default2 + notes + keywords + additional_authors + title880 + publisher880 + author880 + authors880 + endText;
+	var text = startText + timestamp + controlfield008 + default1 + title + manufacturer + serial + physical + default2 + notes + keywords + endText;
 	downloadFile(text,'xml');
 }

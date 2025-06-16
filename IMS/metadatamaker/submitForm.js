@@ -170,7 +170,9 @@ function find100(list) {
  * No information should be submitted to the server, so the default behavior of the button is blocked.
  */
 
-$("#marc-maker").submit(function(event) {
+/*$("#marc-maker").submit(function(event) {
+	event.preventDefault();
+	console.log("Form submitted - starting processing");
 	var VARIFY = true;
 	var words = [];
 	var links = [];
@@ -203,7 +205,7 @@ $("#marc-maker").submit(function(event) {
 
 
 
-	var additional_names = [];
+	/*var additional_names = [];
 	var translit_additional_names = [];
 
 	var auth100  = {}
@@ -280,10 +282,8 @@ $("#marc-maker").submit(function(event) {
 		);	
 	}
 
-
-
 	//Find the first listed author or artist
-	var entry100 = find100(complete_names_list);
+	//var entry100 = find100(complete_names_list);
 	var recordObject = {
 		title: [
 			{
@@ -291,18 +291,12 @@ $("#marc-maker").submit(function(event) {
 				subtitle: $("#subtitle").val()
 			},
 			{
-				title: $("#translit_title").val(),
-				subtitle: $("#translit_subtitle").val()
+				title: "", // No transliteration for now
+				subtitle: ""
 			}
 		],
-		author: entry100[0],
-		publisher: $("#publisher").val(),
-		publication_year: $("#year").val(),
-		publication_place: $("#place").val(),
-		publication_country: $("#country").val(),
-		copyright_year: $("#cyear").val(),
-		language: $("#language").val(),
-		isbn: $("#isbn").val(),
+		manufacturer: $("#manufacturer").val(),
+		serial: $("#serial").val(),
 		volume_or_page: $("#vorp").val(),
 		pages: $("#pages").val(),
 		unpaged: $("#pages_listed").is(':checked'),
@@ -310,16 +304,13 @@ $("#marc-maker").submit(function(event) {
 		literature_dropdown: $("#literature-dropdown").val(),
 		illustrations_yes: $("#illustrations-yes").is(':checked'),
 		dimensions: $("#dimensions").val(),
-		edition: $("#edition").val(),
-		translit_publisher: $("#translit_publisher").val(),
-		translit_place: $("#translit_place").val(),
+		language: "eng", // Default language
 		notes: $("#notes").val(),
 		keywords: words,
-		keywordshtml : links,
+		keywordshtml: links,
 		keywordstype: vtypes,
 		lcshvalue: selectedlabel,
-		lcshuri: selecteduri,
-		additional_authors: complete_names_list
+		lcshuri: selecteduri
 	};
 
 	var institution_info = generateInstitutionInfo();
@@ -355,4 +346,150 @@ $("#marc-maker").submit(function(event) {
 	}
 
 	event.preventDefault();
+});*/
+
+$("#marc-maker").submit(function(event) {
+    event.preventDefault();  // Always prevent reload first
+    console.log("=== FORM SUBMIT STARTED ===");
+    
+    try {
+        // Test basic variables first
+        console.log("Testing variables...");
+        console.log("counter:", typeof counter !== 'undefined' ? counter : 'UNDEFINED');
+        console.log("aCounter:", typeof aCounter !== 'undefined' ? aCounter : 'UNDEFINED');
+        
+       console.log("=== KEYWORD DEBUGGING ===");
+
+		// Count actual keyword fields
+		var counter = 0;
+		while (document.getElementById("keyword" + counter) !== null) {
+			counter++;
+		}
+		console.log("Total keyword fields found:", counter);
+
+        
+        console.log("Basic form values:");
+        console.log("Title:", $("#title").val());
+        console.log("Manufacturer:", $("#manufacturer").val());
+        
+        var VARIFY = true;
+        var links = [];
+        var vtypes = [];
+
+	    var words = [];
+		var fast_array = [];
+
+		for (var i = 0; i < counter; i++) {
+			if(checkExists($("#fastID" + i).val()) && checkExists($("#keyword" + i).val())) {
+				if ($("#keyword" + i).val().substring($("#keyword" + i).val().length - 1) == ']') {
+					var endpoint = $("#keyword" + i).val().lastIndexOf('[');
+					fast_array.push([$("#keyword" + i).val().substring(0,endpoint-1),$("#fastID" + i).val(),$("#fastType" + i).val(),$("#fastInd" + i).val()]);
+				}
+				else {
+					fast_array.push([$("#keyword" + i).val(),$("#fastID" + i).val(),$("#fastType" + i).val(),$("#fastInd" + i).val()]);
+				}
+			}
+			else {
+				words.push($("#keyword" + i).val());
+			}
+		};
+        
+        console.log("Processing keywords...");
+        for (var i = 0; i < counter; i++) {
+		var keywordElement = $("#keyword" + i);
+		var keywordValue = keywordElement.val();
+		
+		console.log("Keyword " + i + ":");
+		console.log("  - Element exists:", keywordElement.length > 0);
+		console.log("  - Value:", keywordValue);
+		console.log("  - Value length:", keywordValue ? keywordValue.length : 0);
+		
+		if (keywordValue && keywordValue.length > 0) {
+				words.push(keywordValue);
+				console.log("  - Added to words array");
+			} else {
+				console.log("  - Skipped (empty)");
+			}
+		}
+
+		console.log("Final words array:", words);
+		console.log("Words array length:", words.length);
+        
+        // Test if the problematic elements exist
+        console.log("Testing problematic elements...");
+        console.log("LCSHresponse exists:", document.getElementById('LCSHresponse') !== null);
+        console.log("hiddenlc exists:", document.getElementById("hiddenlc") !== null);
+        console.log("hiddenviaf exists:", document.getElementById("hiddenviaf") !== null);
+        
+        // If any of these elements don't exist, skip the author processing
+        if (document.getElementById("hiddenlc") === null || 
+            document.getElementById("hiddenviaf") === null) {
+            console.log("Author-related elements missing, skipping author processing");
+        } else {
+            console.log("Author elements exist, but we'll skip processing for now");
+        }
+        
+        // Create simplified recordObject
+        console.log("Creating recordObject...");
+        var recordObject = {
+            title: [
+                {
+                    title: $("#title").val(),
+                    subtitle: $("#subtitle").val()
+                },
+                {
+                    title: "",
+                    subtitle: ""
+                }
+            ],
+			author: [
+				{
+					family: "",
+					given: ""
+				},
+				{
+					family: "",
+					given: ""
+				}
+			], 
+            manufacturer: $("#manufacturer").val(),
+            serial: $("#serial").val(),
+            volume_or_page: $("#vorp").val(),
+            pages: $("#pages").val(),
+            unpaged: $("#pages_listed").is(':checked'),
+            literature_yes: $("#literature-yes").is(':checked'),
+            literature_dropdown: $("#literature-dropdown").val(),
+            illustrations_yes: $("#illustrations-yes").is(':checked'),
+            dimensions: $("#dimensions").val(),
+            language: "eng",
+            notes: $("#notes").val(),
+            keywords: words,
+		    fast: fast_array,
+            lcshvalue: [],
+            lcshuri: []
+        };
+        
+        console.log("recordObject created:", recordObject);
+        
+        var institution_info = generateInstitutionInfo();
+        console.log("institution_info:", institution_info);
+        
+        if ($("#MARC").is(':checked')) {
+            console.log("MARC checkbox is checked, about to call downloadMARC");
+            if (VARIFY){
+                downloadMARC(recordObject,institution_info);
+                console.log("downloadMARC completed successfully");
+            }
+        }
+        
+        console.log("=== FORM PROCESSING COMPLETED ===");
+        
+    } catch (error) {
+        console.error("=== ERROR CAUGHT ===");
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+        console.error("Error occurred at line:", error.lineNumber || "unknown");
+    }
+    
+    return false; // Extra protection against reload
 });
