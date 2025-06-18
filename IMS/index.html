@@ -558,6 +558,15 @@
 				<textarea id="notes"></textarea>
 			</div>
 
+			<div id="image-upload-block" class="standard-block">
+				<label for="image-upload" class="heading">Select images/videos</label><br>
+				<input type="file" id="image-upload" accept="image/*,video/*" multiple>	
+				<button type="button" id="process-image-button" style="margin: 20px 0;" onclick="processImages()">Upload Image(s) / Video(s)</button>
+				<div id="image-preview"></div>
+				<div id="upload-progress"></div>
+				<input type="hidden" id="image-data">
+			</div>
+
 			<div id="save-as-block">
 				<label for="filename">Save as</label>
 				<input type="text" id="filename" placeholder="record">.[file type]

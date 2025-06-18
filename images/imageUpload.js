@@ -411,8 +411,81 @@ async function preFetchFromAI() {
                     console.log('Open Library ISBN API Response:', isbnData);
                 }
 
+                console.log('Enhancing with Perplexity using all available data...');
+
+
+                const enhancedQuery = `
+                    Book search with multiple data sources:
+                    Title: ${title || 'Not provided'}
+                    ISBN: ${isbn || 'Not provided'}
+                    Author: ${[given_name, family_name].filter(Boolean).join(' ') || 'Not provided'}
+
+                    OpenLibrary Search Data: ${JSON.stringify(openLibraryData)}
+                    OpenLibrary ISBN Data: ${JSON.stringify(isbnData)}
+
+                    Please analyze ALL this information from OpenLibrary along with fresh searches from Amazon, bookstores, and other sources to provide the most accurate and complete book metadata. Use OpenLibrary data as reference but prioritize more complete information from current retail sources for fields. 
+                    
+                    Find comprehensive book metadata for the book titled: "${title}". 
+                    Primary search sources (in order of priority):
+                    1. Amazon.com - Look for complete product details including dimensions
+                    2. Amazon.ae / Amazon.in - Regional listings
+                    3. Ubuy.ae
+                    4. Barnes & Noble (barnesandnoble.com)
+                    5. Book Depository (bookdepository.com)
+                    6. Jamalon.com
+                    7. Noon.com books section
+
+                    Secondary sources if needed:
+                    - Publisher's official website
+                    - WorldCat.org
+                    - Goodreads.com
+                    - Google Books
+                    For each field, explicitly state if you found the information or not.
+                    Return the data in this exact JSON format: {
+                    "title": "Full book title",
+                    "translit_title": "Transliterated title if original is non-English, otherwise null",
+                    "subtitle": "Alternative book title",
+                    "translit_subtitle": "Transliterated subtitle if original is non-English, otherwise null",
+                    "isbn": "ISBN-13 or null",
+                    "edition": "Edition information or null",
+                    "language": "Language code (eng, fre, etc.) or null",
+                    "publisher": ["Publisher name(s)"],
+                    "authors": [
+                        {"familyName": "Last name", "givenName": "First name"}
+                    ],
+                    "placeOfPublication": ["City names"],
+                    "publicationCountry": "Full country name",
+                    "publicationDate": "YYYY format",
+                    "copyrightDate": "YYYY format or null",
+                    "numberOfPages": Number of pages or null,
+                    "dimensions": "Dimensions of book should in cm (Always use the dimensions in this format 22.86 x 15.24 x 3.00) If it's in any other format than cm then convert it to cm. If no dimensions are found return an empty value, always rely on the source which mentions dimensions.",
+                    "synopsisOfBook": Synopsis of the book
+                    }
+                            IMPORTANT: If the title or subtitle contains non-English characters (Arabic, Chinese, Russian, etc.), provide both the original AND a transliterated version using Latin characters. For example:
+                    - Original Arabic: "الأسود يليق بك" 
+                    - Transliterated: "Al-Aswad Yaleeq Bik"
+                    Use null for truly unknown values only after thorough searching. Only return the json and nothing else. Do not start with words json, just return the json and nothing else.
+                    Search instructions:
+                    1. Start with Amazon.com/Amazon.ae listings
+                    2. Cross-reference with Ubuy.ae
+                    3. Check other primary sources in order
+                    4. Only use secondary sources if data is missing
+                    5. Include citation for each piece of information found
+                    6. Convert all measurements to centimeters
+                    7. Use null only when information cannot be found in ANY source listed
+                    Only return the json and nothing else. Do not start with words json, just return the json and nothing else.
+                    IMPORTANT: Prioritize Amazon listings for dimensions and complete product details. Only return JSON, no other text and remove citations indications (ie [1][2][3]etc).
+                    `;
+
+
+                const perplexityData = await fetchFromPerplexity(enhancedQuery);
+                if (perplexityData?.choices?.[0]?.message?.content) {
+                    metadata = JSON.parse(perplexityData.choices[0].message.content);
+                    console.log('Enhanced metadata from Perplexity:', metadata);
+                }    
+
                 // If OpenLibrary has data, process it through OpenAI
-                if ((openLibraryData?.docs?.length > 0) || isbnData) {
+                /*if ((openLibraryData?.docs?.length > 0) || isbnData) {
                     const combinedData = {
                         searchData: openLibraryData,
                         isbnData: isbnData
@@ -448,7 +521,7 @@ async function preFetchFromAI() {
                     if (data.choices?.[0]?.message) {
                         metadata = JSON.parse(data.choices[0].message.content);
                     }
-                }
+                }*/
             } catch (error) {
                 console.log('OpenLibrary error, falling back to Perplexity:', error);
                 // Fall back to Perplexity
@@ -614,7 +687,7 @@ Secondary sources if needed:
 5. Include citation for each piece of information found
 6. Convert all measurements to centimeters
 7. Use null only when information cannot be found in ANY source listed
-Only return the json and nothing else. Do not start with words json, just return the json and nothing else.
+Only return the json and nothing else. Do not start with words json, just return the json and nothing else and remove citations indications (ie [1][2][3]etc).
                     `
             })
         });
