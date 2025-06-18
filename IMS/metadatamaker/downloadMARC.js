@@ -493,6 +493,28 @@ function fillNotes(record,head,fieldFunc,subfieldFunc) {
 	}
 }
 
+function fillProductManual(record,head,fieldFunc,subfieldFunc) {
+    if (checkExists(record.product_manual)) {
+        var manual = fieldFunc('856','4','0',[
+            subfieldFunc('a',record.product_manual),
+            subfieldFunc('z','Product manual or specifications')
+        ]);
+
+        //MARC
+        if (head !== null) {
+            var manual_directory = createDirectory('856',manual,head);
+            return [manual_directory,manual];
+        }
+        //MARCXML
+        else {
+            return manual;
+        }
+    }
+    else {
+        return head !== null ? ['',''] : '';
+    }
+}
+
 /*function fillKeywords(record,head,fieldFunc,subfieldFunc) {
 	var keywords_content = '';
 	var keywords_directory = '';
@@ -928,13 +950,16 @@ function downloadMARC(record,institution_info) {
 	var fast = fillFAST(record,head,createContentFill,createSubfield);
 	head = fast[2];
 
+	var product_manual = fillProductManual(record,head,createContentFill,createSubfield);  // Add this line
+    head += getByteLength(product_manual[1]);
+
 	var title880 = fillTranslitTitle(record,head,createContentFill,createSubfield);
 	head += getByteLength(title880[1]);
 
 	var end = String.fromCharCode(30) + String.fromCharCode(29);
-	var text = timestamp_directory + controlfield008_directory + default1_directory + title[0] + manuf[0] + serial[0] + physical[0] + default2_directory + default3_directory + default4_directory + notes[0] + keywords[0] + title880[0] + timestamp_content + controlfield008_content + default1_content + title[1] + manuf[1] + serial[1] + physical[1] + default2_content + default3_content + default4_content + notes[1] + keywords[1] + title880[1] + end;
+	var text = timestamp_directory + controlfield008_directory + default1_directory + title[0] + manuf[0] + serial[0] + physical[0] + default2_directory + default3_directory + default4_directory + notes[0] + keywords[0] + product_manual[0] + title880[0] + timestamp_content + controlfield008_content + default1_content + title[1] + manuf[1] + serial[1] + physical[1] + default2_content + default3_content + default4_content + notes[1] + keywords[1] + product_manual[1] + title880[1] + end;
 	var leader_len = getByteLength(text) + 24;
-	var directory_len = 25 + timestamp_directory.length + controlfield008_directory.length + default1_directory.length + title[0].length + manuf[0].length + serial[0].length + physical[0].length + default2_directory.length + default3_directory.length + default4_directory.length + notes[0].length + keywords[0].length + title880[0].length;
+	var directory_len = 25 + timestamp_directory.length + controlfield008_directory.length + default1_directory.length + title[0].length + manuf[0].length + serial[0].length + physical[0].length + default2_directory.length + default3_directory.length + default4_directory.length + notes[0].length + keywords[0].length + product_manual[0].length + title880[0].length;
 	var leader = addZeros(leader_len,'leader') + 'nam a22' + addZeros(directory_len,'leader') + 'ki 4500';
 	text = leader + text;
 	downloadFile(text,'mrc');
@@ -959,6 +984,7 @@ function downloadXML(record,institution_info) {
 	//var edition = fillEdition(record,null,createMARCXMLField,createMARCXMLSubfield);
 	var manufacturer = fillManufacturer(record,null,createMARCXMLField,createMARCXMLSubfield);
 	var serial = fillSerial(record,null,createMARCXMLField,createMARCXMLSubfield);
+    var product_manual = fillProductManual(record,null,createMARCXMLField,createMARCXMLSubfield);
 	//var copyright = fillCopyright(record,null,createMARCXMLField,createMARCXMLSubfield);
 	var physical = fillPhysical(record,null,createMARCXMLField,createMARCXMLSubfield);
 	var default2 = createMARCXMLField('336',' ',' ',[createMARCXMLSubfield('a','text'),createMARCXMLSubfield('b','txt'),createMARCXMLSubfield('2','rdacontent')]) + createMARCXMLField('337',' ',' ',[createMARCXMLSubfield('a','unmediated'),createMARCXMLSubfield('b','n'),createMARCXMLSubfield('2','rdamedia')]) + createMARCXMLField('338',' ',' ',[createMARCXMLSubfield('a','volume'),createMARCXMLSubfield('b','nc'),createMARCXMLSubfield('2','rdacarrier')]);
@@ -971,6 +997,6 @@ function downloadXML(record,institution_info) {
 	//var authors880 = fillTranslitAdditionalAuthors(record,null,createMARCXMLField,createMARCXMLSubfield);
 	var endText ='</record>\n';
 
-	var text = startText + timestamp + controlfield008 + default1 + title + manufacturer + serial + physical + default2 + notes + keywords + endText;
-	downloadFile(text,'xml');
+	var text = startText + timestamp + controlfield008 + default1 + title + manufacturer + serial + physical + default2 + notes + keywords + product_manual + endText;  // Add product_manual
+    downloadFile(text,'xml');
 }

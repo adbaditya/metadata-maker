@@ -466,7 +466,8 @@ $("#marc-maker").submit(function(event) {
             keywords: words,
 		    fast: fast_array,
             lcshvalue: [],
-            lcshuri: []
+            lcshuri: [],
+			product_manual: $("#product_manual").val()
         };
         
         console.log("recordObject created:", recordObject);

@@ -132,6 +132,8 @@
 				<span class="unlisted">Unlisted</span><input type="checkbox" id="serial_listed" class="listed">
 			</div>
 
+			<button type="button" onclick="preFetchFromAI()">AI Generate Equipment Data</button>
+
 			<div id="manufacturer-block">
 				<label for="manufacturer" class="heading">Name of Manufacturer</label>
 				<label for="manufacturer" class="insert insert_normal" onClick='insertMenu("title");'>Insert Diacritics</label><br>
@@ -556,6 +558,13 @@
 			<div id="notes-block">
 				<label for="notes">Notes to the Cataloger</label><br>
 				<textarea id="notes"></textarea>
+			</div>
+
+			<div id="product-manual-block">
+				<label for="product_manual" class="heading">Access to Product Manual or Product Site</label><br>
+				<input type="url" id="product_manual" class="conditional" placeholder="https://example.com/manual.pdf">
+				<label title="URL link to product manual, specification sheet, or official product page (856$$a)."><span class="question-mark">?</span></label><br>
+				<span class="unlisted">Unlisted</span><input type="checkbox" id="product_manual_listed" class="listed">
 			</div>
 
 			<div id="image-upload-block" class="standard-block">
