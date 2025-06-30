@@ -155,7 +155,7 @@
 			</div>
 
 			<div>
-				<button type="button" class="aiButtons" onclick="preFetchFromAI()" id="preFetch">🤖 Generate Metadata with AI</button>
+				<button type="button" class="aiButtons" onclick="preFetchFromAI()">🤖 Generate Metadata with AI</button>
 			</div>
 
 			<div style="margin-top: 10px;">
@@ -1292,11 +1292,16 @@ document.body.insertAdjacentHTML("beforeend", alertsHTML);
         isbnUnlistedBackdrop.style.display = "none";
     }
 
-    checkbox.addEventListener("change", function () {
+    /*checkbox.addEventListener("change", function () {
         if (this.checked) {
+			const showPopup = false;
+
+			if (this.checked && showPopup) {
+				showIsbnUnlistedAlert();
+			}
             showIsbnUnlistedAlert();
         }
-    });
+    });*/
 
     isbnUnlistedCloseBtn.addEventListener("click", hideIsbnUnlistedAlert);
     isbnUnlistedBackdrop.addEventListener("click", hideIsbnUnlistedAlert);
