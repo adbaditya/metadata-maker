@@ -458,7 +458,7 @@ async function preFetchFromAI() {
                     {
                         "title": "Full book title",
                         "translit_title": "Transliterated title if original is non-English, otherwise null",
-                        "subtitle": "Subtitle if exists, otherwise null",
+                        "subtitle": "Subtitle or if exists, otherwise null",
                         "translit_subtitle": "Transliterated subtitle if original is non-English, otherwise null",
                         "isbn": "ISBN if found, otherwise null",
                         "edition": "Edition information or null",

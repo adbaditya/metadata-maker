@@ -132,7 +132,7 @@
 				<span class="unlisted">Unlisted</span><input type="checkbox" id="serial_listed" class="listed">
 			</div>
 
-			<button type="button" onclick="preFetchFromAI()">AI Generate Equipment Data</button>
+			<button type="button" class="aiButtons" onclick="preFetchFromAI()">Generate Equipment Data with AI</button>
 
 			<div id="manufacturer-block">
 				<label for="manufacturer" class="heading">Name of Manufacturer</label>
@@ -495,36 +495,9 @@
 			</div>
 
 			<div id="dimensions-block" class="standard-block">
-				<label for="dimensions" class="heading">Dimensions<span class="required_marker">*</span></label><br>
+				<label for="dimensions" class="heading">Size<span class="required_marker">*</span></label><br>
 				<input type="text" required id="dimensions" class="required"> cm
 				<label title="Record the height of the piece in cm. Always round up, so that if a piece measures 25.1 cm, record 26 cm"><span class="question-mark">?</span></label>
-			</div>
-
-			<div id="literature-block" class="standard-block">
-				<label for="literature" class="heading">Is this item literature?</label><br>
-				<input type="radio" name="literature" id="literature-yes" value="yes">Yes
-				<input type="radio" name="literature" id="literature-no" value="no">No<br>
-				<select name="literature-dropdown" id="literature-dropdown" class="hidden">
-					<option selected disabled hidden value=''></option>
-					<option value="0">Not fiction (not further specified)</option>
-					<option value="1">Fiction (not further specified)</option>
-					<option value="d">Dramas</option>
-					<option value="e">Essays</option>
-					<option value="f">Novels</option>
-					<option value="h">Humor, satires, etc.</option>
-					<option value="i">Letters</option>
-					<option value="j">Short stories</option>
-					<option value="m">Mixed forms</option>
-					<option value="p">Poetry</option>
-					<option value="s">Speeches</option>
-					<option value="u">Unknown</option>
-				</select>
-			</div>
-
-			<div id="illustrations-block" class="standard-block">
-				<label for="illustrations" class="heading">Does the item include illustrations?</label><br>
-				<input type="radio" name="illustrations" id="illustrations-yes" value="yes">Yes
-				<input type="radio" name="illustrations" id="illustrations-no" value="no">No
 			</div>
 
 			<!--<div class="standard-block">
