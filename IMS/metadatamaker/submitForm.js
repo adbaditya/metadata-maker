@@ -378,21 +378,6 @@ $("#marc-maker").submit(function(event) {
 
 	    var words = [];
 		var fast_array = [];
-
-		for (var i = 0; i < counter; i++) {
-			if(checkExists($("#fastID" + i).val()) && checkExists($("#keyword" + i).val())) {
-				if ($("#keyword" + i).val().substring($("#keyword" + i).val().length - 1) == ']') {
-					var endpoint = $("#keyword" + i).val().lastIndexOf('[');
-					fast_array.push([$("#keyword" + i).val().substring(0,endpoint-1),$("#fastID" + i).val(),$("#fastType" + i).val(),$("#fastInd" + i).val()]);
-				}
-				else {
-					fast_array.push([$("#keyword" + i).val(),$("#fastID" + i).val(),$("#fastType" + i).val(),$("#fastInd" + i).val()]);
-				}
-			}
-			else {
-				words.push($("#keyword" + i).val());
-			}
-		};
         
         console.log("Processing keywords...");
         for (var i = 0; i < counter; i++) {
@@ -438,11 +423,13 @@ console.log("Country text:", $("#country option:selected").text());
             title: [
                 {
                     title: $("#title").val(),
-                    subtitle: $("#subtitle").val()
+                    subtitle: $("#subtitle").val(),
+					alternative_title: $("#alternative_title").val() || ""
                 },
                 {
                     title: "",
-                    subtitle: ""
+                    subtitle: "",
+					alternative_title: ""
                 }
             ],
 			author: [
@@ -486,6 +473,10 @@ console.log("Country text:", $("#country option:selected").text());
                 console.log("downloadMARC completed successfully");
             }
         }
+
+		if ($("#HTML").is(':checked')) {
+			downloadHTML(recordObject,institution_info);
+		}
         
         console.log("=== FORM PROCESSING COMPLETED ===");
         

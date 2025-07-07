@@ -454,3 +454,7 @@ span.question-mark {
    margin-bottom: 10px;
    font-weight: bold;
 }
+
+#alternative-title-block label.insert.insert_normal {
+    left: -15px;
+}

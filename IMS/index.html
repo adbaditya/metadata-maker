@@ -339,6 +339,15 @@
 				<input type="text" id="translit_subtitle" class="hidden translit translit-title">
 			</div>
 
+			<div id="alternative-title-block">
+    <label for="alternative_title" class="heading">Alternative Title</label>
+    <label for="alternative_title" class="insert insert_normal" onClick='insertMenu("alternative_title");'>Insert Diacritics</label><br>
+    <div id="insert-alternative_title"></div>
+    <input type="text" id="alternative_title" class="conditional">
+    <label title="Record an alternative title if one exists (246$$a)."><span class="question-mark">?</span></label><br>
+    <span class="unlisted">Unlisted</span><input type="checkbox" id="alternative_title_listed" class="listed">
+</div>
+
 			<div id="serial-block">
 				<label for="serial" class="heading">Serial No</label><br>
 				<input type="text" id="serial" class="conditional">

@@ -1,6 +1,346 @@
 /*
  * Get the name of the languae from the code
  */
+
+function getCountryName(countryCode) {
+    var countryMap = {
+        'af': 'Afghanistan',
+        'alu': 'Alabama',
+        'aku': 'Alaska',
+        'aa': 'Albania',
+        'abc': 'Alberta',
+        'ae': 'Algeria',
+        'as': 'American Samoa',
+        'an': 'Andorra',
+        'ao': 'Angola',
+        'am': 'Anguilla',
+        'ay': 'Antarctica',
+        'aq': 'Antigua and Barbuda',
+        'ag': 'Argentina',
+        'azu': 'Arizona',
+        'aru': 'Arkansas',
+        'ai': 'Armenia (Republic)',
+        'aw': 'Aruba',
+        'at': 'Australia',
+        'aca': 'Australian Capital Territory',
+        'au': 'Austria',
+        'aj': 'Azerbaijan',
+        'bf': 'Bahamas',
+        'ba': 'Bahrain',
+        'bg': 'Bangladesh',
+        'bb': 'Barbados',
+        'bw': 'Belarus',
+        'be': 'Belgium',
+        'bh': 'Belize',
+        'dm': 'Benin',
+        'bm': 'Bermuda Islands',
+        'bt': 'Bhutan',
+        'bo': 'Bolivia',
+        'bn': 'Bosnia and Hercegovina',
+        'bs': 'Botswana',
+        'bv': 'Bouvet Island',
+        'bl': 'Brazil',
+        'bcc': 'British Columbia',
+        'bi': 'British Indian Ocean Territory',
+        'vb': 'British Virgin Islands',
+        'bx': 'Brunei',
+        'bu': 'Bulgaria',
+        'uv': 'Burkina Faso',
+        'br': 'Burma',
+        'bd': 'Burundi',
+        'cv': 'Cabo Verde',
+        'cau': 'California',
+        'cb': 'Cambodia',
+        'cm': 'Cameroon',
+        'xxc': 'Canada',
+        'ca': 'Caribbean Netherlands',
+        'cj': 'Cayman Islands',
+        'cx': 'Central African Republic',
+        'cd': 'Chad',
+        'cl': 'Chile',
+        'cc': 'China',
+        'ch': 'China (Republic : 1949- )',
+        'xa': 'Christmas Island (Indian Ocean)',
+        'xb': 'Cocos (Keeling) Islands',
+        'ck': 'Colombia',
+        'cou': 'Colorado',
+        'cq': 'Comoros',
+        'cf': 'Congo (Brazzaville)',
+        'cg': 'Congo (Democratic Republic)',
+        'ctu': 'Connecticut',
+        'cw': 'Cook Islands',
+        'xga': 'Coral Sea Islands Territory',
+        'cr': 'Costa Rica',
+        'iv': 'Côte d\'Ivoire',
+        'ci': 'Croatia',
+        'cu': 'Cuba',
+        'co': 'Curaçao',
+        'cy': 'Cyprus',
+        'xr': 'Czech Republic',
+        'deu': 'Delaware',
+        'dk': 'Denmark',
+        'dcu': 'District of Columbia',
+        'ft': 'Djibouti',
+        'dq': 'Dominica',
+        'dr': 'Dominican Republic',
+        'ec': 'Ecuador',
+        'ua': 'Egypt',
+        'es': 'El Salvador',
+        'enk': 'England',
+        'eg': 'Equatorial Guinea',
+        'ea': 'Eritrea',
+        'er': 'Estonia',
+        'et': 'Ethiopia',
+        'fk': 'Falkland Islands',
+        'fa': 'Faroe Islands',
+        'fj': 'Fiji',
+        'fi': 'Finland',
+        'flu': 'Florida',
+        'fr': 'France',
+        'fg': 'French Guiana',
+        'fp': 'French Polynesia',
+        'go': 'Gabon',
+        'gm': 'Gambia',
+        'gz': 'Gaza Strip',
+        'gau': 'Georgia',
+        'gs': 'Georgia (Republic)',
+        'gw': 'Germany',
+        'gh': 'Ghana',
+        'gi': 'Gibraltar',
+        'gr': 'Greece',
+        'gl': 'Greenland',
+        'gd': 'Grenada',
+        'gp': 'Guadeloupe',
+        'gu': 'Guam',
+        'gt': 'Guatemala',
+        'gv': 'Guinea',
+        'pg': 'Guinea-Bissau',
+        'gy': 'Guyana',
+        'ht': 'Haiti',
+        'hiu': 'Hawaii',
+        'hm': 'Heard and McDonald Islands',
+        'ho': 'Honduras',
+        'hu': 'Hungary',
+        'ic': 'Iceland',
+        'idu': 'Idaho',
+        'ilu': 'Illinois',
+        'ii': 'India',
+        'inu': 'Indiana',
+        'io': 'Indonesia',
+        'iau': 'Iowa',
+        'ir': 'Iran',
+        'iq': 'Iraq',
+        'iy': 'Iraq-Saudi Arabia Neutral Zone',
+        'ie': 'Ireland',
+        'is': 'Israel',
+        'it': 'Italy',
+        'jm': 'Jamaica',
+        'ja': 'Japan',
+        'ji': 'Johnston Atoll',
+        'jo': 'Jordan',
+        'ksu': 'Kansas',
+        'kz': 'Kazakhstan',
+        'kyu': 'Kentucky',
+        'ke': 'Kenya',
+        'gb': 'Kiribati',
+        'kn': 'Korea (North)',
+        'ko': 'Korea (South)',
+        'kv': 'Kosovo',
+        'ku': 'Kuwait',
+        'kg': 'Kyrgyzstan',
+        'ls': 'Laos',
+        'lv': 'Latvia',
+        'le': 'Lebanon',
+        'lo': 'Lesotho',
+        'lb': 'Liberia',
+        'ly': 'Libya',
+        'lh': 'Liechtenstein',
+        'li': 'Lithuania',
+        'lau': 'Louisiana',
+        'lu': 'Luxembourg',
+        'xn': 'Macedonia',
+        'mg': 'Madagascar',
+        'meu': 'Maine',
+        'mw': 'Malawi',
+        'my': 'Malaysia',
+        'xc': 'Maldives',
+        'ml': 'Mali',
+        'mm': 'Malta',
+        'mbc': 'Manitoba',
+        'xe': 'Marshall Islands',
+        'mq': 'Martinique',
+        'mdu': 'Maryland',
+        'mau': 'Massachusetts',
+        'mu': 'Mauritania',
+        'mf': 'Mauritius',
+        'ot': 'Mayotte',
+        'mx': 'Mexico',
+        'miu': 'Michigan',
+        'fm': 'Micronesia (Federated States)',
+        'xf': 'Midway Islands',
+        'mnu': 'Minnesota',
+        'msu': 'Mississippi',
+        'mou': 'Missouri',
+        'mv': 'Moldova',
+        'mc': 'Monaco',
+        'mp': 'Mongolia',
+        'mtu': 'Montana',
+        'mo': 'Montenegro',
+        'mj': 'Montserrat',
+        'mr': 'Morocco',
+        'mz': 'Mozambique',
+        'sx': 'Namibia',
+        'nu': 'Nauru',
+        'nbu': 'Nebraska',
+        'np': 'Nepal',
+        'ne': 'Netherlands',
+        'nvu': 'Nevada',
+        'nkc': 'New Brunswick',
+        'nl': 'New Caledonia',
+        'nhu': 'New Hampshire',
+        'nju': 'New Jersey',
+        'nmu': 'New Mexico',
+        'xna': 'New South Wales',
+        'nyu': 'New York (State)',
+        'nz': 'New Zealand',
+        'nfc': 'Newfoundland and Labrador',
+        'nq': 'Nicaragua',
+        'ng': 'Niger',
+        'nr': 'Nigeria',
+        'xh': 'Niue',
+        'xx': 'No place, unknown, or undetermined',
+        'nx': 'Norfolk Island',
+        'ncu': 'North Carolina',
+        'ndu': 'North Dakota',
+        'nik': 'Northern Ireland',
+        'nw': 'Northern Mariana Islands',
+        'xoa': 'Northern Territory',
+        'ntc': 'Northwest Territories',
+        'no': 'Norway',
+        'nsc': 'Nova Scotia',
+        'nuc': 'Nunavut',
+        'ohu': 'Ohio',
+        'oku': 'Oklahoma',
+        'mk': 'Oman',
+        'onc': 'Ontario',
+        'oru': 'Oregon',
+        'pk': 'Pakistan',
+        'pw': 'Palau',
+        'pn': 'Panama',
+        'pp': 'Papua New Guinea',
+        'pf': 'Paracel Islands',
+        'py': 'Paraguay',
+        'pau': 'Pennsylvania',
+        'pe': 'Peru',
+        'ph': 'Philippines',
+        'pc': 'Pitcairn Island',
+        'pl': 'Poland',
+        'po': 'Portugal',
+        'pic': 'Prince Edward Island',
+        'pr': 'Puerto Rico',
+        'qa': 'Qatar',
+        'quc': 'Québec (Province)',
+        'qea': 'Queensland',
+        're': 'Réunion',
+        'riu': 'Rhode Island',
+        'rm': 'Romania',
+        'ru': 'Russia (Federation)',
+        'rw': 'Rwanda',
+        'xj': 'Saint Helena',
+        'xd': 'Saint Kitts-Nevis',
+        'xk': 'Saint Lucia',
+        'xl': 'Saint Pierre and Miquelon',
+        'xm': 'Saint Vincent and the Grenadines',
+        'sc': 'Saint-Barthélemy',
+        'st': 'Saint-Martin',
+        'ws': 'Samoa',
+        'sm': 'San Marino',
+        'sf': 'Sao Tome and Principe',
+        'snc': 'Saskatchewan',
+        'su': 'Saudi Arabia',
+        'stk': 'Scotland',
+        'sg': 'Senegal',
+        'rb': 'Serbia',
+        'se': 'Seychelles',
+        'sl': 'Sierra Leone',
+        'si': 'Singapore',
+        'sn': 'Sint Maarten',
+        'xo': 'Slovakia',
+        'xv': 'Slovenia',
+        'bp': 'Solomon Islands',
+        'so': 'Somalia',
+        'sa': 'South Africa',
+        'xra': 'South Australia',
+        'scu': 'South Carolina',
+        'sdu': 'South Dakota',
+        'xs': 'South Georgia and the South Sandwich Islands',
+        'sd': 'South Sudan',
+        'sp': 'Spain',
+        'sh': 'Spanish North Africa',
+        'xp': 'Spratly Island',
+        'ce': 'Sri Lanka',
+        'sj': 'Sudan',
+        'sr': 'Surinam',
+        'sq': 'Swaziland',
+        'sw': 'Sweden',
+        'sz': 'Switzerland',
+        'sy': 'Syria',
+        'ta': 'Tajikistan',
+        'tz': 'Tanzania',
+        'tma': 'Tasmania',
+        'tnu': 'Tennessee',
+        'fs': 'Terres australes et antarctiques françaises',
+        'txu': 'Texas',
+        'th': 'Thailand',
+        'em': 'Timor-Leste',
+        'tg': 'Togo',
+        'tl': 'Tokelau',
+        'to': 'Tonga',
+        'tr': 'Trinidad and Tobago',
+        'ti': 'Tunisia',
+        'tu': 'Turkey',
+        'tk': 'Turkmenistan',
+        'tc': 'Turks and Caicos Islands',
+        'tv': 'Tuvalu',
+        'ug': 'Uganda',
+        'un': 'Ukraine',
+        'ts': 'United Arab Emirates',
+        'xxk': 'United Kingdom',
+        'uik': 'United Kingdom Misc. Islands',
+        'xxu': 'United States',
+        'uc': 'United States Misc. Caribbean Islands',
+        'up': 'United States Misc. Pacific Islands',
+        'uy': 'Uruguay',
+        'utu': 'Utah',
+        'uz': 'Uzbekistan',
+        'nn': 'Vanuatu',
+        'vp': 'Various places',
+        'vc': 'Vatican City',
+        've': 'Venezuela',
+        'vtu': 'Vermont',
+        'vra': 'Victoria',
+        'vm': 'Vietnam',
+        'vi': 'Virgin Islands of the United States',
+        'vau': 'Virginia',
+        'wk': 'Wake Island',
+        'wlk': 'Wales',
+        'wf': 'Wallis and Futuna',
+        'wau': 'Washington (State)',
+        'wj': 'West Bank of the Jordan River',
+        'wvu': 'West Virginia',
+        'wea': 'Western Australia',
+        'ss': 'Western Sahara',
+        'wiu': 'Wisconsin',
+        'wyu': 'Wyoming',
+        'ye': 'Yemen',
+        'ykc': 'Yukon Territory',
+        'za': 'Zambia',
+        'rh': 'Zimbabwe'
+    };
+    
+    return countryMap[countryCode] || '[Place of manufacture not identified]';
+}
+
 function getLanguage(code) {
 	var langs = {
 		"abk":"Abkhaz",
@@ -904,119 +1244,153 @@ function listPerson(author_record) {
  * institution_info: object containing name of institution creating record
  */
 function downloadHTML(record,institution_info) {
-	var metaTags = '';
-	var displayTags = '';
+    var metaTags = '';
+    var displayTags = '';
 
-	metaTags += buildTag('inLanguage',record.language,true,'');
+    metaTags += buildTag('inLanguage',record.language,true,'');
 
-	var subtitleTag = '';
-	if (checkExists(record.title[0]['subtitle'])) {
-		subtitleTag = ': ' + record.title[0]['subtitle'];
-	}
+    // Main title with subtitle
+    var titleContent = record.title[0]['title'];
+    if (checkExists(record.title[0]['subtitle'])) {
+        titleContent += ': ' + record.title[0]['subtitle'];
+    }
+    displayTags += buildTag('name', titleContent, false, 'Title');
 
-	displayTags += buildTag('name',record.title[0]['title'] + subtitleTag,false,'Title');
+    // Alternative title (separate field)
+    if (checkExists(record.title[0]['alternative_title'])) {
+        displayTags += buildTag('alternateName', record.title[0]['alternative_title'], false, 'Alternative Title');
+    }
 
-	var translitSubTag = '';
-	if (checkExists(record.title[1]['subtitle'])) {
-		translitSubTag = ': ' + record.title[1]['subtitle'] + '.';
-	}
+    // Transliterated title
+    var translitSubTag = '';
+    if (checkExists(record.title[1]['subtitle'])) {
+        translitSubTag = ': ' + record.title[1]['subtitle'];
+    }
+    if (checkExists(record.title[1]['title'])) {
+        displayTags += buildTag('alternateName', record.title[1]['title'] + translitSubTag, false, 'Transliterated Title');
+    }
 
-	if (checkExists(record.title[1]['title'])) {
-		displayTags += buildTag('alternateName',record.title[1]['title'] + translitSubTag,false,'Transliterated Title');
-	}
+    // Serial Number
+    if (checkExists(record.serial)) {
+        displayTags += '\t\t\t<dt>Serial Number:</dt>\n\t\t\t<dd><b>' + record.serial + '</b></dd>\n';
+    }
 
-	if (checkExists(record.isbn)) {
-		displayTags += buildTag('isbn',record.isbn,false,'ISBN');
-	}
+    // Manufacturer
+    if (checkExists(record.manufacturer)) {
+        displayTags += buildTag('manufacturer', record.manufacturer, false, 'Manufacturer');
+    }
 
-	if (checkExists(record.author[0]['role']) && (checkExists(record.author[0]['family']))) {
-		displayTags += listPerson(record.author);
-	}
+    // Country/State/Province of Manufacturer
+    if (checkExists(record.manufacturer_country)) {
+        var countryName = getCountryName(record.manufacturer_country); // You'll need this function
+        displayTags += '\t\t\t<dt>Country/State/Province of Manufacturer:</dt>\n\t\t\t<dd><b>' + countryName + '</b></dd>\n';
+    }
 
-	if (checkExists(record.additional_authors)) {
-		for (var i = 0; i < record.additional_authors.length; i++) {
-			displayTags += listPerson(record.additional_authors[i]);
-		}
-	}
+    // Size/Dimensions
+    if (checkExists(record.dimensions)) {
+        displayTags += '\t\t\t<dt>Size:</dt>\n\t\t\t<dd><b>' + record.dimensions + '</b></dd>\n';
+    }
 
-	if (checkExists(record.edition)) {
-		displayTags += buildTag('bookEdition',record.edition,false,'Edition Statement');
-	}
+    // Physical description (pages/pieces if applicable)
+    if (checkExists(record.pages) || checkExists(record.volume_or_page)) {
+        displayTags += '\t\t\t<dt>Physical Description:</dt>\n\t\t\t<dd><b>';
+        if (checkExists(record.pages)) {
+            var pageType = checkExists(record.volume_or_page) ? record.volume_or_page : 'pieces';
+            displayTags += record.pages + ' ' + pageType;
+        }
+        displayTags += '</b></dd>\n';
+    }
 
-	if (checkExists(record.publisher)) {
-		displayTags += buildTag('publisher',record.publisher,false,'Publisher');
-	}
+    // Author (if exists)
+    if (record.author && record.author[0] && 
+        checkExists(record.author[0]['role']) && 
+        checkExists(record.author[0]['family'])) {
+        displayTags += listPerson(record.author);
+    }
 
-	if (checkExists(record.publication_place) || checkExists(record.publication_country)) {
-		var content = '';
-		if (checkExists(record.publication_place)) {
-			content += '<span itemprop="addressLocality">' + record.publication_place + '</span>';
-			if (checkExists(record.publication_country)) {
-				content += ', ';
-			}
-		}
-		if (checkExists(record.publication_country)) {
-			content += '<span itemprop="addressRegion">' + getCountry(record.publication_country) + '</span>';
-		}
-		var publication_location = buildItemscopeTag('publication','http://schema.org/PublicationEvent',buildItemscopeTag('location','http://schema.org/PostalAddress','\t\t\t\t<dt>Publication Location:</dt>\n\t\t\t\t<dd><b>' + content + '</b></dd>\n'));
-		displayTags += publication_location;
-	}
+    // Additional authors
+    if (checkExists(record.additional_authors)) {
+        for (var i = 0; i < record.additional_authors.length; i++) {
+            displayTags += listPerson(record.additional_authors[i]);
+        }
+    }
 
-	if (checkExists(record.publication_year)) {
-		displayTags += buildTag('datePublished',record.publication_year,false,'Date of Publication');
-	}
+    // Edition (if applicable)
+    if (checkExists(record.edition)) {
+        displayTags += buildTag('bookEdition', record.edition, false, 'Edition Statement');
+    }
 
-	if (checkExists(record.copyright_year)) {
-		displayTags += buildTag('copyrightYear',record.copyright_year,false,'Date of Copyright');
-	}
+    // Publication info (if applicable)
+    if (checkExists(record.publisher)) {
+        displayTags += buildTag('publisher', record.publisher, false, 'Publisher');
+    }
 
-	var ill = '';
-	if (checkExists(record.illustrations_yes) && record.illustrations_yes == true) {
-		ill = 'illustrations';
-	}
+    if (checkExists(record.publication_year)) {
+        displayTags += buildTag('datePublished', record.publication_year, false, 'Date of Publication');
+    }
 
-	if (ill != '' || checkExists(record.pages)) {
-		displayTags += '\t\t\t<dt>Physical Description:</dt>\n\t\t\t<dd><b>';
-		if (checkExists(record.pages)) {
-			displayTags += buildSpan('numberOfPages',record.pages) + ' ' + record.volume_or_page;
-		}
-		if (ill != '' && checkExists(record.pages)) {
-			displayTags += '; ';
-		}
-		if (ill != '') {
-			displayTags += ill;
-		}
-		displayTags += '</b></dd>\n';
-	}
+    if (checkExists(record.copyright_year)) {
+        displayTags += buildTag('copyrightYear', record.copyright_year, false, 'Date of Copyright');
+    }
 
-	displayTags += '\t\t\t<dt>Language:</dt>\n\t\t\t<dd><b>' + getLanguage(record.language) + '</b></dd>\n';
+    // Language
+    displayTags += '\t\t\t<dt>Language:</dt>\n\t\t\t<dd><b>' + getLanguage(record.language) + '</b></dd>\n';
 
+    // Notes to the Cataloger
+    if (checkExists(record.notes)) {
+        displayTags += '\t\t\t<dt>Notes:</dt>\n\t\t\t<dd><b>' + record.notes.replace(/\n/g, '<br>') + '</b></dd>\n';
+    }
 
-//gh test 0903
-	if (checkExists(record.keywords) && record.keywords.length > 0) {
-		if (record.keywords[0]!=''){
-			var FASTList = '\t\t\t<dt>FAST:</dt>\n\t\t\t<dd><b>\n\t\t\t\t<ul>\n';
-			for (var c = 0; c < record.keywords.length; c++) {
-				if (record.keywords[c] != '') {
-					FASTList += '\t\t\t\t\t<li itemprop="about" href="' + record.keywordshtml[c] + '">' + record.keywords[c] + '</li>\n';
-				}
-			}
-			FASTList += '\t\t\t\t</ul>\n\t\t\t</b></dd>\n';
-			displayTags += FASTList;
-		}
-	}
-	if (checkExists(record.lcshvalue) && record.lcshvalue.length > 0){
-		var LCSHList = '\t\t\t<dt>LCSH:</dt>\n\t\t\t<dd><b>\n\t\t\t\t<ul>\n';
-		for (var c = 0; c < record.lcshvalue.length; c++) {
-			if (record.lcshvalue[c] != '') {
-				LCSHList += '\t\t\t\t\t<li itemprop="about" href="' + record.lcshuri[c] + '">' + record.lcshvalue[c] + '</li>\n';
-			}
-		}
-		LCSHList += '\t\t\t\t</ul>\n\t\t\t</b></dd>\n';
-		displayTags += LCSHList;
-	}
-	displayTags += '\t\t\t<div itemprop="offers" itemscope itemtype="http://schema.org/Offer">\n\t\t\t\t<dt>Located At:</dt>\n\t\t\t\t<dd><b><span itemprop="seller" href="' + institution_info['html']['url'] + '">' + institution_info['html']['name'] + '</span></b></dd>\n\t\t\t</div>\n';
+    // Product Manual/Specifications
+    if (checkExists(record.product_manual)) {
+        displayTags += '\t\t\t<dt>Product Manual/Specifications:</dt>\n\t\t\t<dd><b><a href="' + record.product_manual + '" target="_blank">View Product Information</a></b></dd>\n';
+    }
 
-	var text = '<!DOCTYPE html>\n<html>\n<head>\n	<meta charset="utf-8">\n</head>\n\n<body>\n\t<div itemscope itemtype="http://schema.org/Book">\n' + metaTags + '\t\t<dl>\n' + displayTags + '\t\t</dl>\n\t</div>\n</body>\n</html>';
-	downloadFile(text,'html');
+    // Keywords
+    if (checkExists(record.keywords) && record.keywords.length > 0) {
+        var hasKeywords = false;
+        var keywordsList = '\t\t\t<dt>Keywords:</dt>\n\t\t\t<dd><b>\n\t\t\t\t<ul>\n';
+        
+        for (var c = 0; c < record.keywords.length; c++) {
+            if (record.keywords[c] && record.keywords[c] != '') {
+                keywordsList += '\t\t\t\t\t<li>' + record.keywords[c] + '</li>\n';
+                hasKeywords = true;
+            }
+        }
+        
+        if (hasKeywords) {
+            keywordsList += '\t\t\t\t</ul>\n\t\t\t</b></dd>\n';
+            displayTags += keywordsList;
+        }
+    }
+
+    // FAST headings
+    if (checkExists(record.fast) && record.fast.length > 0) {
+        var FASTList = '\t\t\t<dt>FAST:</dt>\n\t\t\t<dd><b>\n\t\t\t\t<ul>\n';
+        for (var c = 0; c < record.fast.length; c++) {
+            if (record.fast[c] && record.fast[c][0] && record.fast[c][0] != '') {
+                FASTList += '\t\t\t\t\t<li itemprop="about">' + record.fast[c][0] + '</li>\n';
+            }
+        }
+        FASTList += '\t\t\t\t</ul>\n\t\t\t</b></dd>\n';
+        displayTags += FASTList;
+    }
+
+    // LCSH
+    if (checkExists(record.lcshvalue) && record.lcshvalue.length > 0) {
+        var LCSHList = '\t\t\t<dt>LCSH:</dt>\n\t\t\t<dd><b>\n\t\t\t\t<ul>\n';
+        for (var c = 0; c < record.lcshvalue.length; c++) {
+            if (record.lcshvalue[c] != '') {
+                LCSHList += '\t\t\t\t\t<li itemprop="about" href="' + record.lcshuri[c] + '">' + record.lcshvalue[c] + '</li>\n';
+            }
+        }
+        LCSHList += '\t\t\t\t</ul>\n\t\t\t</b></dd>\n';
+        displayTags += LCSHList;
+    }
+
+    // Located At
+    displayTags += '\t\t\t<div itemprop="offers" itemscope itemtype="http://schema.org/Offer">\n\t\t\t\t<dt>Located At:</dt>\n\t\t\t\t<dd><b><span itemprop="seller" href="' + institution_info['html']['url'] + '">' + institution_info['html']['name'] + '</span></b></dd>\n\t\t\t</div>\n';
+
+    var text = '<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset="utf-8">\n\t<title>' + record.title[0]['title'] + '</title>\n</head>\n\n<body>\n\t<div itemscope itemtype="http://schema.org/Product">\n' + metaTags + '\t\t<dl>\n' + displayTags + '\t\t</dl>\n\t</div>\n</body>\n</html>';
+    downloadFile(text,'html');
 }

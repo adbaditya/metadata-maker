@@ -1237,6 +1237,16 @@ function fillTranslitAdditionalAuthors(record,head,fieldFunc,subfieldFunc) {
 	}
 }
 
+function fillAlternativeTitle(record, head, createContentFill, createSubfield) {
+    if (record.title[0].alternative_title && record.title[0].alternative_title.length > 0) {
+        var content = createContentFill('246', '1', ' ', [createSubfield('a', record.title[0].alternative_title)]);
+        var directory = createDirectory('246', content, head);
+        return [directory, content];
+    } else {
+        return ['', ''];
+    }
+}
+
 /*
  * Create a MARC record. The variable head is a running total of the length of the record so far. The directory/variable[0]
  * variables number the field, point to the content, and list how long the content is. The content/variable[1] variables
@@ -1259,6 +1269,9 @@ function downloadMARC(record,institution_info) {
 
 	var title = fillTitle(record,head,createContentFill,createSubfield);
 	head += getByteLength(title[1]);
+
+	var altTitle = fillAlternativeTitle(record,head,createContentFill,createSubfield);
+    head += getByteLength(altTitle[1]);
 
 	var manuf = fillManufacturer(record,head,createContentFill,createSubfield);
 	head += getByteLength(manuf[1]);
@@ -1290,17 +1303,18 @@ function downloadMARC(record,institution_info) {
 	var fast = fillFAST(record,head,createContentFill,createSubfield);
 	head = fast[2];
 
-	var product_manual = fillProductManual(record,head,createContentFill,createSubfield);  // Add this line
+	var product_manual = fillProductManual(record,head,createContentFill,createSubfield);
     head += getByteLength(product_manual[1]);
 
 	var title880 = fillTranslitTitle(record,head,createContentFill,createSubfield);
 	head += getByteLength(title880[1]);
 
 	var end = String.fromCharCode(30) + String.fromCharCode(29);
-	var text = timestamp_directory + controlfield008_directory + default1_directory + title[0] + manuf[0] + serial[0] + physical[0] + default2_directory + default3_directory + default4_directory + notes[0] + keywords[0] + product_manual[0] + title880[0] + timestamp_content + controlfield008_content + default1_content + title[1] + manuf[1] + serial[1] + physical[1] + default2_content + default3_content + default4_content + notes[1] + keywords[1] + product_manual[1] + title880[1] + end;
+	var text = timestamp_directory + controlfield008_directory + default1_directory + title[0] + altTitle[0] + manuf[0] + serial[0] + physical[0] + default2_directory + default3_directory + default4_directory + notes[0] + keywords[0] + product_manual[0] + title880[0] + timestamp_content + controlfield008_content + default1_content + title[1] + altTitle[1] + manuf[1] + serial[1] + physical[1] + default2_content + default3_content + default4_content + notes[1] + keywords[1] + product_manual[1] + title880[1] + end;
+
 	var leader_len = getByteLength(text) + 24;
-	var directory_len = 25 + timestamp_directory.length + controlfield008_directory.length + default1_directory.length + title[0].length + manuf[0].length + serial[0].length + physical[0].length + default2_directory.length + default3_directory.length + default4_directory.length + notes[0].length + keywords[0].length + product_manual[0].length + title880[0].length;
-	var leader = addZeros(leader_len,'leader') + 'nam a22' + addZeros(directory_len,'leader') + 'ki 4500';
+    var directory_len = 25 + timestamp_directory.length + controlfield008_directory.length + default1_directory.length + title[0].length + altTitle[0].length + manuf[0].length + serial[0].length + physical[0].length + default2_directory.length + default3_directory.length + default4_directory.length + notes[0].length + keywords[0].length + product_manual[0].length + title880[0].length;
+	var leader = addZeros(leader_len,'leader') + 'npm a22' + addZeros(directory_len,'leader') + 'ki 4500';
 	text = leader + text;
 	downloadFile(text,'mrc');
 }
@@ -1308,6 +1322,14 @@ function downloadMARC(record,institution_info) {
 /*
  * Create the MARCXML document
  */
+function fillAlternativeTitleXML(record, head, createMARCXMLField, createMARCXMLSubfield) {
+    if (record.title[0].alternative_title && record.title[0].alternative_title.length > 0) {
+        return createMARCXMLField('246', '1', ' ', [createMARCXMLSubfield('a', record.title[0].alternative_title)]);
+    } else {
+        return '';
+    }
+}
+
 function downloadXML(record,institution_info) {
 	var startText = '<?xml version="1.0" encoding="utf-8"?>\n<record xmlns="http://www.loc.gov/MARC21/slim" xsi:schemaLocation="http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n  <leader>01447nam a2200397ki 4500</leader>\n  <controlfield tag="001"></controlfield>\n';
 	
@@ -1321,6 +1343,7 @@ function downloadXML(record,institution_info) {
 	//var isbn = fillISBN(record,null,createMARCXMLField,createMARCXMLSubfield);
 	//var author = fillAuthor(record,null,createMARCXMLField,createMARCXMLSubfield);
 	var title = fillTitle(record,null,createMARCXMLField,createMARCXMLSubfield);
+	var altTitle = fillAlternativeTitleXML(record,null,createMARCXMLField,createMARCXMLSubfield);
 	//var edition = fillEdition(record,null,createMARCXMLField,createMARCXMLSubfield);
 	var manufacturer = fillManufacturer(record,null,createMARCXMLField,createMARCXMLSubfield);
 	var serial = fillSerial(record,null,createMARCXMLField,createMARCXMLSubfield);
@@ -1339,6 +1362,7 @@ function downloadXML(record,institution_info) {
 	//var authors880 = fillTranslitAdditionalAuthors(record,null,createMARCXMLField,createMARCXMLSubfield);
 	var endText ='</record>\n';
 
-	var text = startText + timestamp + controlfield008 + default1 + title + manufacturer + serial + physical + default2 + notes + keywords + product_manual + endText;  // Add product_manual
+	var text = startText + timestamp + controlfield008 + default1 + title + altTitle + manufacturer + serial + physical + default2 + notes + keywords + product_manual + endText;
+
     downloadFile(text,'xml');
 }
