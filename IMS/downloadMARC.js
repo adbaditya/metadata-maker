@@ -800,21 +800,17 @@ function downloadMARC(record,institution_info) {
 	var physical = fillPhysical(record,head,createContentFill,createSubfield);
 	head += getByteLength(physical[1]);
 
-	var default2_content = createContent('  ',[createSubfield('a','three-dimensional form'),createSubfield('b','tdf'),createSubfield('2','rdacontent')]);
+	var default2_content = createContent('  ',[createSubfield('a','text'),createSubfield('b','txt'),createSubfield('2','rdacontent')]);
 	var default2_directory = createDirectory('336',default2_content,head);
 	head += default2_content.length;
-	//=336 ##$athree-dimensional form$btdf$2rdacontent
-	//336	__	$atext$btxt$2rdacontent
 
-	var default3_content = createContent('  ',[createSubfield('a','tactile'),createSubfield('b','t'),createSubfield('2','rdamedia')]);
+	var default3_content = createContent('  ',[createSubfield('a','unmediated'),createSubfield('b','n'),createSubfield('2','rdamedia')]);
 	var default3_directory = createDirectory('337',default3_content,head);
 	head += default3_content.length;
-	//=337 ##$atactile$bt$2rdamedia
 
-	var default4_content = createContent('  ',[createSubfield('a','three-dimensional object'),createSubfield('b','nb'),createSubfield('2','rdacarrier')]);
+	var default4_content = createContent('  ',[createSubfield('a','volume'),createSubfield('b','nc'),createSubfield('2','rdacarrier')]);
 	var default4_directory = createDirectory('338',default4_content,head);
 	head += default4_content.length;
-	//=338 ##$athree-dimensional object$bnb$2rdacarrier
 
 	var notes = fillNotes(record,head,createContentFill,createSubfield);
 	head += getByteLength(notes[1]);

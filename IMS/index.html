@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 	<meta charset="utf-8">
 	<title>AI Integrated Metadata Maker</title>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
 	<script src="webshim/js-webshim/minified/polyfiller.js"></script>
-	<script src="assignFAST/assignFASTExample.js"></script>
+	<!--<script src="assignFAST/assignFASTExample.js"></script>
 	<script src="assignFAST/assignFASTGadget.js"></script>
-	<script src="assignFAST/assignFASTComplete.js"></script>
+	<script src="assignFAST/assignFASTComplete.js"></script>-->
 
 	<link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css" rel="stylesheet">
 	<link href="https://jqueryui.com/jquery-wp-content/themes/jqueryui.com/style.css" rel="stylesheet">
@@ -22,14 +23,14 @@
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B2N7KWSB17"></script>
 	<script>
 		window.dataLayer = window.dataLayer || [];
-		function gtag(){dataLayer.push(arguments);}
+		function gtag() { dataLayer.push(arguments); }
 		gtag('js', new Date());
 
 		gtag('config', 'G-B2N7KWSB17');
 	</script>
 </head>
 
-<body >
+<body>
 	<div id="top_navigation">
 		<div id="insert" class="noselect" onClick="toggleInsertMenu()">
 			Special Characters
@@ -67,13 +68,214 @@
 		</div>
 		<div id="global-insert-menu" class="hidden">
 			<div class="menu_line">
-				<button value='́' id='0301' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0301")'>&#x0301</button><button value='ӕ' id='04D5' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u04D5")'>&#x04D5</button><button value='Ӕ' id='04D4' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u04D4")'>&#x04D4</button><button value='͗' id='0357' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0357")'>&#x0357</button><button value='͑' id='0351' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0351")'>&#x0351</button><button value='̆' id='0306' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0306")'>&#x0306</button><button value='£' id='00A3' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u00A3")'>&#x00A3</button><button value='̐' id='0310' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0310")'>&#x0310</button><button value='̧' id='0327' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0327")'>&#x0327</button><button value='̊' id='030A' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u030A")'>&#x030A</button><button value='̥' id='0325' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0325")'>&#x0325</button><button value='̂' id='0302' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0302")'>&#x0302</button><button value='^' id='005E' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u005E")'>&#x005E</button><button value='©' id='00A9' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u00A9")'>&#x00A9</button><button value='đ' id='0111' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0111")'>&#x0111</button><button value='Đ' id='0110' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0110")'>&#x0110</button><button value='ͦ' id='0366' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0366")'>&#x0366</button><button value='̣' id='0323' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0323")'>&#x0323</button><button value='·' id='00B7' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u00B7")'>&#x00B7</button><button value='˝' id='02DD' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u02DD")'>&#x02DD</button><button value='̤' id='0324' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0324")'>&#x0324</button><button value='︢' id='FE22' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\uFE22")'>&#xFE22</button><button value='︣' id='FE23' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\uFE23")'>&#xFE23</button><button value='̳' id='0333' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0333")'>&#x0333</button><button value='ß' id='00DF' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u00DF")'>&#x00DF</button><button value='ð' id='00F0' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u00F0")'>&#x00F0</button><button value='Ð' id='00D0' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u00D0")'>&#x00D0</button><button value='€' id='20AC' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u20AC")'>&#x20AC</button><button value='∎' id='220E' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u220E")'>&#x220E</button><button value='`' id='0060' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0060")'>&#x0060</button><button value='̀' id='0300' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0300")'>&#x0300</button><button value='̌' id='030C' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u030C")'>&#x030C</button><button value='̓' id='0313' class='global_diacritics top_normal' type='button' onclick='globalCharInsertion("\u0313")'>&#x0313</button><button value='̕' id='0315' class='global_diacritics top_end' type='button' onclick='globalCharInsertion("\u0315")'>&#x0315</button>
+				<button value='́' id='0301' class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0301")'>&#x0301</button><button value='ӕ' id='04D5'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u04D5")'>&#x04D5</button><button value='Ӕ' id='04D4'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u04D4")'>&#x04D4</button><button value='͗' id='0357'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0357")'>&#x0357</button><button value='͑' id='0351'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0351")'>&#x0351</button><button value='̆' id='0306'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0306")'>&#x0306</button><button value='£' id='00A3'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u00A3")'>&#x00A3</button><button value='̐' id='0310'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0310")'>&#x0310</button><button value='̧' id='0327'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0327")'>&#x0327</button><button value='̊' id='030A'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u030A")'>&#x030A</button><button value='̥' id='0325'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0325")'>&#x0325</button><button value='̂' id='0302'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0302")'>&#x0302</button><button value='^' id='005E'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u005E")'>&#x005E</button><button value='©' id='00A9'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u00A9")'>&#x00A9</button><button value='đ' id='0111'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0111")'>&#x0111</button><button value='Đ' id='0110'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0110")'>&#x0110</button><button value='ͦ' id='0366'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0366")'>&#x0366</button><button value='̣' id='0323'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0323")'>&#x0323</button><button value='·' id='00B7'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u00B7")'>&#x00B7</button><button value='˝' id='02DD'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u02DD")'>&#x02DD</button><button value='̤' id='0324'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0324")'>&#x0324</button><button value='︢' id='FE22'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\uFE22")'>&#xFE22</button><button value='︣' id='FE23'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\uFE23")'>&#xFE23</button><button value='̳' id='0333'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0333")'>&#x0333</button><button value='ß' id='00DF'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u00DF")'>&#x00DF</button><button value='ð' id='00F0'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u00F0")'>&#x00F0</button><button value='Ð' id='00D0'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u00D0")'>&#x00D0</button><button value='€' id='20AC'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u20AC")'>&#x20AC</button><button value='∎' id='220E'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u220E")'>&#x220E</button><button value='`' id='0060'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0060")'>&#x0060</button><button value='̀' id='0300'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0300")'>&#x0300</button><button value='̌' id='030C'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u030C")'>&#x030C</button><button value='̓' id='0313'
+					class='global_diacritics top_normal' type='button'
+					onclick='globalCharInsertion("\u0313")'>&#x0313</button><button value='̕' id='0315'
+					class='global_diacritics top_end' type='button'
+					onclick='globalCharInsertion("\u0315")'>&#x0315</button>
 			</div>
 			<div class="menu_line">
-				<button value='̨' id='0328' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u0328")'>&#x0328</button><button value='¡' id='00A1' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u00A1")'>&#x00A1</button><button value='¿' id='00BF' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u00BF")'>&#x00BF</button><button value='ł' id='0142' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u0142")'>&#x0142</button><button value='Ł' id='0141' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u0141")'>&#x0141</button><button value='{' id='007B' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u007B")'>&#x007B</button><button value='̡' id='0321' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u0321")'>&#x0321</button><button value='︠' id='FE20' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\uFE20")'>&#xFE20</button><button value='︡' id='FE21' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\uFE21")'>&#xFE21</button><button value='̄' id='0304' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u0304")'>&#x0304</button><button value='ʹ' id='02B9' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u02B9")'>&#x02B9</button><button value='♭' id='266D' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u266D")'>&#x266D</button><button value='♯' id='266F' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u266F")'>&#x266F</button><button value='ơ' id='01A1' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u01A1")'>&#x01A1</button><button value='Ơ' id='01A0' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u01A0")'>&#x01A0</button><button value='ø' id='00F8' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u00F8")'>&#x00F8</button><button value='Ø' id='00D8' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u00D8")'>&#x00D8</button><button value='œ' id='0153' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u0153")'>&#x0153</button><button value='Œ' id='0152' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u0152")'>&#x0152</button><button value='℗' id='2117' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u2117")'>&#x2117</button><button value='±' id='00B1' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u00B1")'>&#x00B1</button><button value='̉' id='0309' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u0309")'>&#x0309</button><button value='}' id='007D' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u007D")'>&#x007D</button><button value='̢' id='0322' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u0322")'>&#x0322</button><button value='ℓ' id='2113' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u2113")'>&#x2113</button><button value='ǂ' id='01C2' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u01C2")'>&#x01C2</button><button value='₀' id='2080' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u2080")'>&#x2080</button><button value='₁' id='2081' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u2081")'>&#x2081</button><button value='₂' id='2082' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u2082")'>&#x2082</button><button value='₃' id='2083' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u2083")'>&#x2083</button><button value='₄' id='2084' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u2084")'>&#x2084</button><button value='₅' id='2085' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u2085")'>&#x2085</button><button value='₆' id='2086' class='global_diacritics middle_normal' type='button' onclick='globalCharInsertion("\u2086")'>&#x2086</button><button value='₇' id='2087' class='global_diacritics middle_end' type='button' onclick='globalCharInsertion("\u2087")'>&#x2087</button>
+				<button value='̨' id='0328' class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u0328")'>&#x0328</button><button value='¡' id='00A1'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u00A1")'>&#x00A1</button><button value='¿' id='00BF'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u00BF")'>&#x00BF</button><button value='ł' id='0142'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u0142")'>&#x0142</button><button value='Ł' id='0141'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u0141")'>&#x0141</button><button value='{' id='007B'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u007B")'>&#x007B</button><button value='̡' id='0321'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u0321")'>&#x0321</button><button value='︠' id='FE20'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\uFE20")'>&#xFE20</button><button value='︡' id='FE21'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\uFE21")'>&#xFE21</button><button value='̄' id='0304'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u0304")'>&#x0304</button><button value='ʹ' id='02B9'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u02B9")'>&#x02B9</button><button value='♭' id='266D'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u266D")'>&#x266D</button><button value='♯' id='266F'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u266F")'>&#x266F</button><button value='ơ' id='01A1'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u01A1")'>&#x01A1</button><button value='Ơ' id='01A0'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u01A0")'>&#x01A0</button><button value='ø' id='00F8'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u00F8")'>&#x00F8</button><button value='Ø' id='00D8'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u00D8")'>&#x00D8</button><button value='œ' id='0153'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u0153")'>&#x0153</button><button value='Œ' id='0152'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u0152")'>&#x0152</button><button value='℗' id='2117'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u2117")'>&#x2117</button><button value='±' id='00B1'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u00B1")'>&#x00B1</button><button value='̉' id='0309'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u0309")'>&#x0309</button><button value='}' id='007D'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u007D")'>&#x007D</button><button value='̢' id='0322'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u0322")'>&#x0322</button><button value='ℓ' id='2113'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u2113")'>&#x2113</button><button value='ǂ' id='01C2'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u01C2")'>&#x01C2</button><button value='₀' id='2080'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u2080")'>&#x2080</button><button value='₁' id='2081'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u2081")'>&#x2081</button><button value='₂' id='2082'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u2082")'>&#x2082</button><button value='₃' id='2083'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u2083")'>&#x2083</button><button value='₄' id='2084'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u2084")'>&#x2084</button><button value='₅' id='2085'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u2085")'>&#x2085</button><button value='₆' id='2086'
+					class='global_diacritics middle_normal' type='button'
+					onclick='globalCharInsertion("\u2086")'>&#x2086</button><button value='₇' id='2087'
+					class='global_diacritics middle_end' type='button'
+					onclick='globalCharInsertion("\u2087")'>&#x2087</button>
 			</div>
 			<div class="menu_line">
-				<button value='₈' id='2088' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u2088")'>&#x2088</button><button value='₉' id='2089' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u2089")'>&#x2089</button><button value='₍' id='208D' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u208D")'>&#x208D</button><button value='₋' id='208B' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u208B")'>&#x208B</button><button value='®' id='00AE' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u00AE")'>&#x00AE</button><button value='₊' id='208A' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u208A")'>&#x208A</button><button value='₎' id='208E' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u208E")'>&#x208E</button><button value='̇' id='0307' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u0307")'>&#x0307</button><button value='⁰' id='2070' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u2070")'>&#x2070</button><button value='¹' id='00B9' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u00B9")'>&#x00B9</button><button value='²' id='00B2' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u00B2")'>&#x00B2</button><button value='³' id='00B3' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u00B3")'>&#x00B3</button><button value='⁴' id='2074' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u2074")'>&#x2074</button><button value='⁵' id='2075' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u2075")'>&#x2075</button><button value='⁶' id='2076' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u2076")'>&#x2076</button><button value='⁷' id='2077' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u2077")'>&#x2077</button><button value='⁸' id='2078' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u2078")'>&#x2078</button><button value='⁹' id='2079' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u2079")'>&#x2079</button><button value='⁽' id='207D' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u207D")'>&#x207D</button><button value='⁻' id='207B' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u207B")'>&#x207B</button><button value='⁺' id='207A' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u207A")'>&#x207A</button><button value='⁾' id='207E' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u207E")'>&#x207E</button><button value='þ' id='00FE' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u00FE")'>&#x00FE</button><button value='Þ' id='00DE' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u00DE")'>&#x00DE</button><button value='̃' id='0303' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u0303")'>&#x0303</button><button value='~' id='007E' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u007E")'>&#x007E</button><button value='ı' id='0131' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u0131")'>&#x0131</button><button value='ʺ' id='02BA' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u02BA")'>&#x02BA</button><button value='ư' id='01B0' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u01B0")'>&#x01B0</button><button value='Ư' id='01AF' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u01AF")'>&#x01AF</button><button value='̈' id='0308' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u0308")'>&#x0308</button><button value='̲' id='0332' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u0332")'>&#x0332</button><button value='_' id='005F' class='global_diacritics bottom_normal' type='button' onclick='globalCharInsertion("\u005F")'>&#x005F</button><button value='̮' id='032E' class='global_diacritics botton_end' type='button' onclick='globalCharInsertion("\u032E")'>&#x032E</button>
+				<button value='₈' id='2088' class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u2088")'>&#x2088</button><button value='₉' id='2089'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u2089")'>&#x2089</button><button value='₍' id='208D'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u208D")'>&#x208D</button><button value='₋' id='208B'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u208B")'>&#x208B</button><button value='®' id='00AE'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u00AE")'>&#x00AE</button><button value='₊' id='208A'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u208A")'>&#x208A</button><button value='₎' id='208E'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u208E")'>&#x208E</button><button value='̇' id='0307'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u0307")'>&#x0307</button><button value='⁰' id='2070'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u2070")'>&#x2070</button><button value='¹' id='00B9'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u00B9")'>&#x00B9</button><button value='²' id='00B2'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u00B2")'>&#x00B2</button><button value='³' id='00B3'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u00B3")'>&#x00B3</button><button value='⁴' id='2074'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u2074")'>&#x2074</button><button value='⁵' id='2075'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u2075")'>&#x2075</button><button value='⁶' id='2076'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u2076")'>&#x2076</button><button value='⁷' id='2077'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u2077")'>&#x2077</button><button value='⁸' id='2078'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u2078")'>&#x2078</button><button value='⁹' id='2079'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u2079")'>&#x2079</button><button value='⁽' id='207D'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u207D")'>&#x207D</button><button value='⁻' id='207B'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u207B")'>&#x207B</button><button value='⁺' id='207A'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u207A")'>&#x207A</button><button value='⁾' id='207E'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u207E")'>&#x207E</button><button value='þ' id='00FE'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u00FE")'>&#x00FE</button><button value='Þ' id='00DE'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u00DE")'>&#x00DE</button><button value='̃' id='0303'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u0303")'>&#x0303</button><button value='~' id='007E'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u007E")'>&#x007E</button><button value='ı' id='0131'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u0131")'>&#x0131</button><button value='ʺ' id='02BA'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u02BA")'>&#x02BA</button><button value='ư' id='01B0'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u01B0")'>&#x01B0</button><button value='Ư' id='01AF'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u01AF")'>&#x01AF</button><button value='̈' id='0308'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u0308")'>&#x0308</button><button value='̲' id='0332'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u0332")'>&#x0332</button><button value='_' id='005F'
+					class='global_diacritics bottom_normal' type='button'
+					onclick='globalCharInsertion("\u005F")'>&#x005F</button><button value='̮' id='032E'
+					class='global_diacritics botton_end' type='button'
+					onclick='globalCharInsertion("\u032E")'>&#x032E</button>
 			</div>
 		</div>
 	</div>
@@ -87,11 +289,13 @@
 		<label for="lcno">Organization's LC Authority Number</label><br>
 		<input type="text" id="lcno" placeholder="qadovcu"></input><br>
 		<label for="org_name" placeholder="qadovcu">Organization's Name</label><br>
-		<input type="text" id="org_name" placeholder="Virginia Commonwealth University School of the Arts in Qatar"></input><br>
+		<input type="text" id="org_name"
+			placeholder="Virginia Commonwealth University School of the Arts in Qatar"></input><br>
 		<input type="submit" id="submit_institution_info" value="Change Institution"></input>
 	</form>
 	<div id="warning_system">
-		<noscript>WARNING: JavaScript is not enabled on this browser. This page requires JavaScript to function correctly.</noscript>
+		<noscript>WARNING: JavaScript is not enabled on this browser. This page requires JavaScript to function
+			correctly.</noscript>
 		<!--Allow Safari and older versions of IE to behave as if they implement HTML5's 'required' attribute-->
 		<script>jQuery.webshims.polyfill('forms');</script>
 	</div>
@@ -99,14 +303,17 @@
 		<form id="marc-maker">
 			<div id="title-block">
 				<label for="title" class="heading">Name of Item<span class="required_marker">*</span></label>
-				<label for="title" class="insert insert_normal" onClick='insertMenu("title");'>Insert Diacritics</label><br>
+				<label for="title" class="insert insert_normal" onClick='insertMenu("title");'>Insert
+					Diacritics</label><br>
 				<div id="insert-title"></div>
 				<input type="text" required id="title" class="required translit-listen">
-				<label title="Record the name of the item as it appears on the title page or label."><span class="question-mark">?</span></label>
+				<label title="Record the name of the item as it appears on the title page or label."><span
+						class="question-mark">?</span></label>
 			</div>
 
 			<div id="subtitle-block">
-				<label for="subtitle" class="heading">Subtitle</label><label for="subtitle" class="insert insert_normal" onClick='insertMenu("subtitle");'>Insert Diacritics</label><br>
+				<label for="subtitle" class="heading">Subtitle</label><label for="subtitle" class="insert insert_normal"
+					onClick='insertMenu("subtitle");'>Insert Diacritics</label><br>
 				<div id="insert-subtitle"></div>
 				<input type="text" required id="subtitle" class="conditional">
 				<label title="Record the subtitle if one exists"><span class="question-mark">?</span></label><br>
@@ -114,13 +321,20 @@
 			</div>
 
 			<div id="translit-title-block" class="translit-title-block translit-block standard-translit-block hidden">
-				<label for="translit_title" class="hidden translit heading translit-title">Transliterated title</label><br><label for="translit_title" class="insert insert_normal hidden translit translit-title" onClick='insertMenu("translit_title");'>Insert Diacritics</label><br>
+				<label for="translit_title" class="hidden translit heading translit-title">Transliterated
+					title</label><br><label for="translit_title"
+					class="insert insert_normal hidden translit translit-title"
+					onClick='insertMenu("translit_title");'>Insert Diacritics</label><br>
 				<div id="insert-translit_title" class="hidden translit translit-title"></div>
 				<input type="text" id="translit_title" class="hidden translit translit-title">
 			</div>
 
-			<div id="translit-subtitle-block" class="translit-title-block translit-block standard-translit-block translit-title hidden">
-				<label for="translit_subtitle" class="hidden translit heading translit-title">Transliterated subtitle</label><label for="translit_subtitle" class="insert insert_normal hidden translit translit-title" onClick='insertMenu("translit_subtitle");'>Insert Diacritics</label><br>
+			<div id="translit-subtitle-block"
+				class="translit-title-block translit-block standard-translit-block translit-title hidden">
+				<label for="translit_subtitle" class="hidden translit heading translit-title">Transliterated
+					subtitle</label><label for="translit_subtitle"
+					class="insert insert_normal hidden translit translit-title"
+					onClick='insertMenu("translit_subtitle");'>Insert Diacritics</label><br>
 				<div id="insert-translit_subtitle" class="hidden translit translit-title"></div>
 				<input type="text" id="translit_subtitle" class="hidden translit translit-title">
 			</div>
@@ -128,7 +342,8 @@
 			<div id="serial-block">
 				<label for="serial" class="heading">Serial No</label><br>
 				<input type="text" id="serial" class="conditional">
-				<label title="Record the serial number as it appears on the item (024$$a)."><span class="question-mark">?</span></label><br>
+				<label title="Record the serial number as it appears on the item (024$$a)."><span
+						class="question-mark">?</span></label><br>
 				<span class="unlisted">Unlisted</span><input type="checkbox" id="serial_listed" class="listed">
 			</div>
 
@@ -136,10 +351,12 @@
 
 			<div id="manufacturer-block">
 				<label for="manufacturer" class="heading">Name of Manufacturer</label>
-				<label for="manufacturer" class="insert insert_normal" onClick='insertMenu("title");'>Insert Diacritics</label><br>
+				<label for="manufacturer" class="insert insert_normal" onClick='insertMenu("title");'>Insert
+					Diacritics</label><br>
 				<div id="insert-manufacturer"></div>
 				<input type="text" id="manufacturer" class="conditional">
-				<label title="Record the name of the manufacturer or publisher as it appears on the item."><span class="question-mark">?</span></label><br>
+				<label title="Record the name of the manufacturer or publisher as it appears on the item."><span
+						class="question-mark">?</span></label><br>
 				<span class="unlisted">Unlisted</span><input type="checkbox" id="manufacturer_listed" class="listed">
 			</div>
 
@@ -480,24 +697,28 @@
 					<option value="za">Zambia</option>
 					<option value="rh">Zimbabwe</option>
 				</select>
-				<label title="Select the country of publication from the drop-down menu. If published in the United States, Canada, Australia, or the United Kingdom, select the state, province, or geographic region"><span class="question-mark">?</span></label><br>
+				<label
+					title="Select the country of publication from the drop-down menu. If published in the United States, Canada, Australia, or the United Kingdom, select the state, province, or geographic region"><span
+						class="question-mark">?</span></label><br>
 				<span class="unlisted">Unlisted</span><input type="checkbox" id="country_listed" class="listed">
 			</div>
 
-			<div id="pages-block" class="standard-block">
+			<!--<div id="pages-block" class="standard-block">
 				<label for="number" class="heading">Number of</label>
 				<select name="vorp" id="vorp">
 					<option selected value="pieces">pieces</option>
 				</select><br>
-				<input type="text" required id="pages" class="conditional">
+				<input type="text" id="pages" class="conditional">
 				<label title="Record the number of pieces or components (300$$a)."><span class="question-mark">?</span></label><br>
 				<span class="unlisted">Unlisted</span><input type="checkbox" id="pages_listed" class="listed">
-			</div>
+			</div>-->
 
 			<div id="dimensions-block" class="standard-block">
 				<label for="dimensions" class="heading">Size<span class="required_marker">*</span></label><br>
 				<input type="text" required id="dimensions" class="required"> cm
-				<label title="Record the height of the piece in cm. Always round up, so that if a piece measures 25.1 cm, record 26 cm"><span class="question-mark">?</span></label>
+				<label
+					title="Record the height of the piece in cm. Always round up, so that if a piece measures 25.1 cm, record 26 cm"><span
+						class="question-mark">?</span></label>
 			</div>
 
 			<!--<div class="standard-block">
@@ -519,13 +740,27 @@
 				</div>
 			</div>-->
 
+			<!--<div id="keywords1" class="standard-block">
+				<label for="keywords" class="heading">Keywords<span class="required_marker">*</span></label><br>
+				<input type="text" class="fastID hidden" id="fastID0">
+				<input type="number" class="fastType hidden" id="fastType0">
+				<input type="text" class="fastInd hidden" id="fastInd0">
+				<input type="text" class="keyword required" required id="keyword0"> <label
+					title="Record, in English, any descriptive terms that describe the content of this book. Record only one term or phrase in each box. E.g., Astronomy or Politics of Egypt"><span
+						class="question-mark">?</span></label>
+				<input type="button" value="+" id="add-button" onClick="addKeyword();">
+			</div>-->
+
 			<div id="keywords" class="standard-block">
 				<label for="keywords" class="heading">Keywords<span class="required_marker">*</span></label><br>
 				<input type="text" class="fastID hidden" id="fastID0">
 				<input type="number" class="fastType hidden" id="fastType0">
 				<input type="text" class="fastInd hidden" id="fastInd0">
-				<input type="text" class="keyword required" required id="keyword0"> <label title="Record, in English, any descriptive terms that describe the content of this book. Record only one term or phrase in each box. E.g., Astronomy or Politics of Egypt"><span class="question-mark">?</span></label>
-				<input type="button" value="+" id="add-button" onClick="addKeyword();">
+				<input type="text" class="keyword required ui-autocomplete-input" required id="keyword0"
+					autocomplete="off">
+				<label title="Record descriptive terms for this equipment. Start typing to see suggestions."><span
+						class="question-mark">?</span></label>
+				<input type="button" value="+" id="add-button" onclick="addKeyword();">
 			</div>
 
 			<div id="notes-block">
@@ -536,14 +771,16 @@
 			<div id="product-manual-block">
 				<label for="product_manual" class="heading">Access to Product Manual or Product Site</label><br>
 				<input type="url" id="product_manual" class="conditional" placeholder="https://example.com/manual.pdf">
-				<label title="URL link to product manual, specification sheet, or official product page (856$$a)."><span class="question-mark">?</span></label><br>
+				<label title="URL link to product manual, specification sheet, or official product page (856$$a)."><span
+						class="question-mark">?</span></label><br>
 				<span class="unlisted">Unlisted</span><input type="checkbox" id="product_manual_listed" class="listed">
 			</div>
 
 			<div id="image-upload-block" class="standard-block">
 				<label for="image-upload" class="heading">Select images/videos</label><br>
-				<input type="file" id="image-upload" accept="image/*,video/*" multiple>	
-				<button type="button" id="process-image-button" style="margin: 20px 0;" onclick="processImages()">Upload Image(s) / Video(s)</button>
+				<input type="file" id="image-upload" accept="image/*,video/*" multiple>
+				<button type="button" id="process-image-button" style="margin: 20px 0;" onclick="processImages()">Upload
+					Image(s) / Video(s)</button>
 				<div id="image-preview"></div>
 				<div id="upload-progress"></div>
 				<input type="hidden" id="image-data">
@@ -563,88 +800,192 @@
 			<div id="buttons" class="standard-block">
 				<input type="submit" value="Make" id="make">
 				<button onClick="history.go(0); resetform">Clear</button>
-	<!-- 			<input type="reset" value="Clear" id="Clear"> -->
+				<!-- 			<input type="reset" value="Clear" id="Clear"> -->
 			</div>
 
 			<div id="star" class="required_marker standard-block">
 				* Required field
 			</div>
 		</form>
-		<div id="disclaimer">The Metadata Maker Project was funded by the University of Illinois at Urbana-Champaign Library's Innovation and Seed Funds.</div>
+		<div id="disclaimer">The Metadata Maker Project was funded by the University of Illinois at Urbana-Champaign
+			Library's Innovation and Seed Funds.</div>
 		<div id="disclaimer2">AI Integration was supported by a grant from VCUarts Qatar.</div>
 		<div id="version">Version 1.1 – Updated on 11/10/2022</div>
-		<a id="code" href="https://github.com/UIUCLibrary/metadata-maker">GitHub</a></div>
+		<a id="code" href="https://github.com/UIUCLibrary/metadata-maker">GitHub</a>
+	</div>
 
-		<!-- Modal for AI Template instructions -->
-		<div class="instructions-modal-backdrop"></div>
-		<div class="instructions-modal">
-			<h3>Instructions to use AI enriched template for metadata creation</h3>
-			<div class="note">
-				<strong>Note:</strong> Instructions to use AI enriched template for metadata creation
-			</div>
-			<ul>
-				<li>Enter ISBN, (only one) 13 digits or 10 digits if available, and click on AI Generate button to retrieve information on the resource. <em>(note for i-icon)</em></li>
-				<li>If ISBN is not available, enter the Title and subtitle as seen on the title page in the field for 'Title' and enter the Author's first name and last name into the right fields. Click on AI Generate button. <em>(note for i-icon)</em></li>
-				<li>Verify the AI generated fields against the details of the physical item. Any blank fields can be completed manually. Check all boxes for the fields that will remain empty.</li>
-				<li>Use 'Search for book with an image' option to search by image of the item to be catalogued.</li>
-				<li>Keywords can be entered using the search terms from the predictive dropdown menu, which uses LOC FAST subject headings.</li>
-				<li>Use 'Select Images' field to add images to the record and upload images. A destination for image storage to be set if you wish the images to be stored on local network or a specific cloud storage. Refer to the Github files to learn more.</li>
-				<li>Save the record to your local computer or to a specific destination by checking the box for right desired format and click on 'Create' button.</li>
-				<li>Refer to the GitHub link below to download and make changes to the template as required.</li>
-			</ul>
-
-			<button class="instructions-close-btn">Close</button>
+	<!-- Modal for AI Template instructions -->
+	<div class="instructions-modal-backdrop"></div>
+	<div class="instructions-modal">
+		<h3>Instructions to use AI enriched template for metadata creation</h3>
+		<div class="note">
+			<strong>Note:</strong> Instructions to use AI enriched template for metadata creation
 		</div>
+		<ul>
+			<li>Enter ISBN, (only one) 13 digits or 10 digits if available, and click on AI Generate button to retrieve
+				information on the resource. <em>(note for i-icon)</em></li>
+			<li>If ISBN is not available, enter the Title and subtitle as seen on the title page in the field for
+				'Title' and enter the Author's first name and last name into the right fields. Click on AI Generate
+				button. <em>(note for i-icon)</em></li>
+			<li>Verify the AI generated fields against the details of the physical item. Any blank fields can be
+				completed manually. Check all boxes for the fields that will remain empty.</li>
+			<li>Use 'Search for book with an image' option to search by image of the item to be catalogued.</li>
+			<li>Keywords can be entered using the search terms from the predictive dropdown menu, which uses LOC FAST
+				subject headings.</li>
+			<li>Use 'Select Images' field to add images to the record and upload images. A destination for image storage
+				to be set if you wish the images to be stored on local network or a specific cloud storage. Refer to the
+				Github files to learn more.</li>
+			<li>Save the record to your local computer or to a specific destination by checking the box for right
+				desired format and click on 'Create' button.</li>
+			<li>Refer to the GitHub link below to download and make changes to the template as required.</li>
+		</ul>
 
-		<script>
-			function openInstructionsModal() {
-				document.querySelector('.instructions-modal-backdrop').style.display = 'block';
-				document.querySelector('.instructions-modal').style.display = 'block';
+		<button class="instructions-close-btn">Close</button>
+	</div>
+
+	<script>
+		function openInstructionsModal() {
+			document.querySelector('.instructions-modal-backdrop').style.display = 'block';
+			document.querySelector('.instructions-modal').style.display = 'block';
+		}
+
+		function closeInstructionsModal() {
+			document.querySelector('.instructions-modal-backdrop').style.display = 'none';
+			document.querySelector('.instructions-modal').style.display = 'none';
+		}
+
+		// Close modal when clicking backdrop or close button
+		document.querySelector('.instructions-modal-backdrop').addEventListener('click', closeInstructionsModal);
+		document.querySelector('.instructions-close-btn').addEventListener('click', closeInstructionsModal);
+
+		// Close with Escape key
+		document.addEventListener('keydown', function (e) {
+			if (e.key === 'Escape') {
+				closeInstructionsModal();
 			}
+		});
+	</script>
+	<script src="metadatamaker/generalInteractions.js"></script>
+	<script src="metadatamaker/topBar.js"></script>
+	<script src="metadatamaker/downloadMARC.js"></script>
+	<script src="metadatamaker/downloadMODS.js"></script>
+	<script src="metadatamaker/downloadBIBFRAME.js"></script>
+	<script src="metadatamaker/downloadHTML.js"></script>
+	<script src="metadatamaker/submitForm.js"></script>
+	<script src="images/imageUpload.js"></script>
+	<script>
+		// Global variables
+		var keywordsList = [];
+		var keywordCounter = 1;
 
-			function closeInstructionsModal() {
-				document.querySelector('.instructions-modal-backdrop').style.display = 'none';
-				document.querySelector('.instructions-modal').style.display = 'none';
-			}
+		// Global functions
+		function addKeyword() {
+			var keywordDiv = document.getElementById('keywords');
+			var newKeywordContainer = document.createElement('div');
+			newKeywordContainer.className = 'added added-keyword';
+			newKeywordContainer.innerHTML = `
+            <br>
+            <input type="text" class="fastID hidden" id="fastID${keywordCounter}">
+            <input type="number" class="fastType hidden" id="fastType${keywordCounter}">
+            <input type="text" class="fastInd hidden" id="fastInd${keywordCounter}">
+            <input type="text" class="keyword ui-autocomplete-input" id="keyword${keywordCounter}" autocomplete="off">
+            <button type="button" onclick="removeKeyword(this)" style="margin-left: 5px;">-</button>
+        `;
 
-			// Close modal when clicking backdrop or close button
-			document.querySelector('.instructions-modal-backdrop').addEventListener('click', closeInstructionsModal);
-			document.querySelector('.instructions-close-btn').addEventListener('click', closeInstructionsModal);
+			keywordDiv.appendChild(newKeywordContainer);
 
-			// Close with Escape key
-			document.addEventListener('keydown', function(e) {
-				if (e.key === 'Escape') {
-					closeInstructionsModal();
+			// Initialize autocomplete for the new keyword field
+			$(`#keyword${keywordCounter}`).autocomplete({
+				source: keywordsList,
+				minLength: 1,
+				select: function (event, ui) {
+					console.log('Selected keyword:', ui.item.value);
 				}
 			});
-		</script>
-		<script src="metadatamaker/generalInteractions.js"></script>
-		<script src="metadatamaker/topBar.js"></script>
-		<script src="metadatamaker/downloadMARC.js"></script>
-		<script src="metadatamaker/downloadMODS.js"></script>
-		<script src="metadatamaker/downloadBIBFRAME.js"></script>
-		<script src="metadatamaker/downloadHTML.js"></script>
-		<script src="metadatamaker/submitForm.js"></script>
-		<script src="images/imageUpload.js"></script>
-		<script>
-			document.addEventListener("DOMContentLoaded", function () {
-				// Find the button and attach the event listener
-				const ocrButton = document.getElementById("ocrSearch");
-				if (ocrButton) {
-					ocrButton.addEventListener("click", function () {
-						if (typeof ocrSearch === "function") {
-							ocrSearch();
-						} else {
-							console.error("ocrSearch function not available");
-						}
-					});
+
+			keywordCounter++;
+
+			if (typeof counter !== 'undefined') {
+				counter = keywordCounter;
+			}
+		}
+
+		function removeKeyword(button) {
+			button.parentElement.remove();
+		}
+
+		function initializeKeywordAutocomplete() {
+			if ($("#keyword0").length > 0) {
+				$("#keyword0").autocomplete({
+					source: keywordsList,
+					minLength: 1,
+					select: function (event, ui) {
+						console.log('Selected keyword:', ui.item.value);
+					}
+				});
+			}
+		}
+
+		// Function to fetch keywords via your worker
+		async function loadKeywordsFromSheet() {
+			try {
+				console.log('Loading keywords from Google Sheets via worker...');
+
+				const response = await fetch('https://metadata-maker.adb-aditya.workers.dev/sheets', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						sheetId: '156tqAQg58zzPEh3uSA-tUPTpKRtqEiXnKzJVd5_9sxs',
+						sheetName: 'IMS Keywords'
+					})
+				});
+
+				const data = await response.json();
+				console.log('Worker response:', data);
+
+				if (data.success && data.keywords) {
+					keywordsList = data.keywords;
+					console.log('Keywords loaded:', keywordsList.length, 'keywords');
+					console.log('Sample keywords:', keywordsList.slice(0, 5));
+				} else {
+					throw new Error('Invalid response from worker');
 				}
-			});
-		</script>
-		<script>
-			// Add this CSS to your stylesheet
-			const style = document.createElement("style");
-			style.textContent = `
+
+				// Initialize autocomplete after loading keywords
+				initializeKeywordAutocomplete();
+
+			} catch (error) {
+				console.error('Error loading keywords from Google Sheets:', error);
+				// Fallback to default keywords if worker fails
+				keywordsList = ['Computers', 'Electronics', 'Equipment', 'Smartphones', 'Laptops', 'Digital Cameras', 'Tablets', 'Monitors'];
+				console.log('Using fallback keywords:', keywordsList);
+				initializeKeywordAutocomplete();
+			}
+		}
+
+		document.addEventListener("DOMContentLoaded", function () {
+			// Handle OCR button if it exists
+			const ocrButton = document.getElementById("ocrSearch");
+			if (ocrButton) {
+				ocrButton.addEventListener("click", function () {
+					if (typeof ocrSearch === "function") {
+						ocrSearch();
+					} else {
+						console.error("ocrSearch function not available");
+					}
+				});
+			}
+
+			// Load keywords when DOM is ready
+			loadKeywordsFromSheet();
+		});
+	</script>
+	<script>
+		// Add this CSS to your stylesheet
+		const style = document.createElement("style");
+		style.textContent = `
 		.custom-alert-common {
         display: none;
         position: fixed;
@@ -688,10 +1029,10 @@
         to { opacity: 1; }
     }
 `;
-			document.head.appendChild(style);
+		document.head.appendChild(style);
 
-			// Add this HTML to your document body
-			const alertsHTML = `
+		// Add this HTML to your document body
+		const alertsHTML = `
     <div class="custom-alert-backdrop-common isbn-unlisted-backdrop"></div>
     <div class="custom-alert-common isbn-unlisted-alert">
         <p>If book doesn't have an ISBN, use the Title Field to pass the Author name along with book title for better results or you can use the Author Name field as well.</p>
@@ -703,9 +1044,9 @@
         <button class="close-btn">OK</button>
     </div>
 `;
-document.body.insertAdjacentHTML("beforeend", alertsHTML);
+		document.body.insertAdjacentHTML("beforeend", alertsHTML);
 
-</script>
+	</script>
 	</div>
 </body>
 

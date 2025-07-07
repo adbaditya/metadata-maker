@@ -361,7 +361,7 @@ $("#marc-maker").submit(function(event) {
        console.log("=== KEYWORD DEBUGGING ===");
 
 		// Count actual keyword fields
-		var counter = 0;
+		var counter = keywordCounter || 1;
 		while (document.getElementById("keyword" + counter) !== null) {
 			counter++;
 		}
@@ -420,6 +420,9 @@ $("#marc-maker").submit(function(event) {
         console.log("LCSHresponse exists:", document.getElementById('LCSHresponse') !== null);
         console.log("hiddenlc exists:", document.getElementById("hiddenlc") !== null);
         console.log("hiddenviaf exists:", document.getElementById("hiddenviaf") !== null);
+
+		console.log("Country value:", $("#country").val());
+console.log("Country text:", $("#country option:selected").text());
         
         // If any of these elements don't exist, skip the author processing
         if (document.getElementById("hiddenlc") === null || 
@@ -453,6 +456,7 @@ $("#marc-maker").submit(function(event) {
 				}
 			], 
             manufacturer: $("#manufacturer").val(),
+			manufacturer_country: $("#country").val(),
             serial: $("#serial").val(),
             volume_or_page: $("#vorp").val(),
             pages: $("#pages").val(),
