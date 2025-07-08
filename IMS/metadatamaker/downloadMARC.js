@@ -51,7 +51,7 @@ function getByteLength(text) {
 /*
  * Generates the MARC format's 008 controlfield for books
  */
-function create008Field(record) {
+/*function create008Field(record) {
 	var controlfield008 = '';
 
 	var timestamp = getTimestamp();
@@ -98,9 +98,52 @@ function create008Field(record) {
 		controlfield008 += '0';
 	}
 
-	controlfield008 += ' ' + record.language + ' d';
+	controlfield008 += 'zxx d';
 
 	return controlfield008;
+}*/
+
+
+function create008Field(record) {
+    var controlfield008 = '';
+
+    // Positions 00-05: Date entered (YYMMDD)
+    var timestamp = getTimestamp();
+    timestamp = timestamp.substring(2,8);
+    controlfield008 += timestamp;
+
+    // Position 06: Dates unknown
+    controlfield008 += 'n';
+
+    // Positions 07-10: Date 1 unknown
+    controlfield008 += 'uuuu';
+
+    // Positions 11-14: Date 2 unknown
+    controlfield008 += 'uuuu';
+
+    // Positions 15-17: Place unknown
+    if (checkExists(record.manufacturer_country)) {
+        controlfield008 += record.manufacturer_country;
+        if (record.manufacturer_country.length === 2) {
+            controlfield008 += ' ';
+        }
+    } else {
+        controlfield008 += 'xx\\';  // Note the backslash for position 17
+    }
+
+    // Positions 18-34: Undefined for mixed materials (17 backslashes)
+    controlfield008 += '\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\';  // 17 backslashes
+
+    // Positions 35-37: Language - no linguistic content
+    controlfield008 += 'zxx';
+
+    // Position 38: Modified record - not specified
+    controlfield008 += '\\';
+
+    // Position 39: Cataloging agency - Other
+    controlfield008 += 'd';
+
+    return controlfield008;
 }
 
 /*
