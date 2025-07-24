@@ -335,9 +335,9 @@ async function preFetchFromAI() {
                     Please analyze ALL this information from OpenLibrary along with fresh searches from Amazon, bookstores, and other sources to provide the most accurate and complete book metadata. Use OpenLibrary data as reference but prioritize more complete information from current retail sources for fields. 
                     
                     Find comprehensive book metadata for the book titled: "${title}". 
-                    Primary search sources (in order of priority):
-                    1. Amazon.com - Look for complete product details including dimensions of the book
-                    2. Amazon.ae / Amazon.in - Regional listings
+                    Primary search sources/citations (in order of priority):
+                    1. Amazon.com - Look for complete product details including dimensions of the book - PRIORITY for product dimensions and specifications
+                    2. Amazon.ae / Amazon.in - Regional listings - PRIORITY for product dimensions and specifications
                     3. Ubuy.ae
                     4. Barnes & Noble (barnesandnoble.com)
                     5. Book Depository (bookdepository.com)
@@ -345,10 +345,20 @@ async function preFetchFromAI() {
                     7. Noon.com books section
 
                     Secondary sources if needed:
-                    - Publisher's official website
+                    - Publisher's official website - PRIORITY for product dimensions and specifications
                     - WorldCat.org
                     - Goodreads.com
                     - Google Books
+
+                    PAGE COUNT REQUIREMENT: Only use page numbers explicitly stated in:
+                    - Amazon product details ("Print length: X pages")
+                    - Publisher specifications
+                    - Official bookstore listings
+                    - Library catalog records (WorldCat, etc.)
+                    - Google Books "About this book" section
+
+                    DO NOT estimate pages based on book thickness, genre, or other books by the same author. If no exact page count is found in verified sources, return null.
+
                     For each field, explicitly state if you found the information or not.
                     Return the data in this exact JSON format: {
                     "title": "Full book title",
@@ -366,8 +376,8 @@ async function preFetchFromAI() {
                     "publicationCountry": "Full country name",
                     "publicationDate": "YYYY format",
                     "copyrightDate": "YYYY format or null",
-                    "numberOfPages": Number of pages or null,
-                    "dimensions": "Dimensions of book should in cm (Always use the dimensions in this format 22.86 x 15.24 x 3.00) If it's in any other format than cm then convert it to cm. If no dimensions are found return an empty value, always rely on the source which mentions dimensions.",
+                    "numberOfPages": "Exact page count as a number (e.g., 256) found in product listings, publisher data, or book specifications. Look specifically for 'Pages:', 'Page Count:', 'Length:', or 'Print Length:' in source materials. If page count not explicitly stated in any verified source, return null. DO NOT estimate or calculate page count - only use exact numbers from official sources.",
+                    "dimensions": "Book dimensions in centimeters using format: Length x Width x Height (e.g., 22.86 x 15.24 x 3.00). Convert from inches/other units to cm if needed (1 inch = 2.54 cm). Search specifically for 'Product Dimensions', 'Book Dimensions', or 'Size' in product listings. If no dimensions found in any source, return empty string. CRITICAL: Only use dimensions from verified product pages or publisher specifications - do not estimate or guess.",
                     "synopsisOfBook": Synopsis of the book
                     }
                             IMPORTANT: If the title or subtitle contains non-English characters (Arabic, Chinese, Russian, etc.), provide both the original AND a transliterated version using Latin characters. For example:
@@ -439,12 +449,11 @@ async function preFetchFromAI() {
                                 - ISBN: ${isbn}
                                 - Title: ${isbnData.title || 'Unknown'}
                                 - Author: ${isbnData.author || 'Unknown'}
-                                - Publisher: ${isbnData.publisher || 'Unknown'}
                                 
                                 Search major bookstores for this exact title and author combination.
                     
                     Primary search sources (in order of priority):
-                    1. Amazon.com / Amazon.ae / Amazon.in
+                    1. Amazon.com / Amazon.ae / Amazon.in - PRIORITY for product dimensions and specifications
                     2. Google Books
                     3. WorldCat.org
                     4. Barnes & Noble (barnesandnoble.com)
@@ -453,6 +462,15 @@ async function preFetchFromAI() {
                     7. Jamalon.com
                     8. Noon.com books section
                     9. ThriftBooks
+
+                    PAGE COUNT REQUIREMENT: Only use page numbers explicitly stated in:
+                    - Amazon product details ("Print length: X pages")
+                    - Publisher specifications
+                    - Official bookstore listings
+                    - Library catalog records (WorldCat, etc.)
+                    - Google Books "About this book" section
+
+                    DO NOT estimate pages based on book thickness, genre, or other books by the same author. If no exact page count is found in verified sources, return null.
                     
                     Return data in this exact JSON format:
                     {
@@ -469,8 +487,8 @@ async function preFetchFromAI() {
                         "publicationCountry": "Full country name",
                         "publicationDate": "YYYY format",
                         "copyrightDate": "YYYY format or null",
-                        "numberOfPages": "Number of pages",
-                        "dimensions": "Look for dimensions of the book in the page. If Dimensions of book in cm (Always the dimensions in this format 22.86 x 15.24 x 3.00) If it's in any other format than cm then convert it to cm. If no dimensions are found return an empty value",
+                        "numberOfPages": "Exact page count as a number (e.g., 256) found in product listings, publisher data, or book specifications. Look specifically for 'Pages:', 'Page Count:', 'Length:', or 'Print Length:' in source materials. If page count not explicitly stated in any verified source, return null. DO NOT estimate or calculate page count - only use exact numbers from official sources.",
+                        "dimensions": "Book dimensions in centimeters using format: Length x Width x Height (e.g., 22.86 x 15.24 x 3.00). Convert from inches/other units to cm if needed (1 inch = 2.54 cm). Search specifically for 'Product Dimensions', 'Book Dimensions', or 'Size' in product listings. If no dimensions found in any source, return empty string. CRITICAL: Only use dimensions from verified product pages or publisher specifications - do not estimate or guess.",
                         "synopsisOfBook": "Book description"
                     }
                 
@@ -531,7 +549,7 @@ async function preFetchFromAI() {
                     Search major bookstores for this exact title and author combination.
                     
                     Primary search sources (in order of priority):
-                    1. Amazon.com / Amazon.ae / Amazon.in
+                    1. Amazon.com / Amazon.ae / Amazon.in - PRIORITY for product dimensions and specifications
                     2. Google Books
                     3. WorldCat.org
                     4. Barnes & Noble (barnesandnoble.com)
@@ -540,6 +558,15 @@ async function preFetchFromAI() {
                     7. Jamalon.com
                     8. Noon.com books section
                     
+                    PAGE COUNT REQUIREMENT: Only use page numbers explicitly stated in:
+                    - Amazon product details ("Print length: X pages")
+                    - Publisher specifications
+                    - Official bookstore listings
+                    - Library catalog records (WorldCat, etc.)
+                    - Google Books "About this book" section
+
+                    DO NOT estimate pages based on book thickness, genre, or other books by the same author. If no exact page count is found in verified sources, return null.
+
                     Return data in this exact JSON format:
                     {
                         "title": "Full book title",
@@ -555,8 +582,8 @@ async function preFetchFromAI() {
                         "publicationCountry": "Full country name",
                         "publicationDate": "YYYY format",
                         "copyrightDate": "YYYY format or null",
-                        "numberOfPages": "Number of pages",
-                        "dimensions": "Dimensions in cm (format: 22.86 x 15.24 x 3.00)",
+                        "numberOfPages": "Exact page count as a number (e.g., 256) found in product listings, publisher data, or book specifications. Look specifically for 'Pages:', 'Page Count:', 'Length:', or 'Print Length:' in source materials. If page count not explicitly stated in any verified source, return null. DO NOT estimate or calculate page count - only use exact numbers from official sources.",
+                        "dimensions": "Book dimensions in centimeters using format: Length x Width x Height (e.g., 22.86 x 15.24 x 3.00). Convert from inches/other units to cm if needed (1 inch = 2.54 cm). Search specifically for 'Product Dimensions', 'Book Dimensions', or 'Size' in product listings. If no dimensions found in any source, return empty string. CRITICAL: Only use dimensions from verified product pages or publisher specifications - do not estimate or guess.",
                         "synopsisOfBook": "Book description"
                     }
                     
@@ -690,8 +717,12 @@ async function fetchFromPerplexity(title) {
             },
             body: JSON.stringify({
                 query: `Find comprehensive book metadata for the book with these details: "${title}". 
-                    Primary search sources (in order of priority):
-1. Amazon.com / Amazon.ae / Amazon.in
+Map data such as print length and dimensions from ALL cited source pages, not just publisher sites.
+Search all sources for listings with the ISBN provided, regardless of edition or regional variation, to ensure all editions are considered for metadata.
+Always check the 'Product Details' or 'Product Information' boxes on bookstore and Amazon product pages for specifications, including page count and product dimensions.
+After searching all listed primary and secondary sources for the provided ISBN and title, map each required metadata field (page count, dimensions, etc.) from every URL found (including all Amazon domains and publisher pages). Do not stop at the publisher site if key data is missing—continue to scan all search results for product details boxes and field labels such as 'Print length', 'Dimensions', and 'Pages' in the full content of every cited site. If multiple values are found, prefer Amazon product details boxes for dimensions and page count, else use the publisher or next available source. Always include which URL/source each field was found at, for traceability.
+Primary search sources (in order of priority):
+1. Amazon.com / Amazon.in / Amazon.co.uk / Amazon.ae / Amazon.jp (all Amazon domains checked for ISBN/product) — HIGHEST priority for product dimensions/specifications
 2. Ubuy.ae
 3. Barnes & Noble (barnesandnoble.com)
 4. Book Depository (bookdepository.com)
@@ -703,41 +734,80 @@ Secondary sources if needed:
 - WorldCat.org
 - Goodreads.com
 - Google Books
-                    For each field, explicitly state if you found the information or not.
-                    Return the data in this exact JSON format: {
-                    "title": "Full book title",
-                    "translit_title": "Transliterated title if original is non-English, otherwise null",
-                    "subtitle": "Alternative book title",
-                    "translit_subtitle": "Transliterated subtitle if original is non-English, otherwise null",
-                    "isbn": "ISBN-13 or null",
-                    "edition": "Edition information or null",
-                    "language": "Language code (eng, fre, etc.) or null",
-                    "publisher": ["Publisher name(s)"],
-                    "authors": [
-                        {"familyName": "Last name", "givenName": "First name"}
-                    ],
-                    "placeOfPublication": ["City names"],
-                    "publicationCountry": "Full country name",
-                    "publicationDate": "YYYY format",
-                    "copyrightDate": "YYYY format or null",
-                    "numberOfPages": Number of pages or null,
-                    "dimensions": "Dimensions of book in cm (Always the dimensions in this format 22.86 x 15.24 x 3.00) If it's in any other format than cm then convert it to cm. If no dimensions are found return an empty value",
-                    "synopsisOfBook": Synopsis of the book
-                    }
-                            IMPORTANT: If the title or subtitle contains non-English characters (Arabic, Chinese, Russian, etc.), provide both the original AND a transliterated version using Latin characters. For example:
-        - Original Arabic: "الأسود يليق بك" 
-        - Transliterated: "Al-Aswad Yaleeq Bik"
-                    Use null for truly unknown values only after thorough searching. Only return the json and nothing else. Do not start with words json, just return the json and nothing else.
-                    Search instructions:
-1. Give priority to Amazon.com/Amazon.ae listings
+
+**ENHANCED DATA EXTRACTION REQUIREMENTS:**
+
+PAGE COUNT REQUIREMENT: Only use page numbers explicitly stated in:
+- Amazon product details ("Print length: X pages", "314 pages", "Kindle Edition: X pages")
+- Publisher specifications
+- Official bookstore listings
+- Library catalog records (WorldCat, etc.)
+- Google Books "About this book" section
+
+**Look specifically for patterns like: "314 pages", "Print length: 314", "Pages: 314"**
+DO NOT estimate pages based on book thickness, genre, or other books by the same author. If no exact page count is found in verified sources, return null.
+
+**DIMENSIONS EXTRACTION REQUIREMENT:**
+Book dimensions in centimeters using format: Length x Width x Height (e.g., 22.86 x 15.24 x 3.00). Convert from inches/other units to cm if needed (1 inch = 2.54 cm). 
+
+**Search specifically for these terms in Amazon/bookstore listings:**
+- "Dimensions: X x Y x Z cm" 
+- "Product Dimensions"
+- "Item dimensions" 
+- "15.6 x 1.88 x 23.4 cm" (look for exact patterns like this)
+
+If no dimensions found in any source, return empty string. CRITICAL: Only use dimensions from verified product pages or publisher specifications - do not estimate or guess.
+
+**AMAZON SEARCH MANDATE:** 
+You MUST search Amazon.com, Amazon.in, or Amazon.ae for this book. Amazon listings typically contain the most complete product specifications including page counts and dimensions. Ensure Amazon URLs appear in your citations.
+
+For each field, explicitly state if you found the information or not.
+for mapping the data to the json combine all the data from all the citations
+Return the data in this exact JSON format: {
+"title": "Full book title",
+"translit_title": "Transliterated title if original is non-English, otherwise null",
+"subtitle": "Alternative book title",
+"translit_subtitle": "Transliterated subtitle if original is non-English, otherwise null",
+"isbn": "ISBN-13 or null",
+"edition": "Edition information or null",
+"language": "Language code (eng, fre, etc.) or null",
+"publisher": ["Publisher name(s)"],
+"authors": [
+    {"familyName": "Last name", "givenName": "First name"}
+],
+"placeOfPublication": ["City names"],
+"publicationCountry": "Full country name",
+"publicationDate": "YYYY format",
+"copyrightDate": "YYYY format or null",
+"numberOfPages": "Exact page count as a number (e.g., 256) found in product listings, publisher data, or book specifications. Look specifically for 'Pages:', 'Page Count:', 'Length:', or 'Print Length:' in source materials. If page count not explicitly stated in any verified source, return null. DO NOT estimate or calculate page count - only use exact numbers from official sources.",
+"dimensions": "Book dimensions in centimeters using format: Length x Width x Height (e.g., 22.86 x 15.24 x 3.00). Convert from inches/other units to cm if needed (1 inch = 2.54 cm). Search specifically for 'Product Dimensions', 'Book Dimensions', or 'Size' in product listings. If no dimensions found in any source, return empty string. CRITICAL: Only use dimensions from verified product pages or publisher specifications - do not estimate or guess.",
+"synopsisOfBook": "Synopsis of the book"
+}
+
+IMPORTANT: If the title or subtitle contains non-English characters (Arabic, Chinese, Russian, etc.), provide both the original AND a transliterated version using Latin characters. For example:
+- Original Arabic: "الأسود يليق بك" 
+- Transliterated: "Al-Aswad Yaleeq Bik"
+
+Use null for truly unknown values only after thorough searching. Only return the json and nothing else. Do not start with words json, just return the json and nothing else.
+
+Search instructions:
+1. Give priority to Amazon.com/Amazon.ae listings - PRIORITY for product dimensions and specifications
+   **CRITICAL: Ensure you actually search Amazon and include Amazon URLs in citations**
 2. Cross-reference with Ubuy.ae
 3. Check other primary sources in order
 4. Only use secondary sources if data is missing
 5. Include citation for each piece of information found
 6. Convert all measurements to centimeters
 7. Use null only when information cannot be found in ANY source listed
-Only return the json and nothing else. Do not start with words json, just return the json and nothing else and remove citations indications (ie [1][2][3]etc).
-                    `
+
+**VERIFICATION CHECKLIST BEFORE RESPONDING:**
+✓ Did you search Amazon with the book title/ISBN?
+✓ Are there Amazon URLs in your citations?
+✓ Did you find page count from product listings?
+✓ Did you find dimensions from product specifications?
+✓ Are you returning exact numbers, not estimates?
+
+Only return the json and nothing else. Do not start with words json, just return the json and nothing else and remove citations indications (ie [1][2][3]etc).`
             })
         });
 
@@ -783,6 +853,10 @@ Only return the json and nothing else. Do not start with words json, just return
         return null;
     }
 }
+
+/* 
+
+Function with OCR Space - not working well
 
 function ocrSearch() {
     const fileInput = document.createElement('input');
@@ -838,6 +912,114 @@ function ocrSearch() {
                 } else {
                     console.error(`OCR failed for image ${i + 1}: ${file.name}`);
                     allExtractedText += `\n\n--- Failed to extract text from ${file.name} ---\n`;
+                }
+
+            } catch (error) {
+                console.error(`Error processing image ${i + 1}:`, error);
+                allExtractedText += `\n\n--- Error processing ${file.name}: ${error.message} ---\n`;
+            }
+        }
+
+        // Display results after processing all images
+        if (progressDiv) {
+            progressDiv.innerHTML = `OCR completed for ${processedCount}/${files.length} image(s). Extracted text:`;
+            
+            const textDisplay = document.createElement('div');
+            textDisplay.style.maxHeight = '200px';
+            textDisplay.style.overflow = 'auto';
+            textDisplay.style.border = '1px solid #ccc';
+            textDisplay.style.padding = '10px';
+            textDisplay.style.marginTop = '10px';
+            textDisplay.style.whiteSpace = 'pre-wrap';
+            textDisplay.textContent = allExtractedText.trim();
+            
+            progressDiv.appendChild(textDisplay);
+            
+            // Store extracted text for later use
+            window.extractedOCRText = allExtractedText.trim();
+            
+            // Add instruction message and AI search button
+            const instructionMsg = document.createElement('div');
+            instructionMsg.innerHTML = `
+                <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border: 1px solid #b0d4f1; border-radius: 5px; margin-bottom: 15px">
+                    <p style="margin: 0 0 10px 0; font-weight: bold;">OCR text extracted successfully!</p>
+                    <p style="margin: 0 0 15px 0;">Enter ISBN, Author (Last name,First name) or Title if needed for more accurate results, then click the button below to generate metadata with AI.</p>
+                    <button id="ai-search-btn" style="
+                        background-color: #4CAF50; 
+                        color: white; 
+                        padding: 10px 20px; 
+                        border: none; 
+                        border-radius: 5px; 
+                        cursor: pointer; 
+                        font-size: 14px;
+                        font-weight: bold;
+                    ">🤖 Generate Metadata with AI</button>
+                    <i class="info-icon" data-tooltip="Use this option to search by image of the item to be catalogued. Enter ISBN, Author (Last name,First name) or Title if needed for more accurate results, then click the button below to generate metadata with AI">ⓘ</i>
+                </div>
+            `;
+            
+            progressDiv.appendChild(instructionMsg);
+            
+            // Add click handler for the AI search button
+            document.getElementById('ai-search-btn').onclick = function() {
+                generateMetadataWithAI();
+            };
+        }
+    };
+
+    fileInput.click();
+}*/
+
+function ocrSearch() {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.multiple = true;
+
+    fileInput.onchange = async function (e) {
+        const files = Array.from(e.target.files);
+        if (!files || files.length === 0) return;
+
+        console.log(`Processing ${files.length} image(s)...`);
+        
+        const progressDiv = document.getElementById('ocr-progress');
+        if (progressDiv) {
+            progressDiv.innerHTML = `Processing ${files.length} image(s) with OCR...`;
+        }
+
+        let allExtractedText = '';
+        let processedCount = 0;
+
+        // Process each image sequentially with Tesseract.js
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            console.log(`Processing image ${i + 1}/${files.length}:`, file.name);
+
+            try {
+                if (progressDiv) {
+                    progressDiv.innerHTML = `Processing image ${i + 1}/${files.length}: ${file.name}...`;
+                }
+
+                // Use Tesseract.js to extract text
+                const { data: { text } } = await Tesseract.recognize(file, 'eng', {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            const progress = Math.round(m.progress * 100);
+                            if (progressDiv) {
+                                progressDiv.innerHTML = `Processing image ${i + 1}/${files.length}: ${file.name} (${progress}%)...`;
+                            }
+                        }
+                    }
+                });
+
+                console.log(`Extracted Text from image ${i + 1}:`, text);
+                
+                if (text.trim()) {
+                    allExtractedText += `\n\n--- Text from ${file.name} ---\n${text.trim()}`;
+                    processedCount++;
+                } else {
+                    console.log(`No text found in image ${i + 1}: ${file.name}`);
+                    allExtractedText += `\n\n--- No text found in ${file.name} ---\n`;
                 }
 
             } catch (error) {

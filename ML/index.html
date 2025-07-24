@@ -41,8 +41,8 @@
 				AI Integrated Metadata Maker for
 			</div>
 			<div id="version_selector" onClick="toggleVersionMenu()">
-				<div id="version_name" value="ims">
-					IMS
+				<div id="version_name" value="ml">
+					ML
 				</div>
 				<img src="arrow2.svg" id="arrow">
 				<div id="version_menu" class="hidden">
@@ -52,9 +52,9 @@
 								Monographs
 							</li>
 						</a>
-						<a class="dropdown" href="../ML/index.html">
+						<a class="dropdown" href="../IMS/index.html">
 							<li id="dataset">
-								ML
+								IMS
 							</li>
 						</a>
 					</ul>
@@ -316,15 +316,6 @@
 						class="question-mark">?</span></label>
 			</div>
 
-			<div id="subtitle-block">
-				<label for="subtitle" class="heading">Subtitle</label><label for="subtitle" class="insert insert_normal"
-					onClick='insertMenu("subtitle");'>Insert Diacritics</label><br>
-				<div id="insert-subtitle"></div>
-				<input type="text" required id="subtitle" class="conditional">
-				<label title="Record the subtitle if one exists"><span class="question-mark">?</span></label><br>
-				<span class="unlisted">Unlisted</span><input type="checkbox" id="subtitle_listed" class="listed">
-			</div>
-
 			<div id="translit-title-block" class="translit-title-block translit-block standard-translit-block hidden">
 				<label for="translit_title" class="hidden translit heading translit-title">Transliterated
 					title</label><br><label for="translit_title"
@@ -334,24 +325,14 @@
 				<input type="text" id="translit_title" class="hidden translit translit-title">
 			</div>
 
-			<div id="translit-subtitle-block"
-				class="translit-title-block translit-block standard-translit-block translit-title hidden">
-				<label for="translit_subtitle" class="hidden translit heading translit-title">Transliterated
-					subtitle</label><label for="translit_subtitle"
-					class="insert insert_normal hidden translit translit-title"
-					onClick='insertMenu("translit_subtitle");'>Insert Diacritics</label><br>
-				<div id="insert-translit_subtitle" class="hidden translit translit-title"></div>
-				<input type="text" id="translit_subtitle" class="hidden translit translit-title">
-			</div>
-
 			<div id="alternative-title-block">
-    <label for="alternative_title" class="heading">Alternative Title</label>
-    <label for="alternative_title" class="insert insert_normal" onClick='insertMenu("alternative_title");'>Insert Diacritics</label><br>
-    <div id="insert-alternative_title"></div>
-    <input type="text" id="alternative_title" class="conditional">
-    <label title="Record an alternative title if one exists (246$$a)."><span class="question-mark">?</span></label><br>
-    <span class="unlisted">Unlisted</span><input type="checkbox" id="alternative_title_listed" class="listed">
-</div>
+				<label for="alternative_title" class="heading">Alternative Title</label>
+				<label for="alternative_title" class="insert insert_normal" onClick='insertMenu("alternative_title");'>Insert Diacritics</label><br>
+				<div id="insert-alternative_title"></div>
+				<input type="text" id="alternative_title" class="conditional">
+				<label title="Record an alternative title if one exists (246$$a)."><span class="question-mark">?</span></label><br>
+				<span class="unlisted">Unlisted</span><input type="checkbox" id="alternative_title_listed" class="listed">
+			</div>
 
 			<div id="serial-block">
 				<label for="serial" class="heading">Serial No</label><br>
@@ -361,7 +342,7 @@
 				<span class="unlisted">Unlisted</span><input type="checkbox" id="serial_listed" class="listed">
 			</div>
 
-			<button type="button" class="aiButtons" onclick="preFetchFromAI()">Generate Equipment Data with AI</button>
+			<button type="button" class="aiButtons" onclick="preFetchFromAI()">Generate Materials Data with AI</button>
 
 			<div id="manufacturer-block">
 				<label for="manufacturer" class="heading">Name of Manufacturer</label>
@@ -727,14 +708,6 @@
 				<span class="unlisted">Unlisted</span><input type="checkbox" id="pages_listed" class="listed">
 			</div>-->
 
-			<div id="dimensions-block" class="standard-block">
-				<label for="dimensions" class="heading">Size<span class="required_marker">*</span></label><br>
-				<input type="text" required id="dimensions" class="required"> cm
-				<label
-					title="Record the height of the piece in cm. Always round up, so that if a piece measures 25.1 cm, record 26 cm"><span
-						class="question-mark">?</span></label>
-			</div>
-
 			<!--<div class="standard-block">
 				<legend>Keywords (Suggest Keywords OR Keywords Search)<span class="required_marker">*</span><label title="This is a required field. You could either ask for keyword suggestion by providing book summary in the box on the left or search keywords in the right search box. Please be noted that those two boxes search for keywords from different sources.">?</span></label></legend>
 			</div>
@@ -780,14 +753,6 @@
 			<div id="notes-block">
 				<label for="notes">Notes to the Cataloger</label><br>
 				<textarea id="notes"></textarea>
-			</div>
-
-			<div id="product-manual-block">
-				<label for="product_manual" class="heading">Access to Product Manual or Product Site</label><br>
-				<input type="url" id="product_manual" class="conditional" placeholder="https://example.com/manual.pdf">
-				<label title="URL link to product manual, specification sheet, or official product page (856$$a)."><span
-						class="question-mark">?</span></label><br>
-				<span class="unlisted">Unlisted</span><input type="checkbox" id="product_manual_listed" class="listed">
 			</div>
 
 			<div id="image-upload-block" class="standard-block">
