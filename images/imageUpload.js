@@ -471,11 +471,11 @@ async function preFetchFromAI() {
                             const contextQuery = `
                                 I found this book information from ISBN database:
                                 Find comprehensive book metadata for the book with these details:
-                                - ISBN: ${isbn}
                                 - Title: ${isbnData.title || 'Unknown'}
                                 - Author: ${isbnData.author || 'Unknown'}
+                                - ISBN: ${isbn}
                                 
-                                Search major bookstores for this exact title and author combination.
+                                Search major bookstores for this exact title or author combination or isbn.
                     
                     Primary search sources (in order of priority):
                     1. Amazon.com / Amazon.ae / Amazon.in - PRIORITY for product dimensions and specifications
