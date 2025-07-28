@@ -137,6 +137,28 @@ async function uploadViaWorker(files) {
     }
 }
 
+function cleanISBN(isbn) {
+    if (!isbn) return '';
+    
+    const cleaned = isbn.replace(/[^0-9X]/g, '');
+    
+    if (cleaned.length === 10 || cleaned.length === 13) {
+        return cleaned;
+    }
+    
+    console.warn('Invalid ISBN length:', cleaned.length);
+    return cleaned;
+}
+
+document.getElementById('isbn').addEventListener('input', function(e) {
+    const originalValue = e.target.value;
+    const cleanedValue = cleanISBN(originalValue);
+    
+    if (originalValue !== cleanedValue) {
+        e.target.value = cleanedValue;
+    }
+});
+
 // Helper Functions
 
 async function fetchFromPerplexityDirect(query) {
@@ -301,6 +323,9 @@ async function preFetchFromAI() {
                 console.log('Open Library Search API Response:', openLibraryData);
 
                 if (isbn) {
+                    const originalISBN = isbn;
+                    isbn = cleanISBN(isbn);
+                    console.log(`ISBN cleaned: "${originalISBN}" → "${isbn}"`);
                     const isbnResponse = await fetch(`https://openlibrary.org/isbn/${isbn}.json`);
                     const isbnText = await isbnResponse.text();
 
