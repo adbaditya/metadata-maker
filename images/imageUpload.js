@@ -30,7 +30,7 @@ function processImages() {
             mediaElement.style.maxWidth = '200px';
             mediaElement.style.maxHeight = '200px';
             mediaElement.style.margin = '10px';
-            
+
             // Add video icon indicator
             const videoIcon = document.createElement('div');
             videoIcon.innerHTML = '🎥 Video';
@@ -38,14 +38,14 @@ function processImages() {
             videoIcon.style.color = '#666';
             videoIcon.style.marginBottom = '5px';
             previewContainer.appendChild(videoIcon);
-            
+
         } else if (isImage) {
             // Create image element
             mediaElement = document.createElement('img');
             mediaElement.style.maxWidth = '200px';
             mediaElement.style.maxHeight = '200px';
             mediaElement.style.margin = '10px';
-            
+
             // Add image icon indicator
             const imageIcon = document.createElement('div');
             imageIcon.innerHTML = '🖼️ Image';
@@ -53,7 +53,7 @@ function processImages() {
             imageIcon.style.color = '#666';
             imageIcon.style.marginBottom = '5px';
             previewContainer.appendChild(imageIcon);
-            
+
         } else {
             // Unknown file type
             mediaElement = document.createElement('div');
@@ -104,6 +104,45 @@ function processImages() {
     uploadViaWorker(files);
 }
 
+function tryParseWithFallbacks(content) {
+    console.log('Attempting to parse JSON with fallbacks...');
+    
+    // Method 1: Direct JSON.parse
+    try {
+        const result = JSON.parse(content);
+        console.log('✅ Method 1 (direct parsing) succeeded');
+        return result;
+    } catch (error) {
+        console.log('❌ Method 1 (direct parsing) failed:', error.message);
+    }
+    
+    // Method 2: Enhanced extraction
+    try {
+        const result = extractJSONFromResponse(content);
+        if (result) {
+            console.log('✅ Method 2 (enhanced extraction) succeeded');
+            return result;
+        }
+    } catch (error) {
+        console.log('❌ Method 2 (enhanced extraction) failed:', error.message);
+    }
+    
+    // Method 3: Simple regex extraction
+    try {
+        const result = simpleJSONExtract(content);
+        if (result) {
+            console.log('✅ Method 3 (regex extraction) succeeded');
+            return result;
+        }
+    } catch (error) {
+        console.log('❌ Method 3 (regex extraction) failed:', error.message);
+    }
+    
+    // All methods failed
+    console.error('❌ All JSON parsing methods failed');
+    return null;
+}
+
 async function uploadViaWorker(files) {
     const progressDiv = document.getElementById('upload-progress');
     const formData = new FormData();
@@ -139,21 +178,21 @@ async function uploadViaWorker(files) {
 
 function cleanISBN(isbn) {
     if (!isbn) return '';
-    
+
     const cleaned = isbn.replace(/[^0-9X]/g, '');
-    
+
     if (cleaned.length === 10 || cleaned.length === 13) {
         return cleaned;
     }
-    
+
     console.warn('Invalid ISBN length:', cleaned.length);
     return cleaned;
 }
 
-document.getElementById('isbn').addEventListener('input', function(e) {
+document.getElementById('isbn').addEventListener('input', function (e) {
     const originalValue = e.target.value;
     const cleanedValue = cleanISBN(originalValue);
-    
+
     if (originalValue !== cleanedValue) {
         e.target.value = cleanedValue;
     }
@@ -202,14 +241,59 @@ async function fetchFromPerplexityDirect(query) {
     }
 }
 
+function extractJSONFromResponse(content) {
+    try {
+        // First, try parsing as-is
+        return JSON.parse(content);
+    } catch (error) {
+        console.log('Direct parsing failed, trying to extract JSON...');
+
+        // Remove citation-style explanations (- **field**: explanation format)
+        let cleaned = content
+            .replace(/\n- \*\*.*?\*\*:.*$/gm, '')
+            .replace(/\[\d+\]/g, '')
+            .trim();
+
+        const startBrace = cleaned.indexOf('{');
+        const lastBrace = cleaned.lastIndexOf('}');
+
+        if (startBrace !== -1 && lastBrace !== -1 && lastBrace > startBrace) {
+            const jsonStr = cleaned.substring(startBrace, lastBrace + 1);
+
+            try {
+                return JSON.parse(jsonStr);
+            } catch (error2) {
+                console.log('Extracted JSON parsing failed:', error2);
+            }
+        }
+
+        // Fallback: try cleaning more aggressively
+        cleaned = content
+            .replace(/^.*?(?=\{)/s, '')
+            .replace(/\}[\s\S]*$/s, '}')
+            .replace(/```json/g, '')
+            .replace(/```/g, '')
+            .replace(/\[\d+\]/g, '')
+            .trim();
+
+        try {
+            return JSON.parse(cleaned);
+        } catch (error3) {
+            console.error('All JSON extraction methods failed');
+            console.log('Original content:', content);
+            return null;
+        }
+    }
+}
+
 function extractISBNData(html) {
     try {
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
-        
+
         let title = null;
         const titleSelectors = ['h1', '.title', '[data-testid="title"]', 'meta[property="og:title"]'];
-        
+
         for (const selector of titleSelectors) {
             const element = doc.querySelector(selector);
             if (element) {
@@ -217,10 +301,10 @@ function extractISBNData(html) {
                 break;
             }
         }
-        
+
         let author = null;
         const authorSelectors = ['.author', '[data-testid="author"]', 'meta[name="author"]'];
-        
+
         for (const selector of authorSelectors) {
             const element = doc.querySelector(selector);
             if (element) {
@@ -228,10 +312,10 @@ function extractISBNData(html) {
                 break;
             }
         }
-        
+
         let publisher = null;
         const publisherSelectors = ['.publisher', '[data-testid="publisher"]'];
-        
+
         for (const selector of publisherSelectors) {
             const element = doc.querySelector(selector);
             if (element) {
@@ -239,17 +323,17 @@ function extractISBNData(html) {
                 break;
             }
         }
-        
+
         title = title ? title.trim().replace(/^Title:\s*/i, '') : null;
         author = author ? author.trim().replace(/^Author:\s*/i, '') : null;
         publisher = publisher ? publisher.trim().replace(/^Publisher:\s*/i, '') : null;
-        
+
         return {
             title: title,
             author: author,
             publisher: publisher
         };
-        
+
     } catch (error) {
         console.error('Error parsing ISBN search HTML:', error);
         return null;
@@ -358,11 +442,12 @@ async function preFetchFromAI() {
                     OpenLibrary ISBN Data: ${JSON.stringify(isbnData)}
 
                     Please analyze ALL this information from OpenLibrary along with fresh searches from Amazon, bookstores, and other sources to provide the most accurate and complete book metadata. Use OpenLibrary data as reference but prioritize more complete information from current retail sources for fields. 
+                    Prefer the source which mentions product dimensions and pages or book length or print length to be most accurate
                     
                     Find comprehensive book metadata for the book titled: "${title}". 
                     Primary search sources/citations (in order of priority):
-                    1. Amazon.com - Look for complete product details including dimensions of the book - PRIORITY for product dimensions and specifications
-                    2. Amazon.ae / Amazon.in - Regional listings - PRIORITY for product dimensions and specifications
+                    1. Amazon.com - Look for complete product details including dimensions of the book
+                    2. Amazon.ae / Amazon.in
                     3. Ubuy.ae
                     4. Barnes & Noble (barnesandnoble.com)
                     5. Book Depository (bookdepository.com)
@@ -418,7 +503,8 @@ async function preFetchFromAI() {
                     6. Convert all measurements to centimeters
                     7. Use null only when information cannot be found in ANY source listed
                     Only return the json and nothing else. Do not start with words json, just return the json and nothing else.
-                    IMPORTANT: Prioritize Amazon listings for dimensions and complete product details. Only return JSON, no other text and remove citations indications (ie [1][2][3]etc).
+                    IMPORTANT: Prioritize the sources which has dimensions, page length and complete product details. Only return JSON, no other text and remove citations indications (ie [1][2][3]etc).
+                    CRITICAL: Return ONLY the JSON object. No text before or after. No explanations. No citations like [1][2]. Just pure JSON.
                     `;
 
 
@@ -429,13 +515,13 @@ async function preFetchFromAI() {
                         console.log(`Perplexity failed: ${perplexityData.error} - ${perplexityData.message}`);
                         throw new Error(`Perplexity validation failed: ${perplexityData.error}`);
                     }
-                    
+
                     // NEW: Check for empty citations (hallucination indicator)
                     if (perplexityData.citations && perplexityData.citations.length === 0) {
                         console.log('⚠️ Perplexity returned no citations - likely hallucinating, triggering fallback');
                         throw new Error('No citations found - potential hallucination');
                     }
-                    
+
                     metadata = JSON.parse(perplexityData.choices[0].message.content);
                     console.log('✅ Enhanced metadata from Perplexity with valid citations:', metadata);
                 } else {
@@ -443,42 +529,42 @@ async function preFetchFromAI() {
                     throw new Error('No valid Perplexity response');
                 }
             } catch (error) {
-            console.log('OpenLibrary error, falling back to ISBN search + Perplexity:', error);
-            
-            if (isbn) {
-                console.log(`Trying ISBN search for: ${isbn}`);
-                
-                try {
-                    // Step 1: Get basic info from ISBN search via worker
-                    const isbnResponse = await fetch('https://metadata-maker.adb-aditya.workers.dev/isbn-search', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            isbn: isbn
-                        })
-                    });
+                console.log('OpenLibrary error, falling back to ISBN search + Perplexity:', error);
 
-                    const isbnResult = await isbnResponse.json();
-                    console.log('ISBN search result:', isbnResult);
+                if (isbn) {
+                    console.log(`Trying ISBN search for: ${isbn}`);
 
-                    if (isbnResult.success && isbnResult.data) {
-                        let isbnData = isbnResult.data;
-                        console.log('ISBN search data:', isbnData);
-                        
-                        if (isbnData && (isbnData.title || isbnData.author)) {
-                            const contextQuery = `
+                    try {
+                        // Step 1: Get basic info from ISBN search via worker
+                        const isbnResponse = await fetch('https://metadata-maker.adb-aditya.workers.dev/isbn-search', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                isbn: isbn
+                            })
+                        });
+
+                        const isbnResult = await isbnResponse.json();
+                        console.log('ISBN search result:', isbnResult);
+
+                        if (isbnResult.success && isbnResult.data) {
+                            let isbnData = isbnResult.data;
+                            console.log('ISBN search data:', isbnData);
+
+                            if (isbnData && (isbnData.title || isbnData.author)) {
+                                const contextQuery = `
                                 I found this book information from ISBN database:
                                 Find comprehensive book metadata for the book with these details:
                                 - Title: ${isbnData.title || 'Unknown'}
                                 - Author: ${isbnData.author || 'Unknown'}
                                 - ISBN: ${isbn}
-                                
-                                Search major bookstores for this above title or isbn.
+
+                    Prefer the source which mentions product dimensions and pages or book length or print length to be most accurate
                     
                     Primary search sources (in order of priority):
-                    1. Amazon.com / Amazon.ae / Amazon.in - PRIORITY for product dimensions and specifications
+                    1. Amazon.com / Amazon.ae / Amazon.in
                     2. Google Books
                     3. WorldCat.org
                     4. Barnes & Noble (barnesandnoble.com)
@@ -518,57 +604,249 @@ async function preFetchFromAI() {
                     }
                 
                     Only return JSON, nothing else.
+                    CRITICAL: Return ONLY the JSON object. No text before or after. No explanations. No citations like [1][2]. Just pure JSON.
                             `;
 
-                            console.log(contextQuery);
-                            
-                            const perplexityData = await fetchFromPerplexityDirect(contextQuery);
-                            if (perplexityData?.choices?.[0]?.message?.content) {
-                                try {
-                                    metadata = JSON.parse(perplexityData.choices[0].message.content);
-                                    if (metadata.error) {
-                                        console.log('Perplexity search with ISBN context failed:', metadata.error);
-                                        throw new Error('ISBN-based search failed');
-                                    } else {
-                                        console.log('Found metadata via ISBN + Perplexity:', metadata);
+                                console.log(contextQuery);
+
+                                const perplexityData = await fetchFromPerplexityDirect(contextQuery);
+                                if (perplexityData?.choices?.[0]?.message?.content) {
+                                    try {
+                                        metadata = JSON.parse(perplexityData.choices[0].message.content);
+                                        if (metadata.error) {
+                                            console.log('Perplexity search with ISBN context failed:', metadata.error);
+                                            throw new Error('ISBN-based search failed');
+                                        } else {
+                                            console.log('Found metadata via ISBN + Perplexity:', metadata);
+                                        }
+                                    } catch (parseError) {
+                                        console.error('Error parsing ISBN-based response:', parseError);
+                                        throw new Error('Failed to parse ISBN search results');
                                     }
-                                } catch (parseError) {
-                                    console.error('Error parsing ISBN-based response:', parseError);
-                                    throw new Error('Failed to parse ISBN search results');
                                 }
+                            } else {
+                                throw new Error('No valid data from ISBN search');
                             }
                         } else {
-                            throw new Error('No valid data from ISBN search');
+                            throw new Error(isbnResult.error || 'ISBN search failed');
                         }
-                    } else {
-                        throw new Error(isbnResult.error || 'ISBN search failed');
-                    }
-                    
-                } catch (isbnError) {
-                    console.log('ISBN search also failed:', isbnError);
-                    alert('Book not found in any database. Please enter details manually.');
-                }
-                
-            } else {
-                // No ISBN provided - use title/author search fallback
-                console.log('No ISBN provided, using title/author search');
-                
-                let searchDetails = [];
-                if (title) searchDetails.push(`Title: "${title}"`);
-                if (family_name || given_name) {
-                    const authorName = [given_name, family_name].filter(Boolean).join(' ');
-                    searchDetails.push(`Author: ${authorName}`);
-                }
-                
-                if (searchDetails.length === 0) {
-                    alert('No search criteria provided. Please enter title, author, or ISBN.');
-                    return;
-                }
-                
-                const searchTerm = searchDetails.join(', ');
-                console.log('Comprehensive search term:', searchTerm);
 
-                const enhancedQuery = `
+                    } catch (isbnError) {
+                        console.log('ISBN search also failed:', isbnError);
+                        const title = $("#title").val();
+                        const familyName = $("#family_name").val();
+                        const givenName = $("#given_name").val();
+                        const isbn = $("isbn").val();
+
+                        const enhancedQuery = `
+                            Book search with multiple data sources:
+                            Title: ${title || 'Not provided'}
+                            ISBN: ${isbn || 'Not provided'}
+                            Author: ${[given_name, family_name].filter(Boolean).join(' ') || 'Not provided'}
+
+                            OpenLibrary Search Data: ${JSON.stringify(openLibraryData)}
+                            OpenLibrary ISBN Data: ${JSON.stringify(isbnData)}
+
+                            Please analyze ALL this information from OpenLibrary along with fresh searches from Amazon, bookstores, and other sources to provide the most accurate and complete book metadata. Use OpenLibrary data as reference but prioritize more complete information from current retail sources for fields. 
+                            Prefer the source which mentions product dimensions and pages or book length or print length to be most accurate
+                            
+                            Find comprehensive book metadata for the book titled: "${title}". 
+                            Primary search sources/citations (in order of priority):
+                            1. Amazon.com - Look for complete product details including dimensions of the book
+                            2. Amazon.ae / Amazon.in
+                            3. Ubuy.ae
+                            4. Barnes & Noble (barnesandnoble.com)
+                            5. Book Depository (bookdepository.com)
+                            6. Jamalon.com
+                            7. Noon.com books section
+
+                            Secondary sources if needed:
+                            - Publisher's official website - PRIORITY for product dimensions and specifications
+                            - WorldCat.org
+                            - Goodreads.com
+                            - Google Books
+
+                            PAGE COUNT REQUIREMENT: Only use page numbers explicitly stated in:
+                            - Amazon product details ("Print length: X pages")
+                            - Publisher specifications
+                            - Official bookstore listings
+                            - Library catalog records (WorldCat, etc.)
+                            - Google Books "About this book" section
+
+                            DO NOT estimate pages based on book thickness, genre, or other books by the same author. If no exact page count is found in verified sources, return null.
+
+                            For each field, explicitly state if you found the information or not.
+                            Return the data in this exact JSON format: {
+                            "title": "Full book title",
+                            "translit_title": "Transliterated title if original is non-English, otherwise null",
+                            "subtitle": "Alternative book title",
+                            "translit_subtitle": "Transliterated subtitle if original is non-English, otherwise null",
+                            "isbn": "ISBN-13 or null",
+                            "edition": "Edition information or null",
+                            "language": "Language code (eng, fre, etc.) or null",
+                            "publisher": ["Publisher name(s)"],
+                            "authors": [
+                                {"familyName": "Last name", "givenName": "First name"}
+                            ],
+                            "placeOfPublication": ["City names"],
+                            "publicationCountry": "Full country name",
+                            "publicationDate": "YYYY format",
+                            "copyrightDate": "YYYY format or null",
+                            "numberOfPages": "Exact page count as a number (e.g., 256) found in product listings, publisher data, or book specifications. Look specifically for 'Pages:', 'Page Count:', 'Length:', or 'Print Length:' in source materials. If page count not explicitly stated in any verified source, return null. DO NOT estimate or calculate page count - only use exact numbers from official sources.",
+                            "dimensions": "Book dimensions in centimeters using format: Length x Width x Height (e.g., 22.86 x 15.24 x 3.00). Convert from inches/other units to cm if needed (1 inch = 2.54 cm). Search specifically for 'Product Dimensions', 'Book Dimensions', or 'Size' in product listings. If no dimensions found in any source, return empty string. CRITICAL: Only use dimensions from verified product pages or publisher specifications - do not estimate or guess.",
+                            "synopsisOfBook": Synopsis of the book
+                            }
+                                    IMPORTANT: If the title or subtitle contains non-English characters (Arabic, Chinese, Russian, etc.), provide both the original AND a transliterated version using Latin characters. For example:
+                            - Original Arabic: "الأسود يليق بك" 
+                            - Transliterated: "Al-Aswad Yaleeq Bik"
+                            Use null for truly unknown values only after thorough searching. Only return the json and nothing else. Do not start with words json, just return the json and nothing else.
+                            Search instructions:
+                            1. Start with Amazon.com/Amazon.ae listings
+                            2. Cross-reference with Ubuy.ae
+                            3. Check other primary sources in order
+                            4. Only use secondary sources if data is missing
+                            5. Include citation for each piece of information found
+                            6. Convert all measurements to centimeters
+                            7. Use null only when information cannot be found in ANY source listed
+                            Only return the json and nothing else. Do not start with words json, just return the json and nothing else.
+                            IMPORTANT: Prioritize the sources which has dimensions, page length and complete product details. Only return JSON, no other text and remove citations indications (ie [1][2][3]etc).
+                            CRITICAL: Return ONLY the JSON object. No text before or after. No explanations. No citations like [1][2]. Just pure JSON.
+                            `;
+
+                        fetchFromPerplexity(enhancedQuery)
+                            .then(perplexityData => {
+                                if (perplexityData && perplexityData.choices?.[0]?.message?.content) {
+                                    try {
+                                        const metadata = tryParseWithFallbacks(perplexityData.choices[0].message.content);
+
+                                        if (metadata && !metadata.error) {
+                                            console.log('✅ Enhanced metadata from Perplexity fallback:', metadata);
+
+                                            // Use your existing form population code
+                                            document.getElementById('title').value = metadata.title || '';
+                                            document.getElementById('isbn').value = metadata.isbn || '';
+                                            document.getElementById('edition').value = metadata.edition || '';
+                                            document.getElementById('language').value = metadata.language || '';
+                                            document.getElementById('pages').value = metadata.numberOfPages || '';
+                                            document.getElementById('dimensions').value = metadata.dimensions || '';
+                                            document.getElementById('subtitle').value = metadata.subtitle || '';
+
+                                            const translitTitleField = document.getElementById('translit_title');
+                                            const translitSubtitleField = document.getElementById('translit_subtitle');
+
+                                            if (metadata.translit_title) {
+                                                translitTitleField.value = metadata.translit_title;
+                                                translitTitleField.style.display = 'inline-block';
+                                            } else {
+                                                translitTitleField.style.display = 'none';
+                                            }
+
+                                            if (metadata.translit_subtitle) {
+                                                translitSubtitleField.value = metadata.translit_subtitle;
+                                                translitSubtitleField.style.display = 'inline-block';
+                                            } else {
+                                                translitSubtitleField.style.display = 'none';
+                                            }
+
+                                            document.getElementById('place').value = Array.isArray(metadata.placeOfPublication)
+                                                ? metadata.placeOfPublication[0]
+                                                : (metadata.placeOfPublication || '');
+
+                                            document.getElementById('publisher').value = Array.isArray(metadata.publisher)
+                                                ? metadata.publisher[0]
+                                                : (metadata.publisher || '');
+
+                                            document.getElementById('year').value = metadata.publicationDate || '';
+                                            document.getElementById('notes').value = metadata.synopsisOfBook || '';
+
+                                            if (metadata.authors?.length > 0) {
+                                                document.getElementById('family_name').value = metadata.authors[0].familyName || '';
+                                                document.getElementById('given_name').value = metadata.authors[0].givenName || '';
+                                            }
+
+                                            // Handle country dropdown
+                                            const countrySelect = document.querySelector('select[name="country"]');
+                                            if (countrySelect && metadata.publicationCountry) {
+                                                Array.from(countrySelect.options).forEach(option => {
+                                                    if (option.text.toLowerCase() === metadata.publicationCountry.toLowerCase()) {
+                                                        countrySelect.value = option.value;
+                                                    }
+                                                });
+                                            }
+
+                                            // Add required attribute to the fields
+                                            const familyNameInput = document.getElementById("family_name");
+                                            const givenNameInput = document.getElementById("given_name");
+                                            const subtitleInput = document.getElementById("subtitle");
+
+                                            // Add required attribute
+                                            familyNameInput.setAttribute("required", "");
+                                            givenNameInput.setAttribute("required", "");
+                                            subtitleInput.setAttribute("required", "");
+
+                                            // Function to set initial border color based on value
+                                            const setInitialBorderColor = (input) => {
+                                                if (!input.value.trim()) {
+                                                    input.style.borderColor = "#ff4444";
+                                                    input.placeholder = input.placeholder + " *";
+                                                }
+                                            };
+
+                                            // Set initial states
+                                            setInitialBorderColor(familyNameInput);
+                                            setInitialBorderColor(givenNameInput);
+
+                                            // Add event listeners to handle input changes
+                                            const handleInput = (input) => {
+                                                input.addEventListener("input", function () {
+                                                    if (this.value.trim() !== "") {
+                                                        this.style.borderColor = ""; // Reset to default
+                                                    } else {
+                                                        this.style.borderColor = "#ff4444"; // Keep red if empty
+                                                    }
+                                                });
+                                            };
+
+                                            handleInput(familyNameInput);
+                                            handleInput(givenNameInput);
+
+                                        } else {
+                                            showJSONParseFailedPopup('Could not parse enhanced search results.');
+                                        }
+                                    } catch (parseError) {
+                                        console.error('Error parsing enhanced search:', parseError);
+                                        showJSONParseFailedPopup('Error parsing enhanced search results.');
+                                    }
+                                } else {
+                                    showJSONParseFailedPopup('No valid response from enhanced search.');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Enhanced search failed:', error);
+                                showJSONParseFailedPopup('All search methods failed. Please enter details manually.');
+                            });
+                    }
+
+                } else {
+                    // No ISBN provided - use title/author search fallback
+                    console.log('No ISBN provided, using title/author search');
+
+                    let searchDetails = [];
+                    if (title) searchDetails.push(`Title: "${title}"`);
+                    if (family_name || given_name) {
+                        const authorName = [given_name, family_name].filter(Boolean).join(' ');
+                        searchDetails.push(`Author: ${authorName}`);
+                    }
+
+                    if (searchDetails.length === 0) {
+                        alert('No search criteria provided. Please enter title, author, or ISBN.');
+                        return;
+                    }
+
+                    const searchTerm = searchDetails.join(', ');
+                    console.log('Comprehensive search term:', searchTerm);
+
+                    const enhancedQuery = `
                     Find comprehensive book metadata for the book with these details: ${searchTerm}
                     
                     Search major bookstores for this exact title and author combination.
@@ -615,25 +893,25 @@ async function preFetchFromAI() {
                     CRITICAL: If no book matches these details exactly, return {"error": "Book not found", "searched_details": "${searchTerm}"}
                     Only return JSON, nothing else.
                 `;
-                
-                const perplexityData = await fetchFromPerplexity(enhancedQuery);
-                if (perplexityData?.choices?.[0]?.message?.content) {
-                    try {
-                        metadata = JSON.parse(perplexityData.choices[0].message.content);
-                        if (metadata.error) {
-                            console.log('Title-based search failed:', metadata.error);
-                            alert('Book not found in any database. Please enter details manually.');
-                        } else {
-                            console.log('Found metadata via title/author search:', metadata);
+
+                    const perplexityData = await fetchFromPerplexity(enhancedQuery);
+                    if (perplexityData?.choices?.[0]?.message?.content) {
+                        try {
+                            metadata = JSON.parse(perplexityData.choices[0].message.content);
+                            if (metadata.error) {
+                                console.log('Title-based search failed:', metadata.error);
+                                alert('Book not found in any database. Please enter details manually.');
+                            } else {
+                                console.log('Found metadata via title/author search:', metadata);
+                            }
+                        } catch (parseError) {
+                            console.error('Error parsing title-based response:', parseError);
+                            alert('Error parsing search results. Please enter details manually.');
                         }
-                    } catch (parseError) {
-                        console.error('Error parsing title-based response:', parseError);
-                        alert('Error parsing search results. Please enter details manually.');
                     }
                 }
             }
         }
-    } 
         // If we have metadata from either source, populate the form
         if (metadata) {
             console.log('Final Metadata:', metadata);
@@ -689,7 +967,7 @@ async function preFetchFromAI() {
                     }
                 });
             }
-            
+
             // Add required attribute to the fields
             const familyNameInput = document.getElementById("family_name");
             const givenNameInput = document.getElementById("given_name");
@@ -725,7 +1003,7 @@ async function preFetchFromAI() {
 
             handleInput(familyNameInput);
             handleInput(givenNameInput);
-            
+
         }
 
     } catch (error) {
@@ -840,9 +1118,9 @@ Only return the json and nothing else. Do not start with words json, just return
         console.log('Perplexity Response:', data);
 
         if (data.result.citations && data.result.citations.length === 0) {
-                console.log('⚠️ Perplexity returned no citations - likely hallucinating');
-                return { error: 'no_citations', message: 'No sources found - potential hallucination' };
-            }
+            console.log('⚠️ Perplexity returned no citations - likely hallucinating');
+            return { error: 'no_citations', message: 'No sources found - potential hallucination' };
+        }
 
         // Navigate through the nested structure to get the content
         if (data && data.success && data.result) {
@@ -860,7 +1138,7 @@ Only return the json and nothing else. Do not start with words json, just return
                 try {
                     const parsedData = JSON.parse(content);
                     console.log('✅ Successfully parsed Perplexity data with citations:', parsedData);
-                    return { 
+                    return {
                         choices: [{ message: { content: JSON.stringify(parsedData) } }],
                         citations: data.result.citations // Include citation info
                     };
@@ -1006,7 +1284,7 @@ function ocrSearch() {
         if (!files || files.length === 0) return;
 
         console.log(`Processing ${files.length} image(s)...`);
-        
+
         const progressDiv = document.getElementById('ocr-progress');
         if (progressDiv) {
             progressDiv.innerHTML = `Processing ${files.length} image(s) with OCR...`;
@@ -1038,7 +1316,7 @@ function ocrSearch() {
                 });
 
                 console.log(`Extracted Text from image ${i + 1}:`, text);
-                
+
                 if (text.trim()) {
                     allExtractedText += `\n\n--- Text from ${file.name} ---\n${text.trim()}`;
                     processedCount++;
@@ -1056,7 +1334,7 @@ function ocrSearch() {
         // Display results after processing all images
         if (progressDiv) {
             progressDiv.innerHTML = `OCR completed for ${processedCount}/${files.length} image(s). Extracted text:`;
-            
+
             const textDisplay = document.createElement('div');
             textDisplay.style.maxHeight = '200px';
             textDisplay.style.overflow = 'auto';
@@ -1065,12 +1343,12 @@ function ocrSearch() {
             textDisplay.style.marginTop = '10px';
             textDisplay.style.whiteSpace = 'pre-wrap';
             textDisplay.textContent = allExtractedText.trim();
-            
+
             progressDiv.appendChild(textDisplay);
-            
+
             // Store extracted text for later use
             window.extractedOCRText = allExtractedText.trim();
-            
+
             // Add instruction message and AI search button
             const instructionMsg = document.createElement('div');
             instructionMsg.innerHTML = `
@@ -1090,11 +1368,11 @@ function ocrSearch() {
                     <i class="info-icon" data-tooltip="Use this option to search by image of the item to be catalogued. Enter ISBN, Author (Last name,First name) or Title if needed for more accurate results, then click the button below to generate metadata with AI">ⓘ</i>
                 </div>
             `;
-            
+
             progressDiv.appendChild(instructionMsg);
-            
+
             // Add click handler for the AI search button
-            document.getElementById('ai-search-btn').onclick = function() {
+            document.getElementById('ai-search-btn').onclick = function () {
                 generateMetadataWithAI();
             };
         }
@@ -1103,29 +1381,128 @@ function ocrSearch() {
     fileInput.click();
 }
 
+function showJSONParseFailedPopup(message) {
+    // Create popup elements
+    const backdrop = document.createElement('div');
+    backdrop.className = 'json-error-backdrop';
+    backdrop.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+
+    const popup = document.createElement('div');
+    popup.className = 'json-error-popup';
+    popup.style.cssText = `
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        margin: 20px;
+        text-align: center;
+        border: 2px solid #ff4444;
+    `;
+
+    popup.innerHTML = `
+        <h3 style="color: #ff4444; margin-top: 0;">⚠️ JSON Parse Failed</h3>
+        <p style="margin: 15px 0; color: #333; line-height: 1.5;">
+            ${message}<br><br>
+            The AI response could not be processed properly. You can:
+        </p>
+        <div style="margin: 20px 0;">
+            <button id="retry-btn" style="
+                background: #4CAF50; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                border-radius: 5px; 
+                cursor: pointer;
+                margin: 5px;
+                font-size: 14px;
+            ">🔄 Try Again</button>
+            <button id="manual-btn" style="
+                background: #2196F3; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                border-radius: 5px; 
+                cursor: pointer;
+                margin: 5px;
+                font-size: 14px;
+            ">✏️ Enter Manually</button>
+            <button id="close-btn" style="
+                background: #666; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                border-radius: 5px; 
+                cursor: pointer;
+                margin: 5px;
+                font-size: 14px;
+            ">❌ Close</button>
+        </div>
+    `;
+
+    backdrop.appendChild(popup);
+    document.body.appendChild(backdrop);
+
+    // Add event listeners
+    document.getElementById('retry-btn').onclick = function () {
+        backdrop.remove();
+        preFetchFromAI(); // Retry the entire function
+    };
+
+    document.getElementById('manual-btn').onclick = function () {
+        backdrop.remove();
+        // Focus on the title field to encourage manual entry
+        document.getElementById('title').focus();
+    };
+
+    document.getElementById('close-btn').onclick = function () {
+        backdrop.remove();
+    };
+
+    // Close on backdrop click
+    backdrop.onclick = function (e) {
+        if (e.target === backdrop) {
+            backdrop.remove();
+        }
+    };
+
+    console.log('JSON parse failed popup shown');
+}
+
 // New function to handle AI metadata generation with user input
 function generateMetadataWithAI() {
     const aiSearchBtn = document.getElementById('ai-search-btn');
     const progressDiv = document.getElementById('ocr-progress');
-    
+
     if (!window.extractedOCRText) {
         alert('No OCR text available. Please upload and process images first.');
         return;
     }
-    
+
     // Disable button and show processing
     aiSearchBtn.disabled = true;
     aiSearchBtn.innerHTML = '🔄 Generating Metadata...';
-    
+
     // Get additional user inputs
     const title = document.getElementById('title').value.trim();
     const familyName = document.getElementById('family_name').value.trim();
     const givenName = document.getElementById('given_name').value.trim();
     const isbn = document.getElementById('isbn').value.trim();
-    
+
     // Prepare enhanced query for AI
     let enhancedQuery = window.extractedOCRText;
-    
+
     // Add user-provided details if available
     const additionalInfo = [];
     if (title) additionalInfo.push(`Title: ${title}`);
@@ -1134,13 +1511,13 @@ function generateMetadataWithAI() {
         additionalInfo.push(`Author: ${author}`);
     }
     if (isbn) additionalInfo.push(`ISBN: ${isbn}`);
-    
+
     if (additionalInfo.length > 0) {
         enhancedQuery = `Additional provided information:\n${additionalInfo.join('\n')}\n\nExtracted OCR Text:\n${window.extractedOCRText}`;
     }
-    
+
     console.log('Enhanced query for AI:', enhancedQuery);
-    
+
     // Add processing message
     const processingMsg = document.createElement('div');
     processingMsg.id = 'ai-processing-msg';
@@ -1148,93 +1525,114 @@ function generateMetadataWithAI() {
     processingMsg.style.marginTop = '10px';
     processingMsg.style.fontStyle = 'italic';
     processingMsg.style.color = '#666';
-    
+
     // Remove any existing processing message
     const existingMsg = document.getElementById('ai-processing-msg');
     if (existingMsg) existingMsg.remove();
-    
+
     progressDiv.appendChild(processingMsg);
-    
+
     // Send enhanced query to Perplexity for analysis
     fetchFromPerplexity(enhancedQuery)
         .then(perplexityData => {
             if (perplexityData && perplexityData.choices?.[0]?.message?.content) {
-                try {
-                    const metadata = JSON.parse(perplexityData.choices[0].message.content);
-                    console.log('Book metadata from enhanced AI search:', metadata);
-                    
-                    processingMsg.textContent = '✅ Successfully generated book metadata with AI!';
-                    processingMsg.style.color = '#4CAF50';
-                    processingMsg.style.fontWeight = 'bold';
-                    
-                    // Populate form fields with the metadata
-                    document.getElementById('title').value = metadata.title || '';
-                    document.getElementById('isbn').value = metadata.isbn || '';
-                    document.getElementById('edition').value = metadata.edition || '';
-                    document.getElementById('language').value = metadata.language || '';
-                    document.getElementById('pages').value = metadata.numberOfPages || '';
-                    document.getElementById('dimensions').value = metadata.dimensions || '';
-                    document.getElementById('subtitle').value = metadata.subtitle || '';
+                let content = perplexityData.choices[0].message.content;
+                console.log('Raw Perplexity content:', content);
 
-                    // NEW: Handle transliteration fields
-                    const translitTitleField = document.getElementById('translit_title');
-                    const translitSubtitleField = document.getElementById('translit_subtitle');
+                // Try to parse with fallbacks
+                const metadata = tryParseWithFallbacks(content);
 
-                    if (metadata.translit_title) {
-                        translitTitleField.value = metadata.translit_title;
-                        translitTitleField.style.display = 'inline-block';
-                    } else {
-                        translitTitleField.style.display = 'none';
-                    }
+                if (metadata && !metadata.error) {
+                    console.log('✅ Book metadata from enhanced AI search:', metadata);
 
-                    if (metadata.translit_subtitle) {
-                        translitSubtitleField.value = metadata.translit_subtitle;
-                        translitSubtitleField.style.display = 'inline-block';
-                    } else {
-                        translitSubtitleField.style.display = 'none';
-                    }
+                    // Validate we got useful data
+                    if (metadata.title || metadata.isbn || metadata.authors?.length > 0) {
+                        processingMsg.textContent = '✅ Successfully generated book metadata with AI!';
+                        processingMsg.style.color = '#4CAF50';
+                        processingMsg.style.fontWeight = 'bold';
 
+                        // Populate form fields with the metadata
+                        document.getElementById('title').value = metadata.title || '';
+                        document.getElementById('isbn').value = metadata.isbn || '';
+                        document.getElementById('edition').value = metadata.edition || '';
+                        document.getElementById('language').value = metadata.language || '';
+                        document.getElementById('pages').value = metadata.numberOfPages || '';
+                        document.getElementById('dimensions').value = metadata.dimensions || '';
+                        document.getElementById('subtitle').value = metadata.subtitle || '';
 
-                    document.getElementById('place').value = Array.isArray(metadata.placeOfPublication)
-                        ? metadata.placeOfPublication[0]
-                        : (metadata.placeOfPublication || '');
+                        // Handle transliteration fields
+                        const translitTitleField = document.getElementById('translit_title');
+                        const translitSubtitleField = document.getElementById('translit_subtitle');
 
-                    document.getElementById('publisher').value = Array.isArray(metadata.publisher)
-                        ? metadata.publisher[0]
-                        : (metadata.publisher || '');
-
-                    document.getElementById('year').value = metadata.publicationDate || '';
-                    document.getElementById('notes').value = metadata.synopsisOfBook || '';
-
-                    if (metadata.authors?.length > 0) {
-                        document.getElementById('family_name').value = metadata.authors[0].familyName || '';
-                        document.getElementById('given_name').value = metadata.authors[0].givenName || '';
-                    }
-
-                    // Handle country dropdown
-                    const countrySelect = document.querySelector('select[name="country"]');
-                    if (countrySelect && metadata.publicationCountry) {
-                        Array.from(countrySelect.options).forEach(option => {
-                            if (option.text.toLowerCase() === metadata.publicationCountry.toLowerCase()) {
-                                countrySelect.value = option.value;
+                        if (translitTitleField) {
+                            if (metadata.translit_title) {
+                                translitTitleField.value = metadata.translit_title;
+                                translitTitleField.style.display = 'inline-block';
+                            } else {
+                                translitTitleField.style.display = 'none';
                             }
-                        });
+                        }
+
+                        if (translitSubtitleField) {
+                            if (metadata.translit_subtitle) {
+                                translitSubtitleField.value = metadata.translit_subtitle;
+                                translitSubtitleField.style.display = 'inline-block';
+                            } else {
+                                translitSubtitleField.style.display = 'none';
+                            }
+                        }
+
+                        document.getElementById('place').value = Array.isArray(metadata.placeOfPublication)
+                            ? metadata.placeOfPublication[0]
+                            : (metadata.placeOfPublication || '');
+
+                        document.getElementById('publisher').value = Array.isArray(metadata.publisher)
+                            ? metadata.publisher[0]
+                            : (metadata.publisher || '');
+
+                        document.getElementById('year').value = metadata.publicationDate || '';
+                        document.getElementById('notes').value = metadata.synopsisOfBook || '';
+
+                        if (metadata.authors?.length > 0) {
+                            document.getElementById('family_name').value = metadata.authors[0].familyName || '';
+                            document.getElementById('given_name').value = metadata.authors[0].givenName || '';
+                        }
+
+                        // Handle country dropdown
+                        const countrySelect = document.querySelector('select[name="country"]');
+                        if (countrySelect && metadata.publicationCountry) {
+                            Array.from(countrySelect.options).forEach(option => {
+                                if (option.text.toLowerCase() === metadata.publicationCountry.toLowerCase()) {
+                                    countrySelect.value = option.value;
+                                }
+                            });
+                        }
+
+                    } else {
+                        // Metadata exists but appears empty
+                        console.warn('Metadata found but appears empty');
+                        processingMsg.textContent = '⚠️ AI found some data but it appears incomplete.';
+                        processingMsg.style.color = '#ff9800';
+                        showJSONParseFailedPopup('AI returned incomplete metadata. Please verify the information and fill in missing fields manually.');
                     }
-                    
-                } catch (error) {
-                    console.error('Error parsing Perplexity content:', error);
-                    processingMsg.textContent = '❌ Error parsing book metadata from AI response.';
+                } else {
+                    // All parsing methods failed
+                    console.error('❌ Failed to extract valid metadata');
+                    processingMsg.textContent = '❌ Could not parse AI response format.';
                     processingMsg.style.color = '#f44336';
+                    showJSONParseFailedPopup('AI response could not be parsed. The AI might have returned an unexpected format.');
                 }
             } else {
                 processingMsg.textContent = '❌ Could not identify book metadata from the provided information.';
                 processingMsg.style.color = '#f44336';
+                showJSONParseFailedPopup('No valid response received from AI service.');
             }
         })
         .catch(error => {
             console.error('Error analyzing text with Perplexity:', error);
             processingMsg.textContent = '❌ Error connecting to AI service for metadata generation.';
             processingMsg.style.color = '#f44336';
+            showJSONParseFailedPopup(`Connection error: ${error.message}`);
         })
         .finally(() => {
             // Re-enable button
@@ -1247,20 +1645,20 @@ function compressImage(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
-        
-        reader.onload = function(event) {
+
+        reader.onload = function (event) {
             const img = new Image();
             img.src = event.target.result;
-            
-            img.onload = function() {
+
+            img.onload = function () {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                
+
                 // Calculate new dimensions while maintaining aspect ratio
                 let width = img.width;
                 let height = img.height;
                 const maxDim = 2000; // Maximum dimension
-                
+
                 if (width > height && width > maxDim) {
                     height *= maxDim / width;
                     width = maxDim;
@@ -1268,29 +1666,29 @@ function compressImage(file) {
                     width *= maxDim / height;
                     height = maxDim;
                 }
-                
+
                 canvas.width = width;
                 canvas.height = height;
-                
+
                 // Draw and compress
                 ctx.drawImage(img, 0, 0, width, height);
-                
+
                 // Convert to blob with compression
                 canvas.toBlob((blob) => {
                     resolve(blob);
                 }, 'image/jpeg', 0.7); // Adjust quality (0.7 = 70% quality)
             };
-            
-            img.onerror = function(error) {
+
+            img.onerror = function (error) {
                 reject(error);
             };
         };
-        
-        reader.onerror = function(error) {
+
+        reader.onerror = function (error) {
             reject(error);
         };
     });
-} 
+}
 
 
 /*function ocrSearch() {
