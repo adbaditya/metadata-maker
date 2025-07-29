@@ -128,17 +128,17 @@ function create008Field(record) {
             controlfield008 += ' ';
         }
     } else {
-        controlfield008 += 'xx\\';  // Note the backslash for position 17
+        controlfield008 += 'xx ';
     }
 
     // Positions 18-34: Undefined for mixed materials (17 backslashes)
-    controlfield008 += '\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\';  // 17 backslashes
+    controlfield008 += '                 ';
 
     // Positions 35-37: Language - no linguistic content
     controlfield008 += 'zxx';
 
     // Position 38: Modified record - not specified
-    controlfield008 += '\\';
+    controlfield008 += ' ';
 
     // Position 39: Cataloging agency - Other
     controlfield008 += 'd';

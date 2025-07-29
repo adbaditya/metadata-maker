@@ -475,7 +475,7 @@ async function preFetchFromAI() {
                                 - Author: ${isbnData.author || 'Unknown'}
                                 - ISBN: ${isbn}
                                 
-                                Search major bookstores for this exact title or author combination or isbn.
+                                Search major bookstores for this above title or isbn.
                     
                     Primary search sources (in order of priority):
                     1. Amazon.com / Amazon.ae / Amazon.in - PRIORITY for product dimensions and specifications
