@@ -542,3 +542,7 @@ span.question-mark {
     border: 1px solid #ffeaa7;
     display: block;
 }
+
+label.heading {
+    font-size: 20px;
+}
