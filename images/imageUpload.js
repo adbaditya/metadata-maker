@@ -1844,3 +1844,249 @@ function compressImage(file) {
 
     fileInput.click();
 }*/
+
+
+// Saving images/videos locally
+async function processImagesLocally() {
+    const fileInput = document.getElementById('image-upload');
+    const files = Array.from(fileInput.files);
+    const previewDiv = document.getElementById('image-preview');
+    const progressDiv = document.getElementById('upload-progress');
+    const persistentStatus = document.getElementById('save-status-persistent');
+
+    // Clear previous previews
+    previewDiv.innerHTML = '';
+    persistentStatus.style.display = 'none';
+    persistentStatus.className = '';
+
+    if (files.length === 0) {
+        progressDiv.innerHTML = 'Please select at least one image';
+        return;
+    }
+
+    // Show previews (your existing preview code)
+    files.forEach(file => {
+        const previewContainer = document.createElement('div');
+        previewContainer.className = 'preview-container';
+
+        // Check if file is video or image
+        const isVideo = file.type.startsWith('video/');
+        const isImage = file.type.startsWith('image/');
+
+        let mediaElement;
+
+        if (isVideo) {
+            // Create video element
+            mediaElement = document.createElement('video');
+            mediaElement.controls = true;
+            mediaElement.style.maxWidth = '200px';
+            mediaElement.style.maxHeight = '200px';
+            mediaElement.style.margin = '10px';
+
+            // Add video icon indicator
+            const videoIcon = document.createElement('div');
+            videoIcon.innerHTML = '🎥 Video';
+            videoIcon.style.fontSize = '12px';
+            videoIcon.style.color = '#666';
+            videoIcon.style.marginBottom = '5px';
+            previewContainer.appendChild(videoIcon);
+
+        } else if (isImage) {
+            // Create image element
+            mediaElement = document.createElement('img');
+            mediaElement.style.maxWidth = '200px';
+            mediaElement.style.maxHeight = '200px';
+            mediaElement.style.margin = '10px';
+
+            // Add image icon indicator
+            const imageIcon = document.createElement('div');
+            imageIcon.innerHTML = '🖼️ Image';
+            imageIcon.style.fontSize = '12px';
+            imageIcon.style.color = '#666';
+            imageIcon.style.marginBottom = '5px';
+            previewContainer.appendChild(imageIcon);
+
+        } else {
+            // Unknown file type
+            mediaElement = document.createElement('div');
+            mediaElement.innerHTML = `📄 ${file.type || 'Unknown file type'}`;
+            mediaElement.style.width = '200px';
+            mediaElement.style.height = '100px';
+            mediaElement.style.margin = '10px';
+            mediaElement.style.border = '2px dashed #ccc';
+            mediaElement.style.display = 'flex';
+            mediaElement.style.alignItems = 'center';
+            mediaElement.style.justifyContent = 'center';
+            mediaElement.style.fontSize = '14px';
+            mediaElement.style.color = '#666';
+        }
+
+        const nameLabel = document.createElement('div');
+        nameLabel.textContent = file.name;
+        nameLabel.className = 'file-name';
+        nameLabel.style.fontSize = '12px';
+        nameLabel.style.color = '#333';
+        nameLabel.style.marginTop = '5px';
+        nameLabel.style.wordBreak = 'break-word';
+
+        // Create object URL and set source
+        if (isVideo || isImage) {
+            const objectUrl = URL.createObjectURL(file);
+            mediaElement.src = objectUrl;
+
+            // Clean up object URL when element loads
+            mediaElement.onload = mediaElement.onloadeddata = () => {
+                URL.revokeObjectURL(objectUrl);
+            };
+
+            // Handle errors
+            mediaElement.onerror = () => {
+                console.error(`Failed to load ${isVideo ? 'video' : 'image'}:`, file.name);
+                mediaElement.style.border = '2px solid #ff4444';
+                mediaElement.alt = `Failed to load ${file.name}`;
+            };
+        }
+
+        previewContainer.appendChild(mediaElement);
+        previewContainer.appendChild(nameLabel);
+        previewDiv.appendChild(previewContainer);
+    });
+
+    // Now save files locally
+    await saveFilesLocally(files, progressDiv);
+}
+
+// Simplified local file saving function - always ask user where to save
+// Simplified local file saving function with success popup
+async function saveFilesLocally(files, progressDiv) {
+    const persistentStatus = document.getElementById('save-status-persistent');
+    try {
+        persistentStatus.style.display = 'none';
+        persistentStatus.className = '';
+
+        // Check if File System Access API is supported
+        if (!window.showDirectoryPicker) {
+            progressDiv.innerHTML = '<span style="color: #ff4444;">File System Access API not supported in this browser. Please use Chrome 86+ or Edge 86+</span>';
+            return;
+        }
+
+        // Always show directory picker - let user choose where to save
+        progressDiv.innerHTML = 'Please choose a folder to save the files...';
+        
+        const directoryHandle = await showDirectoryPicker();
+
+        progressDiv.innerHTML = `Saving ${files.length} file(s) to: ${directoryHandle.name}...`;
+
+        let savedCount = 0;
+        let errorCount = 0;
+
+        // Save each file
+        for (const file of files) {
+            try {
+                // Create file handle
+                const fileHandle = await directoryHandle.getFileHandle(file.name, {
+                    create: true
+                });
+
+                // Create writable stream
+                const writable = await fileHandle.createWritable();
+
+                // Write file content
+                await writable.write(file);
+                await writable.close();
+
+                savedCount++;
+                
+                // Update progress
+                progressDiv.innerHTML = `Saved ${savedCount}/${files.length} files to: ${directoryHandle.name}`;
+                
+            } catch (error) {
+                console.error(`Error saving ${file.name}:`, error);
+                errorCount++;
+            }
+        }
+
+        // Clear the progress div
+        progressDiv.innerHTML = '';
+
+        // Show success popup instead of inline message
+        if (errorCount === 0) {
+            persistentStatus.className = 'success';
+            persistentStatus.innerHTML = `✅ Successfully saved ${savedCount} file(s) to: <strong>${directoryHandle.name}</strong>`;
+            showSuccessPopup(savedCount, directoryHandle.name);
+        } else {
+            persistentStatus.className = 'partial';
+            persistentStatus.innerHTML = `⚠️ Saved ${savedCount} file(s), ${errorCount} failed. Folder: <strong>${directoryHandle.name}</strong>`;
+            showSuccessPopup(savedCount, directoryHandle.name, errorCount);
+        }
+
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            progressDiv.innerHTML = '<span style="color: #666;">Save cancelled by user</span>';
+        } else {
+            console.error('Error saving files locally:', error);
+            progressDiv.innerHTML = `<span style="color: #ff4444;">Error saving files: ${error.message}</span>`;
+        }
+    }
+}
+
+// Function to show success popup
+function showSuccessPopup(savedCount, folderName, errorCount = 0) {
+    // Create popup elements
+    const backdrop = document.createElement('div');
+    backdrop.className = 'success-popup-backdrop';
+    
+    const popup = document.createElement('div');
+    popup.className = 'success-popup';
+    
+    let message = '';
+    if (errorCount === 0) {
+        message = `
+            <h3>✅ Success!</h3>
+            <p>Successfully saved <strong>${savedCount} file(s)</strong> to:</p>
+            <p style="font-weight: bold; color: #4CAF50;">${folderName}</p>
+            <div class="close-info">This popup will close automatically in 3 seconds</div>
+        `;
+    } else {
+        message = `
+            <h3>⚠️ Partially Complete</h3>
+            <p>Saved <strong>${savedCount} file(s)</strong> successfully</p>
+            <p style="color: #ff9800;"><strong>${errorCount} file(s)</strong> failed to save</p>
+            <p>Folder: <strong>${folderName}</strong></p>
+            <div class="close-info">This popup will close automatically in 4 seconds</div>
+        `;
+    }
+    
+    popup.innerHTML = message;
+    
+    // Show popup
+    backdrop.style.display = 'block';
+    popup.style.display = 'block';
+    document.body.appendChild(backdrop);
+    document.body.appendChild(popup);
+    
+    // Auto-close after 3-4 seconds
+    const closeTime = errorCount === 0 ? 3000 : 4000;
+    
+    setTimeout(() => {
+        // Add fade out animation
+        popup.classList.add('fade-out');
+        
+        // Remove elements after animation completes
+        setTimeout(() => {
+            backdrop.remove();
+            popup.remove();
+        }, 300);
+    }, closeTime);
+    
+    // Allow manual close by clicking backdrop
+    backdrop.onclick = function() {
+        popup.classList.add('fade-out');
+        setTimeout(() => {
+            backdrop.remove();
+            popup.remove();
+        }, 300);
+    };
+    
+    console.log(`Success popup shown: ${savedCount} files saved to ${folderName}`);
+}
