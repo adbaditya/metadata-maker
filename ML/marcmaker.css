@@ -458,3 +458,8 @@ span.question-mark {
 #alternative-title-block label.insert.insert_normal {
     left: -15px;
 }
+
+/* Temp */
+label.heading {
+    font-size: 20px;
+}
