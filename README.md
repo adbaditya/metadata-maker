@@ -37,6 +37,8 @@ The information for the organization creating the record can be altered via the 
 
 **03-14-2023:** Folded the many branches into the default branch to make updating and deploying easier. The files from the other branches lack the development history, but the README for each page includes a link to the corresponding branch, which stores that history up until today.
 
-## Contact info
+## Original Version of this Template
+This updated version builds on the original and is available on [GitHub](https://github.com/UIUCLibrary/metadata-maker).
 
-Comments and questions can be directed to Deren Kudeki at Myung-Ja Han at mhan3@illinois.edu
+## Contact info
+For comments and questions, contact Liya Louis ([llouis@vcu.edu](mailto:llouis@vcu.edu)) or Amy J Andres ([ajandres@vcu.edu](mailto:ajandres@vcu.edu)).
