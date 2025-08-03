@@ -1,5 +1,5 @@
 # MetadataMaker
-**AI-Integrated Metadata Maker Template Series** is a web application designed to generate good-enough quality metadata for unique and non-bibliographic items with AI assistance. It supports export in two formats—MARC and HTML—to accommodate various metadata ingestion systems and content management systems.
+**AI-Integrated Metadata Maker Template Series** is a web application designed to generate core-level metadata for unique and non-bibliographic items with AI assistance. It supports export in two formats—MARC and HTML—to accommodate various metadata ingestion systems and content management systems.
 
 ## 🔍 How it works
 
@@ -248,4 +248,3 @@ This updated version builds on the original and is available on [GitHub](https:/
 
 ## Contact info
 For comments and questions, contact Liya Louis ([llouis@vcu.edu](mailto:llouis@vcu.edu)) or Amy J Andres ([ajandres@vcu.edu](mailto:ajandres@vcu.edu)).
-
