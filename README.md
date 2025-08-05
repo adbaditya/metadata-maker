@@ -1,5 +1,10 @@
 # MetadataMaker
-**AI-Integrated Metadata Maker Template Series** is a web application designed to generate core-level metadata for unique and non-bibliographic items with AI assistance. It supports export in two formats—MARC and HTML—to accommodate various metadata ingestion systems and content management systems.
+**AI-Integrated Metadata Maker Template Series** is a web application designed to generate core-level metadata for unique and non-bibliographic items. The templates are developed with flexibility to support the documentation of artists’ books, equipment and material samples. They support metadata export in two formats—MARC and HTML and image curation to meet the requirements of various metadata ingestion systems and content management systems.
+
+Originally developed as a manual entry tool, this enhanced version integrates LLM models and API calls to streamline metadata creation and image curation for diverse resources. To meet the cataloging needs of VCUarts Qatar Libraries, three specialized templates were added:
+Monograph: for books (e.g., artists’ books, rare books, foreign language books)
+IMS(Innovative Media Studios): for documenting equipment (e.g., cameras, media kits)
+ML(Materials Library): for cataloging material samples (e.g., fabric swatches, polymers)
 
 ## 🔍 How it works
 
@@ -8,12 +13,11 @@ The tool integrates LLM models and API calls to:
 * Query various LLM for metadata using ISBN, title, or author
 * Use Tesseract.js(OCR) to extract data from clear book cover images
 * Auto-generate multilingual and standards-aligned metadata
-* Offer an option to save associated images along with metadata
+* Offer an option to save associated images along with metadata to build websites or online catalogues
 
-Ideal for cataloging unique or non-standard items with AI assistance, while ensuring human oversight for accuracy and context. The base model template for manual entry of metadata was developed at the University of Illinois, and the AI integration was developed by the Virginia Commonwealth University in Qatar. 
+Ideal for cataloging unique or non-standard items with AI assistance, while ensuring human oversight for accuracy and context. The base model template for manual entry of metadata was developed at the University of Illinois, and the AI integration was developed by the Virginia Commonwealth University in Qatar.
 
 A live version of the tool is available here: https://metadata-maker.pages.dev/
-
 
 ## Editing institution information
 

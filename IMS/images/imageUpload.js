@@ -165,20 +165,6 @@ async function preFetchFromAI() {
     try {
         let metadata = null;
 
-        // Dummy eBay API call (always fails/returns no data)
-        console.log('Attempting eBay API call...');
-        try {
-            // This is a dummy call that will fail/return no data
-            const ebayResponse = await fetch('https://dummy-ebay-api.com/search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, serial })
-            });
-            // This will always fail, so we'll catch and continue to Perplexity
-        } catch (ebayError) {
-            console.log('eBay API unavailable, proceeding to Perplexity search...');
-        }
-
         // Perplexity search for equipment
         console.log('Searching Perplexity for equipment data...');
         let searchQuery = title;
