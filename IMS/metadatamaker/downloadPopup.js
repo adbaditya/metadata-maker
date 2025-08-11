@@ -30,7 +30,26 @@ async function showDownloadLocationPicker(content, extension) {
     `;
 
     const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
-    const filename = `metadata_${timestamp}.${extension}`;
+    const filenameField = document.querySelector('#filename');
+    let filename;
+    
+    if (filenameField && filenameField.value.trim()) {
+        const userFilename = filenameField.value.trim();
+        if (!userFilename.endsWith(`.${extension}`)) {
+            filename = `${userFilename}.${extension}`;
+        } else {
+            filename = userFilename;
+        }
+    } else if (customFilename) {
+        if (!customFilename.endsWith(`.${extension}`)) {
+            filename = `${customFilename}.${extension}`;
+        } else {
+            filename = customFilename;
+        }
+    } else {
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+        filename = `metadata_${timestamp}.${extension}`;
+    }
     
     // Show which format is being downloaded
     const formatName = extension.toUpperCase();

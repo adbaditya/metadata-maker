@@ -868,11 +868,10 @@ if (typeof downloadInProgress === 'undefined') {
     let downloadInProgress = false;
 }
 
-async function downloadFile2(content, extension) {
+async function downloadFile2(content, extension, customFilename = null) {
     if (downloadInProgress) {
-        // If download is in progress, queue this download
-        setTimeout(() => downloadFile2(content, extension), 500);
+        setTimeout(() => downloadFile2(content, extension, customFilename), 500);
         return;
     }
-    await showDownloadLocationPicker(content, extension);
+    await showDownloadLocationPicker(content, extension, customFilename);
 }
