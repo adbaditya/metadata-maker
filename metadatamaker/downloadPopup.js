@@ -40,12 +40,6 @@ async function showDownloadLocationPicker(content, extension) {
         } else {
             filename = userFilename;
         }
-    } else if (customFilename) {
-        if (!customFilename.endsWith(`.${extension}`)) {
-            filename = `${customFilename}.${extension}`;
-        } else {
-            filename = customFilename;
-        }
     } else {
         const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
         filename = `metadata_${timestamp}.${extension}`;

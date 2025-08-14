@@ -2,7 +2,7 @@ let downloadInProgress = false;
 
 async function showDownloadLocationPicker(content, extension) {
     downloadInProgress = true;
-    
+
     // Create popup modal
     const modal = document.createElement('div');
     modal.id = 'downloadModal';
@@ -32,7 +32,7 @@ async function showDownloadLocationPicker(content, extension) {
     const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
     const filenameField = document.querySelector('#filename');
     let filename;
-    
+
     if (filenameField && filenameField.value.trim()) {
         const userFilename = filenameField.value.trim();
         if (!userFilename.endsWith(`.${extension}`)) {
@@ -40,17 +40,11 @@ async function showDownloadLocationPicker(content, extension) {
         } else {
             filename = userFilename;
         }
-    } else if (customFilename) {
-        if (!customFilename.endsWith(`.${extension}`)) {
-            filename = `${customFilename}.${extension}`;
-        } else {
-            filename = customFilename;
-        }
     } else {
         const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
         filename = `metadata_${timestamp}.${extension}`;
     }
-    
+
     // Show which format is being downloaded
     const formatName = extension.toUpperCase();
 
@@ -123,7 +117,7 @@ async function showDownloadLocationPicker(content, extension) {
 
 async function downloadFileWithDirectoryPicker(content, filename, extension) {
     let mimeType;
-    switch(extension) {
+    switch (extension) {
         case 'mrc':
             mimeType = 'application/marc';
             break;
@@ -144,18 +138,18 @@ async function downloadFileWithDirectoryPicker(content, filename, extension) {
             accept: { [mimeType]: [`.${extension}`] }
         }]
     });
-    
+
     const writable = await fileHandle.createWritable();
     await writable.write(content);
     await writable.close();
-    
+
     // Show success message
     showSuccessMessage(`${filename} saved successfully!`);
 }
 
 function fallbackDownload(content, filename, extension) {
     let mimeType;
-    switch(extension) {
+    switch (extension) {
         case 'mrc':
             mimeType = 'application/marc';
             break;
@@ -178,7 +172,7 @@ function fallbackDownload(content, filename, extension) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
+
     console.log(`Downloaded: ${filename}`);
 }
 
@@ -199,7 +193,7 @@ function showSuccessMessage(message) {
     `;
     successModal.innerHTML = `✅ ${message}`;
     document.body.appendChild(successModal);
-    
+
     setTimeout(() => {
         if (document.body.contains(successModal)) {
             document.body.removeChild(successModal);

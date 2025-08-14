@@ -16,43 +16,118 @@ function get(name) {
  *	Returns the institution info
  */
 function generateInstitutionInfo() {
-	var output = {
-		//040 $a, 040 $c
-		marc: 'VCU',
-		mods: {
-			physicalLocation: 'Art & Design Library',
-			recordContentSource: 'D@A'
-		},
-		//"seller" info
-		html: {
-			url: 'http://id.loc.gov/authorities/names/qadovcu',
-			name: 'Virginia Commonwealth University, Qatar'
-		}
-	};
+    var output = {
+        //040 $a, 040 $c
+        marc: 'VCU',
+        mods: {
+            physicalLocation: 'Art & Design Library',
+            recordContentSource: 'D@A'
+        },
+        //"seller" info
+        html: {
+            url: 'http://id.loc.gov/authorities/names/qadovcu',
+            name: 'Virginia Commonwealth University, Qatar'
+        }
+    };
 
-	marc = get('marc');
-	if (typeof marc !== 'undefined') {
-		output['marc'] = marc;
-	}
-	physicalLocation = get('physicalLocation');
-	if (typeof physicalLocation !== 'undefined') {
-		output['mods']['physicalLocation'] = physicalLocation;
-	}
-	recordContentSource = get('recordContentSource');
-	if (typeof recordContentSource !== 'undefined') {
-		output['mods']['recordContentSource'] = recordContentSource;
-	}
-	lcn = get('lcn');
-	if (typeof lcn !== 'undefined') {
-		output['html']['url']  = 'http://id.loc.gov/authorities/names/' + lcn;
-	}
-	n = get('n');
-	if (typeof n !== 'undefined') {
-		output['html']['name'] = n;
-	}
+    // First check form fields (if they exist)
+    const marcField = document.querySelector('#marc_code');
+    const physicalLocationField = document.querySelector('#physicalLocation');
+    const recordContentSourceField = document.querySelector('#recordContentSource');
+    const lcnField = document.querySelector('#lcno');
+    const nameField = document.querySelector('#org_name');
 
-	return output;
+    if (marcField && marcField.value.trim()) {
+        output['marc'] = marcField.value.trim();
+    }
+    if (physicalLocationField && physicalLocationField.value.trim()) {
+        output['mods']['physicalLocation'] = physicalLocationField.value.trim();
+    }
+    if (recordContentSourceField && recordContentSourceField.value.trim()) {
+        output['mods']['recordContentSource'] = recordContentSourceField.value.trim();
+    }
+    if (lcnField && lcnField.value.trim()) {
+        output['html']['url'] = 'http://id.loc.gov/authorities/names/' + lcnField.value.trim();
+    }
+    if (nameField && nameField.value.trim()) {
+        output['html']['name'] = nameField.value.trim();
+    }
+
+    // Then check URL parameters (existing functionality)
+    marc = get('marc');
+    if (typeof marc !== 'undefined') {
+        output['marc'] = marc;
+    }
+    physicalLocation = get('physicalLocation');
+    if (typeof physicalLocation !== 'undefined') {
+        output['mods']['physicalLocation'] = physicalLocation;
+    }
+    recordContentSource = get('recordContentSource');
+    if (typeof recordContentSource !== 'undefined') {
+        output['mods']['recordContentSource'] = recordContentSource;
+    }
+    lcn = get('lcn');
+    if (typeof lcn !== 'undefined') {
+        output['html']['url'] = 'http://id.loc.gov/authorities/names/' + lcn;
+    }
+    n = get('n');
+    if (typeof n !== 'undefined') {
+        output['html']['name'] = n;
+    }
+
+    return output;
 }
+
+const institutionAlertHTML = `
+    <div class="custom-alert-backdrop-common institution-changed-backdrop"></div>
+    <div class="custom-alert-common institution-changed-alert">
+        <h3>✅ Institution Updated!</h3>
+        <div id="institution-details"></div>
+        <button class="close-btn">OK</button>
+    </div>
+`;
+document.body.insertAdjacentHTML("beforeend", institutionAlertHTML);
+
+// Handle institution form submission
+document.addEventListener('DOMContentLoaded', function() {
+    const institutionForm = document.querySelector('#institution_menu');
+    if (institutionForm) {
+        institutionForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get updated institution info
+            const institutionInfo = generateInstitutionInfo();
+            
+            // Show custom alert with the new information
+            const detailsDiv = document.querySelector('#institution-details');
+            detailsDiv.innerHTML = `
+                <p><strong>MARC Code:</strong> ${institutionInfo.marc}</p>
+                <p><strong>Physical Location:</strong> ${institutionInfo.mods.physicalLocation}</p>
+                <p><strong>Record Content Source:</strong> ${institutionInfo.mods.recordContentSource}</p>
+                <p><strong>Organization:</strong> ${institutionInfo.html.name}</p>
+            `;
+            
+            // Show the alert
+            document.querySelector('.institution-changed-backdrop').style.display = 'block';
+            document.querySelector('.institution-changed-alert').style.display = 'block';
+            
+            // Hide the institution form
+            institutionForm.classList.add('hidden');
+        });
+    }
+
+    // Handle closing the institution alert
+    document.querySelector('.institution-changed-alert .close-btn').addEventListener('click', function() {
+        document.querySelector('.institution-changed-backdrop').style.display = 'none';
+        document.querySelector('.institution-changed-alert').style.display = 'none';
+    });
+
+    // Handle clicking backdrop to close
+    document.querySelector('.institution-changed-backdrop').addEventListener('click', function() {
+        document.querySelector('.institution-changed-backdrop').style.display = 'none';
+        document.querySelector('.institution-changed-alert').style.display = 'none';
+    });
+});
 
 /*
  * The first listed author should be placed in 100. If no author is listed, then the first
