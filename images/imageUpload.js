@@ -1,3 +1,200 @@
+let aiProcessingInProgress = false;
+
+function showAIProcessingState() {
+    if (aiProcessingInProgress) return; // Prevent multiple calls
+
+    aiProcessingInProgress = true;
+
+    // Lock the main AI button
+    const aiButton = document.getElementById('ai-generate-btn');
+    if (aiButton) {
+        aiButton.disabled = true;
+        aiButton.classList.add('ai-processing');
+        aiButton.innerHTML = '🔄 Processing...';
+        aiButton.style.position = 'relative';
+    }
+
+    // Lock the OCR AI button if it exists
+    const aiSearchBtn = document.getElementById('ai-search-btn');
+    if (aiSearchBtn) {
+        aiSearchBtn.disabled = true;
+        aiSearchBtn.classList.add('ai-processing');
+        aiSearchBtn.innerHTML = '🔄 Processing...';
+        aiSearchBtn.style.position = 'relative';
+    }
+
+    // Show processing notification
+    const notification = document.createElement('div');
+    notification.id = 'ai-processing-notification';
+    notification.className = 'ai-processing-notification';
+    notification.innerHTML = `
+        <div class="ai-processing-spinner"></div>
+        <span>AI is analyzing and generating metadata...</span>
+    `;
+
+    document.body.appendChild(notification);
+    console.log('AI processing state activated');
+}
+
+function hideAIProcessingState(success = true) {
+    aiProcessingInProgress = false;
+
+    // Unlock the main AI button
+    const aiButton = document.getElementById('ai-generate-btn');
+    if (aiButton) {
+        aiButton.disabled = false;
+        aiButton.classList.remove('ai-processing');
+        aiButton.innerHTML = '🤖 Generate Metadata with AI';
+        aiButton.style.position = '';
+    }
+
+    // Unlock the OCR AI button
+    const aiSearchBtn = document.getElementById('ai-search-btn');
+    if (aiSearchBtn) {
+        aiSearchBtn.disabled = false;
+        aiSearchBtn.classList.remove('ai-processing');
+        aiSearchBtn.innerHTML = '🤖 Generate Metadata with AI';
+        aiSearchBtn.style.position = '';
+    }
+
+    // Hide processing notification
+    const notification = document.getElementById('ai-processing-notification');
+    if (notification) {
+        notification.remove();
+    }
+
+    // Show success notification briefly
+    if (success) {
+        showSuccessNotification('✅ Metadata generated successfully!');
+    }
+
+    console.log(`AI processing state deactivated (success: ${success})`);
+}
+
+function showSuccessNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'ai-processing-notification';
+    notification.style.background = '#4CAF50';
+    notification.innerHTML = `<span>${message}</span>`;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        if (document.body.contains(notification)) {
+            notification.remove();
+        }
+    }, 3000);
+
+    console.log('Success notification shown:', message);
+}
+
+function showAIErrorPopup(errorMessage, canRetry = true) {
+    // Create error popup
+    const backdrop = document.createElement('div');
+    backdrop.className = 'ai-error-backdrop';
+    backdrop.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+
+    const popup = document.createElement('div');
+    popup.className = 'ai-error-popup';
+    popup.style.cssText = `
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        margin: 20px;
+        text-align: center;
+        border: 2px solid #ff4444;
+        animation: popupSlideIn 0.3s ease-out;
+    `;
+
+    let retryButton = '';
+    if (canRetry) {
+        retryButton = `
+            <button id="ai-retry-btn" style="
+                background: #4CAF50; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                border-radius: 5px; 
+                cursor: pointer;
+                margin: 5px;
+                font-size: 14px;
+            ">🔄 Try Again</button>
+        `;
+    }
+
+    popup.innerHTML = `
+        <h3 style="color: #ff4444; margin-top: 0;">⚠️ AI Processing Error</h3>
+        <p style="margin: 15px 0; color: #333; line-height: 1.5;">
+            ${errorMessage}
+        </p>
+        <div style="margin: 20px 0;">
+            ${retryButton}
+            <button id="ai-manual-btn" style="
+                background: #2196F3; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                border-radius: 5px; 
+                cursor: pointer;
+                margin: 5px;
+                font-size: 14px;
+            ">✏️ Enter Manually</button>
+            <button id="ai-close-btn" style="
+                background: #666; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                border-radius: 5px; 
+                cursor: pointer;
+                margin: 5px;
+                font-size: 14px;
+            ">❌ Close</button>
+        </div>
+    `;
+
+    backdrop.appendChild(popup);
+    document.body.appendChild(backdrop);
+
+    // Add event listeners
+    if (canRetry) {
+        document.getElementById('ai-retry-btn').onclick = function () {
+            backdrop.remove();
+            preFetchFromAI(); // Retry the AI generation
+        };
+    }
+
+    document.getElementById('ai-manual-btn').onclick = function () {
+        backdrop.remove();
+        document.getElementById('title').focus();
+    };
+
+    document.getElementById('ai-close-btn').onclick = function () {
+        backdrop.remove();
+    };
+
+    // Close on backdrop click
+    backdrop.onclick = function (e) {
+        if (e.target === backdrop) {
+            backdrop.remove();
+        }
+    };
+
+    console.log('AI error popup shown:', errorMessage);
+}
+
 function processImages() {
     const fileInput = document.getElementById('image-upload');
     const files = Array.from(fileInput.files);
@@ -104,9 +301,83 @@ function processImages() {
     uploadViaWorker(files);
 }
 
+function simpleJSONExtract(content) {
+    try {
+        console.log('Simple JSON extraction attempting...');
+
+        // Method 1: Find JSON between first { and last }
+        const start = content.indexOf('{');
+        const end = content.lastIndexOf('}');
+
+        if (start !== -1 && end !== -1 && end > start) {
+            const jsonStr = content.substring(start, end + 1);
+            console.log('Extracted JSON string:', jsonStr.substring(0, 100) + '...');
+
+            try {
+                const parsed = JSON.parse(jsonStr);
+                console.log('✅ Simple extraction method 1 succeeded');
+                return parsed;
+            } catch (parseError) {
+                console.log('❌ Simple extraction method 1 failed:', parseError.message);
+            }
+        }
+
+        // Method 2: Try to find JSON with regex pattern
+        const jsonPattern = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
+        const matches = content.match(jsonPattern);
+
+        if (matches && matches.length > 0) {
+            // Try the largest match first (most likely to be complete)
+            const sortedMatches = matches.sort((a, b) => b.length - a.length);
+
+            for (const match of sortedMatches) {
+                try {
+                    const parsed = JSON.parse(match);
+                    console.log('✅ Simple extraction method 2 succeeded');
+                    return parsed;
+                } catch (parseError) {
+                    console.log('❌ Simple extraction method 2 failed for match:', parseError.message);
+                    continue;
+                }
+            }
+        }
+
+        // Method 3: Try to clean common AI response patterns
+        let cleaned = content
+            // Remove markdown code blocks
+            .replace(/```json\s*/gi, '')
+            .replace(/```\s*/g, '')
+            // Remove common AI prefixes
+            .replace(/^.*?(?=\{)/s, '')
+            // Remove everything after the last }
+            .replace(/\}[\s\S]*$/s, '}')
+            // Remove citation numbers [1], [2], etc.
+            .replace(/\[\d+\]/g, '')
+            // Remove extra whitespace
+            .trim();
+
+        if (cleaned.startsWith('{') && cleaned.endsWith('}')) {
+            try {
+                const parsed = JSON.parse(cleaned);
+                console.log('✅ Simple extraction method 3 succeeded');
+                return parsed;
+            } catch (parseError) {
+                console.log('❌ Simple extraction method 3 failed:', parseError.message);
+            }
+        }
+
+        console.log('❌ All simple extraction methods failed');
+        return null;
+
+    } catch (error) {
+        console.error('❌ Simple JSON extraction error:', error);
+        return null;
+    }
+}
+
 function tryParseWithFallbacks(content) {
     console.log('Attempting to parse JSON with fallbacks...');
-    
+
     // Method 1: Direct JSON.parse
     try {
         const result = JSON.parse(content);
@@ -115,7 +386,7 @@ function tryParseWithFallbacks(content) {
     } catch (error) {
         console.log('❌ Method 1 (direct parsing) failed:', error.message);
     }
-    
+
     // Method 2: Enhanced extraction
     try {
         const result = extractJSONFromResponse(content);
@@ -126,7 +397,7 @@ function tryParseWithFallbacks(content) {
     } catch (error) {
         console.log('❌ Method 2 (enhanced extraction) failed:', error.message);
     }
-    
+
     // Method 3: Simple regex extraction
     try {
         const result = simpleJSONExtract(content);
@@ -137,7 +408,7 @@ function tryParseWithFallbacks(content) {
     } catch (error) {
         console.log('❌ Method 3 (regex extraction) failed:', error.message);
     }
-    
+
     // All methods failed
     console.error('❌ All JSON parsing methods failed');
     return null;
@@ -343,6 +614,10 @@ function extractISBNData(html) {
 //v3 - with perplexity
 
 async function preFetchFromAI() {
+    if (aiProcessingInProgress) {
+        return;
+    }
+
     const title = document.getElementById('title').value;
     const isbn = document.getElementById('isbn').value;
     let family_name = document.getElementById('family_name').value;
@@ -367,6 +642,8 @@ async function preFetchFromAI() {
         return;
     }
 
+    showAIProcessingState();
+
     try {
         let metadata = null;
 
@@ -384,8 +661,10 @@ async function preFetchFromAI() {
                     // Parse the JSON string from the content
                     metadata = JSON.parse(perplexityData.choices[0].message.content);
                     console.log('Parsed metadata:', metadata);
+
                 } catch (error) {
                     console.error('Error parsing Perplexity content:', error);
+                    hideAIProcessingState(false);
                 }
             }
         } else {
@@ -524,6 +803,7 @@ async function preFetchFromAI() {
 
                     metadata = JSON.parse(perplexityData.choices[0].message.content);
                     console.log('✅ Enhanced metadata from Perplexity with valid citations:', metadata);
+                    hideAIProcessingState(true);
                 } else {
                     console.log('❌ No valid Perplexity response, triggering fallback');
                     throw new Error('No valid Perplexity response');
@@ -633,10 +913,10 @@ async function preFetchFromAI() {
 
                     } catch (isbnError) {
                         console.log('ISBN search also failed:', isbnError);
-                        const title = $("#title").val();
-                        const familyName = $("#family_name").val();
-                        const givenName = $("#given_name").val();
-                        const isbn = $("isbn").val();
+                        const title = document.getElementById('title').value;
+                        const familyName = document.getElementById("#family_name").value;
+                        const givenName = document.getElementById("#given_name").value;
+                        const isbn = document.getElementById("isbn").value;
 
                         const enhancedQuery = `
                             Book search with multiple data sources:
@@ -720,7 +1000,6 @@ async function preFetchFromAI() {
                                         const metadata = tryParseWithFallbacks(perplexityData.choices[0].message.content);
 
                                         if (metadata && !metadata.error) {
-                                            console.log('✅ Enhanced metadata from Perplexity fallback:', metadata);
 
                                             // Use your existing form population code
                                             document.getElementById('title').value = metadata.title || '';
@@ -810,8 +1089,11 @@ async function preFetchFromAI() {
                                             handleInput(familyNameInput);
                                             handleInput(givenNameInput);
 
+                                            hideAIProcessingState(true);
+
                                         } else {
                                             showJSONParseFailedPopup('Could not parse enhanced search results.');
+                                            hideAIProcessingState(false);
                                         }
                                     } catch (parseError) {
                                         console.error('Error parsing enhanced search:', parseError);
@@ -824,6 +1106,7 @@ async function preFetchFromAI() {
                             .catch(error => {
                                 console.error('Enhanced search failed:', error);
                                 showJSONParseFailedPopup('All search methods failed. Please enter details manually.');
+                                hideAIProcessingState(false);
                             });
                     }
 
@@ -839,6 +1122,7 @@ async function preFetchFromAI() {
                     }
 
                     if (searchDetails.length === 0) {
+                        hideAIProcessingState(false);
                         alert('No search criteria provided. Please enter title, author, or ISBN.');
                         return;
                     }
@@ -900,13 +1184,17 @@ async function preFetchFromAI() {
                             metadata = JSON.parse(perplexityData.choices[0].message.content);
                             if (metadata.error) {
                                 console.log('Title-based search failed:', metadata.error);
+                                hideAIProcessingState(false);
                                 alert('Book not found in any database. Please enter details manually.');
+                                return;
                             } else {
                                 console.log('Found metadata via title/author search:', metadata);
                             }
                         } catch (parseError) {
+                            hideAIProcessingState(false);
                             console.error('Error parsing title-based response:', parseError);
                             alert('Error parsing search results. Please enter details manually.');
+                            return;
                         }
                     }
                 }
@@ -1004,10 +1292,14 @@ async function preFetchFromAI() {
             handleInput(familyNameInput);
             handleInput(givenNameInput);
 
+            hideAIProcessingState(true);
+
         }
 
     } catch (error) {
         console.error('Error fetching data:', error);
+        hideAIProcessingState(false);
+        showAIErrorPopup(error.message, true);
     }
 }
 
@@ -1124,7 +1416,6 @@ Only return the json and nothing else. Do not start with words json, just return
 
         // Navigate through the nested structure to get the content
         if (data && data.success && data.result) {
-            // Check if the API returned the nested structure we saw in your screenshot
             if (data.result.choices &&
                 data.result.choices[0] &&
                 data.result.choices[0].message &&
@@ -1156,122 +1447,6 @@ Only return the json and nothing else. Do not start with words json, just return
         return null;
     }
 }
-
-/* 
-
-Function with OCR Space - not working well
-
-function ocrSearch() {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
-    fileInput.multiple = true;
-
-    fileInput.onchange = async function (e) {
-        const files = Array.from(e.target.files);
-        if (!files || files.length === 0) return;
-
-        console.log(`Processing ${files.length} image(s)...`);
-        
-        const progressDiv = document.getElementById('ocr-progress');
-        if (progressDiv) {
-            progressDiv.innerHTML = `Processing ${files.length} image(s) with OCR...`;
-        }
-
-        let allExtractedText = '';
-        let processedCount = 0;
-
-        // Process each image sequentially
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            console.log(`Processing image ${i + 1}/${files.length}:`, file.name);
-            console.log('Original size:', file.size / 1024 / 1024, 'MB');
-
-            try {
-                const compressedImage = await compressImage(file);
-                console.log('Compressed size:', compressedImage.size / 1024 / 1024, 'MB');
-
-                const formData = new FormData();
-                formData.append('image', compressedImage, file.name);
-
-                if (progressDiv) {
-                    progressDiv.innerHTML = `Processing image ${i + 1}/${files.length}: ${file.name}...`;
-                }
-
-                const response = await fetch('https://metadata-maker.adb-aditya.workers.dev/ocr', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-                console.log(`OCR Result for image ${i + 1}:`, result);
-
-                if (result.success && result.result && result.result.ParsedResults) {
-                    const extractedText = result.result.ParsedResults[0].ParsedText;
-                    console.log(`Extracted Text from image ${i + 1}:`, extractedText);
-                    
-                    allExtractedText += `\n\n--- Text from ${file.name} ---\n${extractedText}`;
-                    processedCount++;
-                } else {
-                    console.error(`OCR failed for image ${i + 1}: ${file.name}`);
-                    allExtractedText += `\n\n--- Failed to extract text from ${file.name} ---\n`;
-                }
-
-            } catch (error) {
-                console.error(`Error processing image ${i + 1}:`, error);
-                allExtractedText += `\n\n--- Error processing ${file.name}: ${error.message} ---\n`;
-            }
-        }
-
-        // Display results after processing all images
-        if (progressDiv) {
-            progressDiv.innerHTML = `OCR completed for ${processedCount}/${files.length} image(s). Extracted text:`;
-            
-            const textDisplay = document.createElement('div');
-            textDisplay.style.maxHeight = '200px';
-            textDisplay.style.overflow = 'auto';
-            textDisplay.style.border = '1px solid #ccc';
-            textDisplay.style.padding = '10px';
-            textDisplay.style.marginTop = '10px';
-            textDisplay.style.whiteSpace = 'pre-wrap';
-            textDisplay.textContent = allExtractedText.trim();
-            
-            progressDiv.appendChild(textDisplay);
-            
-            // Store extracted text for later use
-            window.extractedOCRText = allExtractedText.trim();
-            
-            // Add instruction message and AI search button
-            const instructionMsg = document.createElement('div');
-            instructionMsg.innerHTML = `
-                <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border: 1px solid #b0d4f1; border-radius: 5px; margin-bottom: 15px">
-                    <p style="margin: 0 0 10px 0; font-weight: bold;">OCR text extracted successfully!</p>
-                    <p style="margin: 0 0 15px 0;">Enter ISBN, Author (Last name,First name) or Title if needed for more accurate results, then click the button below to generate metadata with AI.</p>
-                    <button id="ai-search-btn" style="
-                        background-color: #4CAF50; 
-                        color: white; 
-                        padding: 10px 20px; 
-                        border: none; 
-                        border-radius: 5px; 
-                        cursor: pointer; 
-                        font-size: 14px;
-                        font-weight: bold;
-                    ">🤖 Generate Metadata with AI</button>
-                    <i class="info-icon" data-tooltip="Use this option to search by image of the item to be catalogued. Enter ISBN, Author (Last name,First name) or Title if needed for more accurate results, then click the button below to generate metadata with AI">ⓘ</i>
-                </div>
-            `;
-            
-            progressDiv.appendChild(instructionMsg);
-            
-            // Add click handler for the AI search button
-            document.getElementById('ai-search-btn').onclick = function() {
-                generateMetadataWithAI();
-            };
-        }
-    };
-
-    fileInput.click();
-}*/
 
 function ocrSearch() {
     const fileInput = document.createElement('input');
@@ -1373,6 +1548,10 @@ function ocrSearch() {
 
             // Add click handler for the AI search button
             document.getElementById('ai-search-btn').onclick = function () {
+                if (aiProcessingInProgress) {
+                    return;
+                }
+                showAIProcessingState();
                 generateMetadataWithAI();
             };
         }
@@ -1482,13 +1661,20 @@ function showJSONParseFailedPopup(message) {
 
 // New function to handle AI metadata generation with user input
 function generateMetadataWithAI() {
+    if (aiProcessingInProgress) {
+        return;
+    }
+
     const aiSearchBtn = document.getElementById('ai-search-btn');
     const progressDiv = document.getElementById('ocr-progress');
 
     if (!window.extractedOCRText) {
+        hideAIProcessingState(false);
         alert('No OCR text available. Please upload and process images first.');
         return;
     }
+
+    showAIProcessingState();
 
     // Disable button and show processing
     aiSearchBtn.disabled = true;
@@ -1608,6 +1794,8 @@ function generateMetadataWithAI() {
                             });
                         }
 
+                        hideAIProcessingState(true);
+
                     } else {
                         // Metadata exists but appears empty
                         console.warn('Metadata found but appears empty');
@@ -1621,11 +1809,13 @@ function generateMetadataWithAI() {
                     processingMsg.textContent = '❌ Could not parse AI response format.';
                     processingMsg.style.color = '#f44336';
                     showJSONParseFailedPopup('AI response could not be parsed. The AI might have returned an unexpected format.');
+                    hideAIProcessingState(false);
                 }
             } else {
                 processingMsg.textContent = '❌ Could not identify book metadata from the provided information.';
                 processingMsg.style.color = '#f44336';
                 showJSONParseFailedPopup('No valid response received from AI service.');
+                hideAIProcessingState(false);
             }
         })
         .catch(error => {
@@ -1633,9 +1823,11 @@ function generateMetadataWithAI() {
             processingMsg.textContent = '❌ Error connecting to AI service for metadata generation.';
             processingMsg.style.color = '#f44336';
             showJSONParseFailedPopup(`Connection error: ${error.message}`);
+            hideAIProcessingState(false);
         })
         .finally(() => {
             // Re-enable button
+            hideAIProcessingState(false);
             aiSearchBtn.disabled = false;
             aiSearchBtn.innerHTML = '🤖 Generate Metadata with AI';
         });
@@ -1689,161 +1881,6 @@ function compressImage(file) {
         };
     });
 }
-
-
-/*function ocrSearch() {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
-    fileInput.multiple = true; // Enable multiple file selection
-
-    fileInput.onchange = async function (e) {
-        const files = Array.from(e.target.files); // Convert FileList to Array
-        if (!files || files.length === 0) return;
-
-        console.log(`Processing ${files.length} image(s)...`);
-        
-        const progressDiv = document.getElementById('ocr-progress');
-        if (progressDiv) {
-            progressDiv.innerHTML = `Processing ${files.length} image(s) with OCR...`;
-        }
-
-        let allExtractedText = ''; // Store text from all images
-        let processedCount = 0;
-
-        // Process each image sequentially
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            console.log(`Processing image ${i + 1}/${files.length}:`, file.name);
-            console.log('Original size:', file.size / 1024 / 1024, 'MB');
-
-            try {
-                const compressedImage = await compressImage(file);
-                console.log('Compressed size:', compressedImage.size / 1024 / 1024, 'MB');
-
-                const formData = new FormData();
-                formData.append('image', compressedImage, file.name);
-
-                // Update progress
-                if (progressDiv) {
-                    progressDiv.innerHTML = `Processing image ${i + 1}/${files.length}: ${file.name}...`;
-                }
-
-                const response = await fetch('https://metadata-maker.adb-aditya.workers.dev/ocr', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-                console.log(`OCR Result for image ${i + 1}:`, result);
-
-                if (result.success && result.result && result.result.ParsedResults) {
-                    const extractedText = result.result.ParsedResults[0].ParsedText;
-                    console.log(`Extracted Text from image ${i + 1}:`, extractedText);
-                    
-                    // Combine text from all images with separators
-                    allExtractedText += `\n\n--- Text from ${file.name} ---\n${extractedText}`;
-                    processedCount++;
-                } else {
-                    console.error(`OCR failed for image ${i + 1}: ${file.name}`);
-                    allExtractedText += `\n\n--- Failed to extract text from ${file.name} ---\n`;
-                }
-
-            } catch (error) {
-                console.error(`Error processing image ${i + 1}:`, error);
-                allExtractedText += `\n\n--- Error processing ${file.name}: ${error.message} ---\n`;
-            }
-        }
-
-        // Display results after processing all images
-        if (progressDiv) {
-            progressDiv.innerHTML = `OCR completed for ${processedCount}/${files.length} image(s). Extracted text:`;
-            
-            const textDisplay = document.createElement('div');
-            textDisplay.style.maxHeight = '200px'; // Increased height for multiple images
-            textDisplay.style.overflow = 'auto';
-            textDisplay.style.border = '1px solid #ccc';
-            textDisplay.style.padding = '10px';
-            textDisplay.style.marginTop = '10px';
-            textDisplay.style.whiteSpace = 'pre-wrap'; // Preserve formatting
-            textDisplay.textContent = allExtractedText.trim();
-            
-            progressDiv.appendChild(textDisplay);
-            
-            // Add a processing message
-            const processingMsg = document.createElement('div');
-            processingMsg.textContent = 'Analyzing combined text for book metadata...';
-            processingMsg.style.marginTop = '10px';
-            processingMsg.style.fontStyle = 'italic';
-            progressDiv.appendChild(processingMsg);
-            
-            // Send combined text to Perplexity for analysis
-            if (allExtractedText.trim()) {
-                fetchFromPerplexity(allExtractedText)
-                    .then(perplexityData => {
-                        if (perplexityData && perplexityData.choices?.[0]?.message?.content) {
-                            try {
-                                // Parse the JSON string from the content
-                                const metadata = JSON.parse(perplexityData.choices[0].message.content);
-                                console.log('Book metadata from combined OCR:', metadata);
-                                
-                                // Update the processing message
-                                processingMsg.textContent = 'Found book metadata from combined images!';
-                                
-                                // Populate form fields with the metadata
-                                document.getElementById('title').value = metadata.title || '';
-                                document.getElementById('edition').value = metadata.edition || '';
-                                document.getElementById('language').value = metadata.language || '';
-                                document.getElementById('pages').value = metadata.numberOfPages || '';
-                                document.getElementById('dimensions').value = metadata.dimensions || '';
-                                document.getElementById('subtitle').value = metadata.subtitle || '';
-        
-                                document.getElementById('place').value = Array.isArray(metadata.placeOfPublication)
-                                    ? metadata.placeOfPublication[0]
-                                    : (metadata.placeOfPublication || '');
-        
-                                document.getElementById('publisher').value = Array.isArray(metadata.publisher)
-                                    ? metadata.publisher[0]
-                                    : (metadata.publisher || '');
-        
-                                document.getElementById('year').value = metadata.publicationDate || '';
-                                document.getElementById('notes').value = metadata.synopsisOfBook || '';
-        
-                                if (metadata.authors?.length > 0) {
-                                    document.getElementById('family_name').value = metadata.authors[0].familyName || '';
-                                    document.getElementById('given_name').value = metadata.authors[0].givenName || '';
-                                }
-        
-                                // Handle country dropdown
-                                const countrySelect = document.querySelector('select[name="country"]');
-                                if (countrySelect && metadata.publicationCountry) {
-                                    Array.from(countrySelect.options).forEach(option => {
-                                        if (option.text.toLowerCase() === metadata.publicationCountry.toLowerCase()) {
-                                            countrySelect.value = option.value;
-                                        }
-                                    });
-                                }
-                                
-                            } catch (error) {
-                                console.error('Error parsing Perplexity content:', error);
-                                processingMsg.textContent = 'Error parsing book metadata.';
-                            }
-                        } else {
-                            processingMsg.textContent = 'Could not identify book metadata from the combined text.';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error analyzing combined text with Perplexity:', error);
-                        processingMsg.textContent = 'Error analyzing text for book information.';
-                    });
-            } else {
-                processingMsg.textContent = 'No text was successfully extracted from any image.';
-            }
-        }
-    };
-
-    fileInput.click();
-}*/
 
 
 // Saving images/videos locally
@@ -1972,7 +2009,7 @@ async function saveFilesLocally(files, progressDiv) {
 
         // Always show directory picker - let user choose where to save
         progressDiv.innerHTML = 'Please choose a folder to save the files...';
-        
+
         const directoryHandle = await showDirectoryPicker();
 
         progressDiv.innerHTML = `Saving ${files.length} file(s) to: ${directoryHandle.name}...`;
@@ -1996,10 +2033,10 @@ async function saveFilesLocally(files, progressDiv) {
                 await writable.close();
 
                 savedCount++;
-                
+
                 // Update progress
                 progressDiv.innerHTML = `Saved ${savedCount}/${files.length} files to: ${directoryHandle.name}`;
-                
+
             } catch (error) {
                 console.error(`Error saving ${file.name}:`, error);
                 errorCount++;
@@ -2035,10 +2072,10 @@ function showSuccessPopup(savedCount, folderName, errorCount = 0) {
     // Create popup elements
     const backdrop = document.createElement('div');
     backdrop.className = 'success-popup-backdrop';
-    
+
     const popup = document.createElement('div');
     popup.className = 'success-popup';
-    
+
     let message = '';
     if (errorCount === 0) {
         message = `
@@ -2056,37 +2093,37 @@ function showSuccessPopup(savedCount, folderName, errorCount = 0) {
             <div class="close-info">This popup will close automatically in 4 seconds</div>
         `;
     }
-    
+
     popup.innerHTML = message;
-    
+
     // Show popup
     backdrop.style.display = 'block';
     popup.style.display = 'block';
     document.body.appendChild(backdrop);
     document.body.appendChild(popup);
-    
+
     // Auto-close after 3-4 seconds
     const closeTime = errorCount === 0 ? 3000 : 4000;
-    
+
     setTimeout(() => {
         // Add fade out animation
         popup.classList.add('fade-out');
-        
+
         // Remove elements after animation completes
         setTimeout(() => {
             backdrop.remove();
             popup.remove();
         }, 300);
     }, closeTime);
-    
+
     // Allow manual close by clicking backdrop
-    backdrop.onclick = function() {
+    backdrop.onclick = function () {
         popup.classList.add('fade-out');
         setTimeout(() => {
             backdrop.remove();
             popup.remove();
         }, 300);
     };
-    
+
     console.log(`Success popup shown: ${savedCount} files saved to ${folderName}`);
 }
