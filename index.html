@@ -397,7 +397,7 @@
 
 			<div style="margin-top: 10px;">
 				<div id="ocr-progress"></div>
-				<button type="button" class="ocrButtons" onclick="ocrSearch()" id="ocrSearch">🖼️ Select images for OCR
+				<button type="button" class="ocrButtons" id="ocrSearch">🖼️ Select images for OCR
 					Search</button>
 			</div>
 
@@ -1469,6 +1469,7 @@
 				}
 			});
 		</script>
+		<script src="images/imageUpload.js"></script>
 		<script src="metadatamaker/downloadPopup.js"></script>
 		<script src="metadatamaker/generalInteractions.js"></script>
 		<script src="metadatamaker/topBar.js"></script>
@@ -1477,17 +1478,16 @@
 		<script src="metadatamaker/downloadBIBFRAME.js"></script>
 		<script src="metadatamaker/downloadHTML.js"></script>
 		<script src="metadatamaker/submitForm.js"></script>
-		<script src="images/imageUpload.js"></script>
 		<script>
-			document.addEventListener("DOMContentLoaded", function () {
-				// Find the button and attach the event listener
-				const ocrButton = document.getElementById("ocrSearch");
+			document.addEventListener('DOMContentLoaded', function () {
+				const ocrButton = document.getElementById('ocrSearch');
 				if (ocrButton) {
-					ocrButton.addEventListener("click", function () {
-						if (typeof ocrSearch === "function") {
+					ocrButton.addEventListener('click', function () {
+						if (typeof ocrSearch === 'function') {
 							ocrSearch();
 						} else {
-							console.error("ocrSearch function not available");
+							console.error('ocrSearch function not found');
+							alert('OCR functionality is not available. Please check if all scripts are loaded properly.');
 						}
 					});
 				}

@@ -1,29 +1,36 @@
 let aiProcessingInProgress = false;
 
-function showAIProcessingState() {
-    if (aiProcessingInProgress) return; // Prevent multiple calls
+let originalButtonStates = {};
 
+function showAIProcessingState() {
+    if (aiProcessingInProgress) return;
     aiProcessingInProgress = true;
 
-    // Lock the main AI button
+    // Store and lock main AI button
     const aiButton = document.getElementById('ai-generate-btn');
     if (aiButton) {
+        originalButtonStates['ai-generate-btn'] = {
+            innerHTML: aiButton.innerHTML,
+            disabled: aiButton.disabled
+        };
         aiButton.disabled = true;
         aiButton.classList.add('ai-processing');
         aiButton.innerHTML = '🔄 Processing...';
-        aiButton.style.position = 'relative';
     }
 
-    // Lock the OCR AI button if it exists
+    // Store and lock OCR AI button
     const aiSearchBtn = document.getElementById('ai-search-btn');
     if (aiSearchBtn) {
+        originalButtonStates['ai-search-btn'] = {
+            innerHTML: aiSearchBtn.innerHTML,
+            disabled: aiSearchBtn.disabled
+        };
         aiSearchBtn.disabled = true;
         aiSearchBtn.classList.add('ai-processing');
         aiSearchBtn.innerHTML = '🔄 Processing...';
-        aiSearchBtn.style.position = 'relative';
     }
 
-    // Show processing notification
+    // Show notification (existing code)
     const notification = document.createElement('div');
     notification.id = 'ai-processing-notification';
     notification.className = 'ai-processing-notification';
@@ -31,7 +38,6 @@ function showAIProcessingState() {
         <div class="ai-processing-spinner"></div>
         <span>AI is analyzing and generating metadata...</span>
     `;
-
     document.body.appendChild(notification);
     console.log('AI processing state activated');
 }
@@ -39,31 +45,33 @@ function showAIProcessingState() {
 function hideAIProcessingState(success = true) {
     aiProcessingInProgress = false;
 
-    // Unlock the main AI button
+    // Restore main AI button
     const aiButton = document.getElementById('ai-generate-btn');
-    if (aiButton) {
+    if (aiButton && originalButtonStates['ai-generate-btn']) {
         aiButton.disabled = false;
         aiButton.classList.remove('ai-processing');
-        aiButton.innerHTML = '🤖 Generate Metadata with AI';
+        aiButton.innerHTML = originalButtonStates['ai-generate-btn'].innerHTML;
         aiButton.style.position = '';
     }
 
-    // Unlock the OCR AI button
+    // Restore OCR AI button
     const aiSearchBtn = document.getElementById('ai-search-btn');
-    if (aiSearchBtn) {
+    if (aiSearchBtn && originalButtonStates['ai-search-btn']) {
         aiSearchBtn.disabled = false;
         aiSearchBtn.classList.remove('ai-processing');
-        aiSearchBtn.innerHTML = '🤖 Generate Metadata with AI';
+        aiSearchBtn.innerHTML = originalButtonStates['ai-search-btn'].innerHTML;
         aiSearchBtn.style.position = '';
     }
 
-    // Hide processing notification
+    // Clear stored states
+    originalButtonStates = {};
+
+    // Hide notification (existing code)
     const notification = document.getElementById('ai-processing-notification');
     if (notification) {
         notification.remove();
     }
 
-    // Show success notification briefly
     if (success) {
         showSuccessNotification('✅ Metadata generated successfully!');
     }
@@ -172,7 +180,7 @@ function showAIErrorPopup(errorMessage, canRetry = true) {
     if (canRetry) {
         document.getElementById('ai-retry-btn').onclick = function () {
             backdrop.remove();
-            preFetchFromAI(); // Retry the AI generation
+            //preFetchFromAI(); // Retry the AI generation
         };
     }
 
@@ -193,6 +201,100 @@ function showAIErrorPopup(errorMessage, canRetry = true) {
     };
 
     console.log('AI error popup shown:', errorMessage);
+}
+
+function showOCRParseFailedPopup(message) {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'json-error-backdrop';
+    backdrop.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+
+    const popup = document.createElement('div');
+    popup.className = 'json-error-popup';
+    popup.style.cssText = `
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        margin: 20px;
+        text-align: center;
+        border: 2px solid #ff4444;
+    `;
+
+    popup.innerHTML = `
+        <h3 style="color: #ff4444; margin-top: 0;">⚠️ OCR AI Processing Failed</h3>
+        <p style="margin: 15px 0; color: #333; line-height: 1.5;">
+            ${message}<br><br>
+            The OCR text analysis could not be completed. You can:
+        </p>
+        <div style="margin: 20px 0;">
+            <button id="ocr-retry-btn" style="
+                background: #4CAF50; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                border-radius: 5px; 
+                cursor: pointer;
+                margin: 5px;
+                font-size: 14px;
+            ">🔄 Try OCR Analysis Again</button>
+            <button id="manual-btn" style="
+                background: #2196F3; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                border-radius: 5px; 
+                cursor: pointer;
+                margin: 5px;
+                font-size: 14px;
+            ">✏️ Enter Manually</button>
+            <button id="close-btn" style="
+                background: #666; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                border-radius: 5px; 
+                cursor: pointer;
+                margin: 5px;
+                font-size: 14px;
+            ">❌ Close</button>
+        </div>
+    `;
+
+    backdrop.appendChild(popup);
+    document.body.appendChild(backdrop);
+
+    // ✅ OCR-specific retry - calls generateMetadataWithAI, not preFetchFromAI
+    document.getElementById('ocr-retry-btn').onclick = function () {
+        backdrop.remove();
+        generateMetadataWithAI(); // ✅ Retry OCR processing
+    };
+
+    document.getElementById('manual-btn').onclick = function () {
+        backdrop.remove();
+        document.getElementById('title').focus();
+    };
+
+    document.getElementById('close-btn').onclick = function () {
+        backdrop.remove();
+    };
+
+    backdrop.onclick = function (e) {
+        if (e.target === backdrop) {
+            backdrop.remove();
+        }
+    };
 }
 
 function processImages() {
@@ -1551,7 +1653,7 @@ function ocrSearch() {
                 if (aiProcessingInProgress) {
                     return;
                 }
-                showAIProcessingState();
+                //showAIProcessingState();
                 generateMetadataWithAI();
             };
         }
@@ -1636,7 +1738,7 @@ function showJSONParseFailedPopup(message) {
     // Add event listeners
     document.getElementById('retry-btn').onclick = function () {
         backdrop.remove();
-        preFetchFromAI(); // Retry the entire function
+        //preFetchFromAI(); // Retry the entire function
     };
 
     document.getElementById('manual-btn').onclick = function () {
@@ -1659,14 +1761,188 @@ function showJSONParseFailedPopup(message) {
     console.log('JSON parse failed popup shown');
 }
 
-// New function to handle AI metadata generation with user input
 function generateMetadataWithAI() {
+    console.log('🔍 generateMetadataWithAI() called');
+    
     if (aiProcessingInProgress) {
+        console.log('❌ AI processing already in progress');
         return;
     }
 
-    const aiSearchBtn = document.getElementById('ai-search-btn');
+    if (!window.extractedOCRText) {
+        console.log('❌ No OCR text available');
+        alert('No OCR text available. Please upload and process images first.');
+        return;
+    }
+
+    console.log('✅ Starting AI processing with OCR text');
+    
+    // ✅ Use centralized state management
+    showAIProcessingState();
+
+    // Get additional user inputs
+    const title = document.getElementById('title').value.trim();
+    const familyName = document.getElementById('family_name').value.trim();
+    const givenName = document.getElementById('given_name').value.trim();
+    const isbn = document.getElementById('isbn').value.trim();
+
+    console.log('📝 User inputs:', { title, familyName, givenName, isbn });
+
+    // Prepare enhanced query for AI
+    let enhancedQuery = window.extractedOCRText;
+
+    // Add user-provided details if available
+    const additionalInfo = [];
+    if (title) additionalInfo.push(`Title: ${title}`);
+    if (familyName || givenName) {
+        const author = `${givenName} ${familyName}`.trim();
+        additionalInfo.push(`Author: ${author}`);
+    }
+    if (isbn) additionalInfo.push(`ISBN: ${isbn}`);
+
+    if (additionalInfo.length > 0) {
+        enhancedQuery = `Additional provided information:\n${additionalInfo.join('\n')}\n\nExtracted OCR Text:\n${window.extractedOCRText}`;
+    }
+
+    console.log('🔍 Enhanced query prepared, length:', enhancedQuery.length);
+
+    // Set up processing message
     const progressDiv = document.getElementById('ocr-progress');
+    let processingMsg = document.getElementById('ai-processing-msg');
+
+    if (!processingMsg) {
+        processingMsg = document.createElement('div');
+        processingMsg.id = 'ai-processing-msg';
+        processingMsg.style.marginTop = '10px';
+        processingMsg.style.fontStyle = 'italic';
+        progressDiv.appendChild(processingMsg);
+    }
+    
+    processingMsg.textContent = 'Analyzing OCR text with AI for book metadata...';
+    processingMsg.style.color = '#666';
+
+    console.log('🚀 Calling fetchFromPerplexity...');
+
+    // Send enhanced query to Perplexity for analysis
+    fetchFromPerplexity(enhancedQuery)
+        .then(perplexityData => {
+            console.log('📥 Perplexity response received:', perplexityData);
+            
+            if (perplexityData && perplexityData.choices?.[0]?.message?.content) {
+                let content = perplexityData.choices[0].message.content;
+                console.log('📄 Raw Perplexity content preview:', content.substring(0, 200) + '...');
+
+                // Try to parse with fallbacks
+                const metadata = tryParseWithFallbacks(content);
+                console.log('🔧 Parsed metadata:', metadata);
+
+                if (metadata && !metadata.error) {
+                    console.log('✅ Valid metadata found');
+
+                    // Validate we got useful data
+                    if (metadata.title || metadata.isbn || metadata.authors?.length > 0) {
+                        console.log('✅ Useful data found, populating form');
+                        processingMsg.textContent = '✅ Successfully generated book metadata with AI!';
+                        processingMsg.style.color = '#4CAF50';
+                        processingMsg.style.fontWeight = 'bold';
+
+                        // Populate form fields with the metadata
+                        document.getElementById('title').value = metadata.title || '';
+                        document.getElementById('isbn').value = metadata.isbn || '';
+                        document.getElementById('edition').value = metadata.edition || '';
+                        document.getElementById('language').value = metadata.language || '';
+                        document.getElementById('pages').value = metadata.numberOfPages || '';
+                        document.getElementById('dimensions').value = metadata.dimensions || '';
+                        document.getElementById('subtitle').value = metadata.subtitle || '';
+
+                        // Handle transliteration fields
+                        const translitTitleField = document.getElementById('translit_title');
+                        const translitSubtitleField = document.getElementById('translit_subtitle');
+
+                        if (translitTitleField) {
+                            if (metadata.translit_title) {
+                                translitTitleField.value = metadata.translit_title;
+                                translitTitleField.style.display = 'inline-block';
+                            } else {
+                                translitTitleField.style.display = 'none';
+                            }
+                        }
+
+                        if (translitSubtitleField) {
+                            if (metadata.translit_subtitle) {
+                                translitSubtitleField.value = metadata.translit_subtitle;
+                                translitSubtitleField.style.display = 'inline-block';
+                            } else {
+                                translitSubtitleField.style.display = 'none';
+                            }
+                        }
+
+                        document.getElementById('place').value = Array.isArray(metadata.placeOfPublication)
+                            ? metadata.placeOfPublication[0]
+                            : (metadata.placeOfPublication || '');
+
+                        document.getElementById('publisher').value = Array.isArray(metadata.publisher)
+                            ? metadata.publisher[0]
+                            : (metadata.publisher || '');
+
+                        document.getElementById('year').value = metadata.publicationDate || '';
+                        document.getElementById('notes').value = metadata.synopsisOfBook || '';
+
+                        if (metadata.authors?.length > 0) {
+                            document.getElementById('family_name').value = metadata.authors[0].familyName || '';
+                            document.getElementById('given_name').value = metadata.authors[0].givenName || '';
+                        }
+
+                        // Handle country dropdown
+                        const countrySelect = document.querySelector('select[name="country"]');
+                        if (countrySelect && metadata.publicationCountry) {
+                            Array.from(countrySelect.options).forEach(option => {
+                                if (option.text.toLowerCase() === metadata.publicationCountry.toLowerCase()) {
+                                    countrySelect.value = option.value;
+                                }
+                            });
+                        }
+
+                        console.log('✅ Form populated, calling hideAIProcessingState(true)');
+                        hideAIProcessingState(true);
+
+                    } else {
+                        console.log('⚠️ Metadata found but appears empty');
+                        processingMsg.textContent = '⚠️ AI found some data but it appears incomplete.';
+                        processingMsg.style.color = '#ff9800';
+                        showOCRParseFailedPopup('AI returned incomplete metadata. Please verify the information and fill in missing fields manually.');
+                        hideAIProcessingState(false);
+                    }
+                } else {
+                    console.log('❌ Failed to parse metadata');
+                    processingMsg.textContent = '❌ Could not parse AI response format.';
+                    processingMsg.style.color = '#f44336';
+                    showOCRParseFailedPopup('AI response could not be parsed. The AI might have returned an unexpected format.');
+                    hideAIProcessingState(false);
+                }
+            } else {
+                console.log('❌ No valid content in Perplexity response');
+                processingMsg.textContent = '❌ Could not identify book metadata from the provided information.';
+                processingMsg.style.color = '#f44336';
+                showOCRParseFailedPopup('No valid response received from AI service.');
+                hideAIProcessingState(false);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error in fetchFromPerplexity:', error);
+            console.error('❌ Error stack:', error.stack);
+            processingMsg.textContent = '❌ Error connecting to AI service for metadata generation.';
+            processingMsg.style.color = '#f44336';
+            showOCRParseFailedPopup(`Connection error: ${error.message}`);
+            hideAIProcessingState(false);
+        });
+}
+
+// New function to handle AI metadata generation with user input
+/*function generateMetadataWithAI() {
+    if (aiProcessingInProgress) {
+        return;
+    }
 
     if (!window.extractedOCRText) {
         hideAIProcessingState(false);
@@ -1677,8 +1953,8 @@ function generateMetadataWithAI() {
     showAIProcessingState();
 
     // Disable button and show processing
-    aiSearchBtn.disabled = true;
-    aiSearchBtn.innerHTML = '🔄 Generating Metadata...';
+    //aiSearchBtn.disabled = true;
+    //aiSearchBtn.innerHTML = '🔄 Generating Metadata...';
 
     // Get additional user inputs
     const title = document.getElementById('title').value.trim();
@@ -1704,19 +1980,27 @@ function generateMetadataWithAI() {
 
     console.log('Enhanced query for AI:', enhancedQuery);
 
-    // Add processing message
-    const processingMsg = document.createElement('div');
-    processingMsg.id = 'ai-processing-msg';
-    processingMsg.textContent = 'Analyzing text with additional details for book metadata...';
-    processingMsg.style.marginTop = '10px';
-    processingMsg.style.fontStyle = 'italic';
+    const aiSearchBtn = document.getElementById('ai-search-btn');
+    const progressDiv = document.getElementById('ocr-progress');
+
+    let processingMsg = document.getElementById('ai-processing-msg');
+
+    if (!processingMsg) {
+        processingMsg = document.createElement('div');
+        processingMsg.id = 'ai-processing-msg';
+        processingMsg.style.marginTop = '10px';
+        processingMsg.style.fontStyle = 'italic';
+        progressDiv.appendChild(processingMsg);
+    }
+    
+    processingMsg.textContent = 'Analyzing OCR text with AI for book metadata...';
     processingMsg.style.color = '#666';
 
     // Remove any existing processing message
-    const existingMsg = document.getElementById('ai-processing-msg');
-    if (existingMsg) existingMsg.remove();
+    //const existingMsg = document.getElementById('ai-processing-msg');
+    //if (existingMsg) existingMsg.remove();
 
-    progressDiv.appendChild(processingMsg);
+    //progressDiv.appendChild(processingMsg);
 
     // Send enhanced query to Perplexity for analysis
     fetchFromPerplexity(enhancedQuery)
@@ -1825,13 +2109,7 @@ function generateMetadataWithAI() {
             showJSONParseFailedPopup(`Connection error: ${error.message}`);
             hideAIProcessingState(false);
         })
-        .finally(() => {
-            // Re-enable button
-            hideAIProcessingState(false);
-            aiSearchBtn.disabled = false;
-            aiSearchBtn.innerHTML = '🤖 Generate Metadata with AI';
-        });
-}
+}*/
 
 function compressImage(file) {
     return new Promise((resolve, reject) => {
