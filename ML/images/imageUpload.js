@@ -105,6 +105,136 @@ function processImages() {
     uploadViaWorker(files);
 }
 
+function evaluateOCRQuality(extractedText) {
+    if (!extractedText || extractedText.trim().length < 10) {
+        return { isGood: false, reason: "Too short or empty" };
+    }
+    
+    // Check for meaningful patterns
+    const bookIndicators = [
+        /isbn/i, /author/i, /title/i, /publisher/i, /edition/i, /copyright/i,
+        /\b\d{13}\b/, /\b\d{10}\b/, // ISBN patterns
+        /\d{4}/, // Years
+        /by\s+[A-Z][a-z]+/i, // "by Author"
+        /[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}/ // Proper names
+    ];
+    
+    // Count meaningful words (not garbled like "eee aaa")
+    const words = extractedText.split(/\s+/);
+    const meaningfulWords = words.filter(word => 
+        word.length > 2 && 
+        /^[a-zA-Z0-9\-'.,;:!?]+$/.test(word) &&
+        !/(ee|aa|oo){2,}/.test(word.toLowerCase()) // Avoid "eee", "aaa" patterns
+    );
+    
+    // Calculate quality score
+    const meaningfulRatio = meaningfulWords.length / words.length;
+    const hasBookIndicators = bookIndicators.some(pattern => pattern.test(extractedText));
+    const hasProperStructure = /[.!?]/.test(extractedText); // Has sentence structure
+    
+    const isGood = meaningfulRatio > 0.6 && (hasBookIndicators || hasProperStructure);
+    
+    return {
+        isGood,
+        score: meaningfulRatio,
+        meaningfulWords: meaningfulWords.length,
+        totalWords: words.length,
+        hasBookIndicators,
+        reason: isGood ? "Good quality" : "Low quality or garbled text"
+    };
+}
+
+async function convertImagesToBase64(files) {
+    const base64Images = [];
+    
+    for (const file of files) {
+        try {
+            const base64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+            
+            base64Images.push({
+                filename: file.name,
+                data: base64
+            });
+        } catch (error) {
+            console.error(`Failed to convert ${file.name} to base64:`, error);
+        }
+    }
+    
+    return base64Images;
+}
+
+async function fetchFromPerplexityWithImages(textQuery, base64Images = []) {
+    try {
+        const content = [];
+        
+        // Always add text query
+        if (textQuery) {
+            content.push({
+                type: "text",
+                text: textQuery
+            });
+        }
+        
+        // Add images if provided
+        for (const image of base64Images) {
+            content.push({
+                type: "image_url",
+                image_url: {
+                    url: image.data // This should be "data:image/jpeg;base64,..."
+                }
+            });
+        }
+        
+        const response = await fetch('https://metadata-maker.adb-aditya.workers.dev/perplexity', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                messages: [{
+                    role: "user",
+                    content: content
+                }]
+            })
+        });
+
+        const data = await response.json();
+        console.log('Perplexity Multi-modal Response:', data);
+
+        if (data && data.success && data.result) {
+            if (data.result.choices && 
+                data.result.choices[0] && 
+                data.result.choices[0].message && 
+                data.result.choices[0].message.content) {
+
+                let responseContent = data.result.choices[0].message.content;
+                responseContent = responseContent.replace(/```json\n*/g, '').replace(/```/g, '').trim();
+
+                try {
+                    const parsedData = JSON.parse(responseContent);
+                    console.log('✅ Successfully parsed Perplexity multi-modal data:', parsedData);
+                    return {
+                        choices: [{ message: { content: JSON.stringify(parsedData) } }],
+                        citations: data.result.citations
+                    };
+                } catch (parseError) {
+                    console.error('Error parsing multi-modal content:', parseError);
+                    return { error: 'parse_error', message: 'Could not parse response' };
+                }
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error('Perplexity Multi-modal API error:', error);
+        return null;
+    }
+}
+
 async function uploadViaWorker(files) {
     const progressDiv = document.getElementById('upload-progress');
     const formData = new FormData();
@@ -309,7 +439,7 @@ async function fetchFromPerplexityEquipment(searchQuery) {
 }
 
 
-function ocrSearch() {
+/*function ocrSearch() {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
@@ -419,6 +549,263 @@ function ocrSearch() {
     };
 
     fileInput.click();
+}*/
+
+function ocrSearch() {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.multiple = true;
+
+    fileInput.onchange = async function (e) {
+        const files = Array.from(e.target.files);
+        if (!files || files.length === 0) return;
+
+        console.log(`Processing ${files.length} image(s)...`);
+
+        const progressDiv = document.getElementById('ocr-progress');
+        if (progressDiv) {
+            progressDiv.innerHTML = `Processing ${files.length} image(s) with OCR...`;
+        }
+
+        let allExtractedText = '';
+        let processedCount = 0;
+        
+        // Store original files for later use
+        window.ocrImageFiles = files;
+
+        // Process each image sequentially with Tesseract.js
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            console.log(`Processing image ${i + 1}/${files.length}:`, file.name);
+
+            try {
+                if (progressDiv) {
+                    progressDiv.innerHTML = `Processing image ${i + 1}/${files.length}: ${file.name}...`;
+                }
+
+                const { data: { text } } = await Tesseract.recognize(file, 'eng', {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            const progress = Math.round(m.progress * 100);
+                            if (progressDiv) {
+                                progressDiv.innerHTML = `Processing image ${i + 1}/${files.length}: ${file.name} (${progress}%)...`;
+                            }
+                        }
+                    }
+                });
+
+                console.log(`Extracted Text from image ${i + 1}:`, text);
+
+                if (text.trim()) {
+                    allExtractedText += `\n\n--- Text from ${file.name} ---\n${text.trim()}`;
+                    processedCount++;
+                } else {
+                    console.log(`No text found in image ${i + 1}: ${file.name}`);
+                    allExtractedText += `\n\n--- No text found in ${file.name} ---\n`;
+                }
+
+            } catch (error) {
+                console.error(`Error processing image ${i + 1}:`, error);
+                allExtractedText += `\n\n--- Error processing ${file.name}: ${error.message} ---\n`;
+            }
+        }
+
+        // Evaluate OCR quality
+        const qualityCheck = evaluateOCRQuality(allExtractedText);
+        console.log('OCR Quality Assessment:', qualityCheck);
+
+        // Display results with quality assessment
+        if (progressDiv) {
+            let statusMessage = '';
+            let statusColor = '';
+            
+            if (qualityCheck.isGood) {
+                statusMessage = `✅ OCR completed for ${processedCount}/${files.length} image(s). Text quality: Good`;
+                statusColor = '#4CAF50';
+                window.extractedOCRText = allExtractedText.trim();
+                window.ocrQuality = 'good';
+            } else {
+                statusMessage = `⚠️ OCR completed for ${processedCount}/${files.length} image(s). Text quality: Poor (${qualityCheck.reason})`;
+                statusColor = '#ff9800';
+                window.extractedOCRText = allExtractedText.trim();
+                window.ocrQuality = 'poor';
+            }
+            
+            progressDiv.innerHTML = `<div style="color: ${statusColor}; font-weight: bold;">${statusMessage}</div>`;
+
+            // Show extracted text
+            const textDisplay = document.createElement('div');
+            textDisplay.style.maxHeight = '200px';
+            textDisplay.style.overflow = 'auto';
+            textDisplay.style.border = '1px solid #ccc';
+            textDisplay.style.padding = '10px';
+            textDisplay.style.marginTop = '10px';
+            textDisplay.style.whiteSpace = 'pre-wrap';
+            textDisplay.textContent = allExtractedText.trim();
+            progressDiv.appendChild(textDisplay);
+
+            // Add instruction message and AI search button
+            const instructionMsg = document.createElement('div');
+            
+            if (qualityCheck.isGood) {
+                instructionMsg.innerHTML = `
+                    <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border: 1px solid #b0d4f1; border-radius: 5px;">
+                        <p style="margin: 0 0 10px 0; font-weight: bold;">OCR text extracted successfully!</p>
+                        <p style="margin: 0 0 15px 0;">Good quality text detected. Enter additional details if needed, then click below to generate metadata with AI using both text and images.</p>
+                        <button id="ai-search-btn" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold;">🤖 Generate Metadata with AI (Text + Images)</button>
+                    </div>
+                `;
+            } else {
+                instructionMsg.innerHTML = `
+                    <div style="margin-top: 15px; padding: 10px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px;">
+                        <p style="margin: 0 0 10px 0; font-weight: bold;">Low quality OCR detected</p>
+                        <p style="margin: 0 0 15px 0;">Text appears garbled. AI will analyze only the images for book metadata. Enter ISBN, Author, or Title if known for better results.</p>
+                        <button id="ai-search-btn" style="background-color: #ff9800; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold;">🤖 Generate Metadata with AI (Images Only)</button>
+                    </div>
+                `;
+            }
+
+            progressDiv.appendChild(instructionMsg);
+
+            // Add click handler for the AI search button
+            document.getElementById('ai-search-btn').onclick = function () {
+                if (aiProcessingInProgress) {
+                    console.log('❌ AI processing already in progress');
+                    return;
+                }
+                console.log('🔍 generateMetadataWithAI() called');
+                generateMetadataWithAIImages();
+            };
+        }
+    };
+
+    fileInput.click();
+}
+
+async function generateMetadataWithAIImages() {
+    console.log('🔍 generateMetadataWithAI() called');
+    
+    if (aiProcessingInProgress) {
+        console.log('❌ AI processing already in progress');
+        return;
+    }
+
+    if (!window.extractedOCRText && !window.ocrImageFiles) {
+        console.log('❌ No OCR text or images available');
+        alert('No OCR data available. Please upload and process images first.');
+        return;
+    }
+
+    console.log('✅ Starting AI processing with OCR data');
+    
+    showAIProcessingState();
+
+    try {
+        // Get additional user inputs
+        const title = document.getElementById('title').value.trim();
+        const familyName = document.getElementById('family_name').value.trim();
+        const givenName = document.getElementById('given_name').value.trim();
+        const isbn = document.getElementById('isbn').value.trim();
+
+        console.log('📝 User inputs:', { title, familyName, givenName, isbn });
+
+        // Prepare query based on OCR quality
+        let textQuery = '';
+        let useImages = false;
+        
+        if (window.ocrQuality === 'good' && window.extractedOCRText) {
+            // Use both text and images
+            textQuery = `Book metadata extraction request:
+
+Additional provided information:
+${title ? `Title: ${title}` : ''}
+${familyName || givenName ? `Author: ${[givenName, familyName].filter(Boolean).join(' ')}` : ''}
+${isbn ? `ISBN: ${isbn}` : ''}
+
+Extracted OCR Text:
+${window.extractedOCRText}
+
+Please analyze both the OCR text above AND the uploaded images to extract comprehensive book metadata.`;
+            useImages = true;
+        } else {
+            // Use only images (poor OCR quality)
+            textQuery = `Book metadata extraction from images only:
+
+Additional provided information:
+${title ? `Title: ${title}` : ''}
+${familyName || givenName ? `Author: ${[givenName, familyName].filter(Boolean).join(' ')}` : ''}
+${isbn ? `ISBN: ${isbn}` : ''}
+
+The OCR text quality was poor, so please analyze only the uploaded book images to extract metadata. Look for title, author, ISBN, publisher, and other book details visible in the images.`;
+            useImages = true;
+        }
+
+        // Add the standard metadata extraction instructions
+        textQuery += `
+
+Please extract comprehensive book metadata and return it in this exact JSON format:
+{
+    "title": "Full book title",
+    "subtitle": "Subtitle if exists, otherwise null", 
+    "isbn": "ISBN if found, otherwise null",
+    "edition": "Edition information or null",
+    "language": "Language code (eng, fre, etc.)",
+    "publisher": ["Publisher name"],
+    "authors": [{"familyName": "Last name", "givenName": "First name"}],
+    "placeOfPublication": ["City names"],
+    "publicationCountry": "Full country name",
+    "publicationDate": "YYYY format",
+    "numberOfPages": "Exact page count or null",
+    "dimensions": "Book dimensions in cm (L x W x H) or empty string",
+    "synopsisOfBook": "Book description"
+}
+
+CRITICAL: Return ONLY the JSON object. No text before or after. No explanations.`;
+
+        // Convert images to base64 if needed
+        let base64Images = [];
+        if (useImages && window.ocrImageFiles) {
+            console.log('🖼️ Converting images to base64...');
+            base64Images = await convertImagesToBase64(window.ocrImageFiles);
+            console.log(`✅ Converted ${base64Images.length} images`);
+        }
+
+        // Call Perplexity with multi-modal support
+        console.log('🚀 Calling Perplexity with multi-modal data...');
+        
+        const perplexityData = await fetchFromPerplexityWithImages(textQuery, base64Images);
+        
+        if (perplexityData && perplexityData.choices?.[0]?.message?.content) {
+            let content = perplexityData.choices[0].message.content;
+            console.log('📄 Raw Perplexity content preview:', content.substring(0, 200) + '...');
+
+            const metadata = tryParseWithFallbacks(content);
+            console.log('🔧 Parsed metadata:', metadata);
+
+            if (metadata && !metadata.error) {
+                console.log('✅ Valid metadata found, populating form...');
+                
+                // Populate form (your existing form population code)
+                populateFormWithMetadata(metadata);
+                
+                hideAIProcessingState(true);
+            } else {
+                console.log('❌ Failed to parse metadata');
+                showOCRParseFailedPopup('AI response could not be parsed.');
+                hideAIProcessingState(false);
+            }
+        } else {
+            console.log('❌ No valid content in Perplexity response');
+            showOCRParseFailedPopup('No valid response received from AI service.');
+            hideAIProcessingState(false);
+        }
+
+    } catch (error) {
+        console.error('❌ Error in generateMetadataWithAI:', error);
+        showOCRParseFailedPopup(`Connection error: ${error.message}`);
+        hideAIProcessingState(false);
+    }
 }
 
 // New function to handle AI metadata generation with user input

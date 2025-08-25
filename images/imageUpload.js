@@ -573,6 +573,150 @@ document.getElementById('isbn').addEventListener('input', function (e) {
 
 // Helper Functions
 
+function evaluateOCRQuality(extractedText) {
+    if (!extractedText || extractedText.trim().length < 5) {
+        return { isGood: false, reason: "Too short or empty" };
+    }
+
+    // Check for meaningful patterns
+    const bookIndicators = [
+        /isbn/i, /author/i, /title/i, /publisher/i, /edition/i, /copyright/i,
+        /\b\d{13}\b/, /\b\d{10}\b/, // ISBN patterns
+        /\d{4}/, // Years
+        /by\s+[A-Z][a-z]+/i, // "by Author"
+        /[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}/ // Proper names
+    ];
+
+    // Count meaningful words (not garbled like "eee aaa")
+    const words = extractedText.split(/\s+/);
+    const meaningfulWords = words.filter(word =>
+        word.length > 2 &&
+        /^[a-zA-Z0-9\-'.,;:!?]+$/.test(word) &&
+        !/(ee|aa|oo){2,}/.test(word.toLowerCase()) // Avoid "eee", "aaa" patterns
+    );
+
+    // Calculate quality score
+    const meaningfulRatio = meaningfulWords.length / words.length;
+    const hasBookIndicators = bookIndicators.some(pattern => pattern.test(extractedText));
+    const hasProperStructure = /[.!?]/.test(extractedText); // Has sentence structure
+
+    const isGood = meaningfulRatio > 0.6 && (hasBookIndicators || hasProperStructure);
+
+    return {
+        isGood,
+        score: meaningfulRatio,
+        meaningfulWords: meaningfulWords.length,
+        totalWords: words.length,
+        hasBookIndicators,
+        reason: isGood ? "Good quality" : "Low quality or garbled text"
+    };
+}
+
+async function convertImagesToBase64(files) {
+    const base64Images = [];
+
+    for (const file of files) {
+        try {
+            const base64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+
+            base64Images.push({
+                filename: file.name,
+                data: base64
+            });
+        } catch (error) {
+            console.error(`Failed to convert ${file.name} to base64:`, error);
+        }
+    }
+
+    return base64Images;
+}
+
+async function fetchFromPerplexityWithImages(textQuery, base64Images = []) {
+    try {
+        console.log('🔍 Sending request to worker:', {
+            hasText: !!textQuery,
+            imageCount: base64Images.length
+        });
+        
+        const requestBody = {
+            query: textQuery
+        };
+        
+        // Add images if provided
+        if (base64Images && base64Images.length > 0) {
+            requestBody.images = base64Images;
+            console.log('📸 Including images in request');
+        }
+        
+        const response = await fetch('https://metadata-maker.adb-aditya.workers.dev/perplexity', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        const data = await response.json();
+        console.log('Perplexity Response:', data);
+
+        // Check for error first
+        if (data.error || !data.success) {
+            console.error('❌ Perplexity API Error:', data.error);
+            
+            // If multi-modal fails, try text-only fallback
+            if (base64Images.length > 0) {
+                console.log('🔄 Multi-modal failed, trying text-only fallback...');
+                return await fetchFromPerplexityWithImages(textQuery, []); // Retry without images
+            }
+            
+            return { error: 'api_error', message: data.error?.message || 'API request failed' };
+        }
+
+        if (data && data.success && data.result) {
+            if (data.result.choices && 
+                data.result.choices[0] && 
+                data.result.choices[0].message && 
+                data.result.choices[0].message.content) {
+
+                let responseContent = data.result.choices[0].message.content;
+                responseContent = responseContent.replace(/```json\n*/g, '').replace(/```/g, '').trim();
+
+                try {
+                    const parsedData = JSON.parse(responseContent);
+                    console.log('✅ Successfully parsed multi-modal response:', parsedData);
+                    return {
+                        choices: [{ message: { content: JSON.stringify(parsedData) } }],
+                        citations: data.result.citations,
+                        isMultiModal: base64Images.length > 0
+                    };
+                } catch (parseError) {
+                    console.error('Error parsing response:', parseError);
+                    console.log('Raw content:', responseContent);
+                    return { error: 'parse_error', message: 'Could not parse response' };
+                }
+            }
+        }
+        
+        return { error: 'no_content', message: 'No valid content in response' };
+        
+    } catch (error) {
+        console.error('Network error:', error);
+        
+        // Fallback to text-only on network errors
+        if (base64Images.length > 0) {
+            console.log('🔄 Network error, trying text-only fallback...');
+            return await fetchFromPerplexityWithImages(textQuery, []);
+        }
+        
+        return { error: 'network_error', message: error.message };
+    }
+}
+
 async function fetchFromPerplexityDirect(query) {
     try {
         const response = await fetch('https://metadata-maker.adb-aditya.workers.dev/perplexity', {
@@ -1550,7 +1694,7 @@ Only return the json and nothing else. Do not start with words json, just return
     }
 }
 
-function ocrSearch() {
+/*function ocrSearch() {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
@@ -1660,6 +1804,138 @@ function ocrSearch() {
     };
 
     fileInput.click();
+}*/
+
+function ocrSearch() {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.multiple = true;
+
+    fileInput.onchange = async function (e) {
+        const files = Array.from(e.target.files);
+        if (!files || files.length === 0) return;
+
+        console.log(`Processing ${files.length} image(s)...`);
+
+        const progressDiv = document.getElementById('ocr-progress');
+        if (progressDiv) {
+            progressDiv.innerHTML = `Processing ${files.length} image(s) with OCR...`;
+        }
+
+        let allExtractedText = '';
+        let processedCount = 0;
+
+        // Store original files for later use
+        window.ocrImageFiles = files;
+
+        // Process each image sequentially with Tesseract.js
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            console.log(`Processing image ${i + 1}/${files.length}:`, file.name);
+
+            try {
+                if (progressDiv) {
+                    progressDiv.innerHTML = `Processing image ${i + 1}/${files.length}: ${file.name}...`;
+                }
+
+                const { data: { text } } = await Tesseract.recognize(file, 'eng', {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            const progress = Math.round(m.progress * 100);
+                            if (progressDiv) {
+                                progressDiv.innerHTML = `Processing image ${i + 1}/${files.length}: ${file.name} (${progress}%)...`;
+                            }
+                        }
+                    }
+                });
+
+                console.log(`Extracted Text from image ${i + 1}:`, text);
+
+                if (text.trim()) {
+                    allExtractedText += `\n\n--- Text from ${file.name} ---\n${text.trim()}`;
+                    processedCount++;
+                } else {
+                    console.log(`No text found in image ${i + 1}: ${file.name}`);
+                    allExtractedText += `\n\n--- No text found in ${file.name} ---\n`;
+                }
+
+            } catch (error) {
+                console.error(`Error processing image ${i + 1}:`, error);
+                allExtractedText += `\n\n--- Error processing ${file.name}: ${error.message} ---\n`;
+            }
+        }
+
+        // Evaluate OCR quality
+        const qualityCheck = evaluateOCRQuality(allExtractedText);
+        console.log('OCR Quality Assessment:', qualityCheck);
+
+        // Display results with quality assessment
+        if (progressDiv) {
+            let statusMessage = '';
+            let statusColor = '';
+
+            if (qualityCheck.isGood) {
+                statusMessage = `✅ OCR completed for ${processedCount}/${files.length} image(s). Text quality: Good`;
+                statusColor = '#4CAF50';
+                window.extractedOCRText = allExtractedText.trim();
+                window.ocrQuality = 'good';
+            } else {
+                statusMessage = `⚠️ OCR completed for ${processedCount}/${files.length} image(s). Text quality: Poor (${qualityCheck.reason})`;
+                statusColor = '#ff9800';
+                window.extractedOCRText = allExtractedText.trim();
+                window.ocrQuality = 'poor';
+            }
+
+            progressDiv.innerHTML = `<div style="color: ${statusColor}; font-weight: bold;">${statusMessage}</div>`;
+
+            // Show extracted text
+            const textDisplay = document.createElement('div');
+            textDisplay.style.maxHeight = '200px';
+            textDisplay.style.overflow = 'auto';
+            textDisplay.style.border = '1px solid #ccc';
+            textDisplay.style.padding = '10px';
+            textDisplay.style.marginTop = '10px';
+            textDisplay.style.whiteSpace = 'pre-wrap';
+            textDisplay.textContent = allExtractedText.trim();
+            progressDiv.appendChild(textDisplay);
+
+            // Add instruction message and AI search button
+            const instructionMsg = document.createElement('div');
+
+            if (qualityCheck.isGood) {
+                instructionMsg.innerHTML = `
+                    <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border: 1px solid #b0d4f1; border-radius: 5px;">
+                        <p style="margin: 0 0 10px 0; font-weight: bold;">OCR text extracted successfully!</p>
+                        <p style="margin: 0 0 15px 0;">Good quality text detected. Enter additional details if needed, then click below to generate metadata with AI using both text and images.</p>
+                        <button id="ai-search-btn" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold;">🤖 Generate Metadata with AI (Text + Images)</button>
+                    </div>
+                `;
+            } else {
+                instructionMsg.innerHTML = `
+                    <div style="margin-top: 15px; padding: 10px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px;">
+                        <p style="margin: 0 0 10px 0; font-weight: bold;">Low quality OCR detected</p>
+                        <p style="margin: 0 0 15px 0;">Text appears garbled. AI will analyze only the images for book metadata. Enter ISBN, Author, or Title if known for better results.</p>
+                        <button id="ai-search-btn" style="background-color: #ff9800; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold;">🤖 Generate Metadata with AI (Images Only)</button>
+                    </div>
+                `;
+            }
+
+            progressDiv.appendChild(instructionMsg);
+
+            // Add click handler for the AI search button
+            document.getElementById('ai-search-btn').onclick = function () {
+                if (aiProcessingInProgress) {
+                    console.log('❌ AI processing already in progress');
+                    return;
+                }
+                console.log('🔍 generateMetadataWithAI() called');
+                generateMetadataWithAiImages();
+            };
+        }
+    };
+
+    fileInput.click();
 }
 
 function showJSONParseFailedPopup(message) {
@@ -1761,9 +2037,188 @@ function showJSONParseFailedPopup(message) {
     console.log('JSON parse failed popup shown');
 }
 
+function populateFormWithMetadata(metadata) {
+    console.log('📝 Populating form with metadata:', metadata);
+    
+    // Basic fields
+    document.getElementById('title').value = metadata.title || '';
+    document.getElementById('isbn').value = metadata.isbn || '';
+    document.getElementById('edition').value = metadata.edition || '';
+    document.getElementById('language').value = metadata.language || '';
+    document.getElementById('pages').value = metadata.numberOfPages || '';
+    document.getElementById('dimensions').value = metadata.dimensions || '';
+    document.getElementById('subtitle').value = metadata.subtitle || '';
+
+    // Handle transliteration fields
+    const translitTitleField = document.getElementById('translit_title');
+    const translitSubtitleField = document.getElementById('translit_subtitle');
+
+    if (translitTitleField) {
+        if (metadata.translit_title) {
+            translitTitleField.value = metadata.translit_title;
+            translitTitleField.style.display = 'inline-block';
+        } else {
+            translitTitleField.style.display = 'none';
+        }
+    }
+
+    if (translitSubtitleField) {
+        if (metadata.translit_subtitle) {
+            translitSubtitleField.value = metadata.translit_subtitle;
+            translitSubtitleField.style.display = 'inline-block';
+        } else {
+            translitSubtitleField.style.display = 'none';
+        }
+    }
+
+    // Handle arrays
+    document.getElementById('place').value = Array.isArray(metadata.placeOfPublication)
+        ? metadata.placeOfPublication[0]
+        : (metadata.placeOfPublication || '');
+
+    document.getElementById('publisher').value = Array.isArray(metadata.publisher)
+        ? metadata.publisher[0]
+        : (metadata.publisher || '');
+
+    // Date and notes
+    document.getElementById('year').value = metadata.publicationDate || '';
+    document.getElementById('notes').value = metadata.synopsisOfBook || '';
+
+    // Authors
+    if (metadata.authors?.length > 0) {
+        document.getElementById('family_name').value = metadata.authors[0].familyName || '';
+        document.getElementById('given_name').value = metadata.authors[0].givenName || '';
+    }
+
+    // Handle country dropdown
+    const countrySelect = document.querySelector('select[name="country"]');
+    if (countrySelect && metadata.publicationCountry) {
+        Array.from(countrySelect.options).forEach(option => {
+            if (option.text.toLowerCase() === metadata.publicationCountry.toLowerCase()) {
+                countrySelect.value = option.value;
+            }
+        });
+    }
+
+    console.log('✅ Form populated successfully');
+}
+
+async function generateMetadataWithAiImages() {
+    console.log('🔍 generateMetadataWithAiImages() called');
+
+    if (aiProcessingInProgress) {
+        console.log('❌ AI processing already in progress');
+        return;
+    }
+
+    if (!window.ocrImageFiles) {
+        console.log('❌ No images available');
+        alert('No images available. Please upload and process images first.');
+        return;
+    }
+
+    console.log('✅ Starting AI processing with images');
+    showAIProcessingState();
+
+    // Set up processing message
+    const progressDiv = document.getElementById('ocr-progress');
+    let processingMsg = document.getElementById('ai-processing-msg');
+
+    if (!processingMsg) {
+        processingMsg = document.createElement('div');
+        processingMsg.id = 'ai-processing-msg';
+        processingMsg.style.marginTop = '10px';
+        processingMsg.style.fontStyle = 'italic';
+        progressDiv.appendChild(processingMsg);
+    }
+    
+    processingMsg.textContent = 'Analyzing images with AI for book metadata...';
+    processingMsg.style.color = '#666';
+
+    try {
+        // Get user inputs
+        const title = document.getElementById('title').value.trim();
+        const familyName = document.getElementById('family_name').value.trim();
+        const givenName = document.getElementById('given_name').value.trim();
+        const isbn = document.getElementById('isbn').value.trim();
+
+        // Build query
+        const additionalInfo = [];
+        if (title) additionalInfo.push(`Title: ${title}`);
+        if (familyName || givenName) {
+            const author = `${givenName} ${familyName}`.trim();
+            additionalInfo.push(`Author: ${author}`);
+        }
+        if (isbn) additionalInfo.push(`ISBN: ${isbn}`);
+
+        let textQuery = `Find book metadata from the uploaded images.
+
+${additionalInfo.length > 0 ? 'Additional information provided:\n' + additionalInfo.join('\n') + '\n\n' : ''}
+
+${window.ocrQuality === 'good' && window.extractedOCRText ? 
+  `OCR extracted this text: "${window.extractedOCRText}"\n\n` : 
+  'OCR text extraction had poor quality.\n\n'}
+
+Please analyze the book images and search for this book on Amazon, Google Books, etc.
+
+Return JSON format:
+{
+    "title": "Full book title",
+    "subtitle": "Subtitle if exists, otherwise null",
+    "isbn": "ISBN-13 if found, otherwise null",
+    "authors": [{"familyName": "Last name", "givenName": "First name"}],
+    "publisher": ["Publisher name"],
+    "publicationDate": "YYYY format",
+    "numberOfPages": "Exact page count or null",
+    "dimensions": "Book dimensions in cm or empty string",
+    "synopsisOfBook": "Book description"
+}
+
+Return ONLY JSON, no other text.`;
+
+        // Convert images to base64
+        console.log('🖼️ Converting images to base64...');
+        const base64Images = await convertImagesToBase64(window.ocrImageFiles);
+        console.log(`✅ Converted ${base64Images.length} images`);
+
+        // Call the worker
+        console.log('🚀 Sending to worker with images...');
+        const perplexityData = await fetchFromPerplexityWithImages(textQuery, base64Images);
+        
+        // Handle response
+        if (perplexityData && !perplexityData.error && perplexityData.choices?.[0]?.message?.content) {
+            const content = perplexityData.choices[0].message.content;
+            console.log('📄 Raw response:', content.substring(0, 200) + '...');
+
+            const metadata = tryParseWithFallbacks(content);
+            
+            if (metadata && !metadata.error && (metadata.title || metadata.isbn || metadata.authors?.length > 0)) {
+                console.log('✅ Success! Populating form...');
+                processingMsg.textContent = '✅ Successfully generated metadata from images!';
+                processingMsg.style.color = '#4CAF50';
+                processingMsg.style.fontWeight = 'bold';
+                
+                populateFormWithMetadata(metadata);
+                hideAIProcessingState(true);
+            } else {
+                throw new Error('Could not extract valid book metadata from response');
+            }
+        } else {
+            throw new Error(perplexityData?.error?.message || 'No valid response from AI');
+        }
+
+    } catch (error) {
+        console.error('❌ Error:', error);
+        processingMsg.textContent = '❌ Error analyzing images with AI';
+        processingMsg.style.color = '#f44336';
+        showOCRParseFailedPopup(`Error: ${error.message}`);
+        hideAIProcessingState(false);
+    }
+}
+
 function generateMetadataWithAI() {
     console.log('🔍 generateMetadataWithAI() called');
-    
+
     if (aiProcessingInProgress) {
         console.log('❌ AI processing already in progress');
         return;
@@ -1776,7 +2231,7 @@ function generateMetadataWithAI() {
     }
 
     console.log('✅ Starting AI processing with OCR text');
-    
+
     // ✅ Use centralized state management
     showAIProcessingState();
 
@@ -1817,7 +2272,7 @@ function generateMetadataWithAI() {
         processingMsg.style.fontStyle = 'italic';
         progressDiv.appendChild(processingMsg);
     }
-    
+
     processingMsg.textContent = 'Analyzing OCR text with AI for book metadata...';
     processingMsg.style.color = '#666';
 
@@ -1827,7 +2282,7 @@ function generateMetadataWithAI() {
     fetchFromPerplexity(enhancedQuery)
         .then(perplexityData => {
             console.log('📥 Perplexity response received:', perplexityData);
-            
+
             if (perplexityData && perplexityData.choices?.[0]?.message?.content) {
                 let content = perplexityData.choices[0].message.content;
                 console.log('📄 Raw Perplexity content preview:', content.substring(0, 200) + '...');
