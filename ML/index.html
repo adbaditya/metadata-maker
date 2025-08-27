@@ -316,6 +316,14 @@
 						class="question-mark">?</span></label>
 			</div>
 
+			<div style="margin-top: 10px;">
+				<button type="button" onclick="materialSampleImageSearch()"
+					style="background-color: #2196F3; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">
+					📸 Select Images for ML Analysis
+				</button>
+				<div id="material-progress"></div>
+			</div>
+
 			<div id="translit-title-block" class="translit-title-block translit-block standard-translit-block hidden">
 				<label for="translit_title" class="hidden translit heading translit-title">Transliterated
 					title</label><br><label for="translit_title"
@@ -327,11 +335,14 @@
 
 			<div id="alternative-title-block">
 				<label for="alternative_title" class="heading">Alternative Title</label>
-				<label for="alternative_title" class="insert insert_normal" onClick='insertMenu("alternative_title");'>Insert Diacritics</label><br>
+				<label for="alternative_title" class="insert insert_normal"
+					onClick='insertMenu("alternative_title");'>Insert Diacritics</label><br>
 				<div id="insert-alternative_title"></div>
 				<input type="text" id="alternative_title" class="conditional">
-				<label title="Record an alternative title if one exists (246$$a)."><span class="question-mark">?</span></label><br>
-				<span class="unlisted">Unlisted</span><input type="checkbox" id="alternative_title_listed" class="listed">
+				<label title="Record an alternative title if one exists (246$$a)."><span
+						class="question-mark">?</span></label><br>
+				<span class="unlisted">Unlisted</span><input type="checkbox" id="alternative_title_listed"
+					class="listed">
 			</div>
 
 			<div id="serial-block">
@@ -1026,6 +1037,10 @@
 `;
 		document.body.insertAdjacentHTML("beforeend", alertsHTML);
 
+	</script>
+	
+	<script>
+		document.querySelector('#upload-images-btn, .upload-btn')?.addEventListener('click', materialSampleImageSearch);
 	</script>
 	</div>
 </body>

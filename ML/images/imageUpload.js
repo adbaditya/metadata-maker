@@ -1,152 +1,336 @@
-function processImages() {
-    console.log('IMS Template Loaded');
-    const fileInput = document.getElementById('image-upload');
-    const files = Array.from(fileInput.files);
-    const previewDiv = document.getElementById('image-preview');
-    const progressDiv = document.getElementById('upload-progress');
+// AI Processing State Management
+let aiProcessingInProgress = false;
+let originalButtonStates = {};
 
-    // Clear previous previews
-    previewDiv.innerHTML = '';
+function showAIProcessingState() {
+    if (aiProcessingInProgress) return;
+    aiProcessingInProgress = true;
 
-    if (files.length === 0) {
-        progressDiv.innerHTML = 'Please select at least one image';
-        return;
-    }
-
-    // Show previews
-    files.forEach(file => {
-        const previewContainer = document.createElement('div');
-        previewContainer.className = 'preview-container';
-
-        // Check if file is video or image
-        const isVideo = file.type.startsWith('video/');
-        const isImage = file.type.startsWith('image/');
-
-        let mediaElement;
-
-        if (isVideo) {
-            // Create video element
-            mediaElement = document.createElement('video');
-            mediaElement.controls = true;
-            mediaElement.style.maxWidth = '200px';
-            mediaElement.style.maxHeight = '200px';
-            mediaElement.style.margin = '10px';
-            
-            // Add video icon indicator
-            const videoIcon = document.createElement('div');
-            videoIcon.innerHTML = '🎥 Video';
-            videoIcon.style.fontSize = '12px';
-            videoIcon.style.color = '#666';
-            videoIcon.style.marginBottom = '5px';
-            previewContainer.appendChild(videoIcon);
-            
-        } else if (isImage) {
-            // Create image element
-            mediaElement = document.createElement('img');
-            mediaElement.style.maxWidth = '200px';
-            mediaElement.style.maxHeight = '200px';
-            mediaElement.style.margin = '10px';
-            
-            // Add image icon indicator
-            const imageIcon = document.createElement('div');
-            imageIcon.innerHTML = '🖼️ Image';
-            imageIcon.style.fontSize = '12px';
-            imageIcon.style.color = '#666';
-            imageIcon.style.marginBottom = '5px';
-            previewContainer.appendChild(imageIcon);
-            
-        } else {
-            // Unknown file type
-            mediaElement = document.createElement('div');
-            mediaElement.innerHTML = `📄 ${file.type || 'Unknown file type'}`;
-            mediaElement.style.width = '200px';
-            mediaElement.style.height = '100px';
-            mediaElement.style.margin = '10px';
-            mediaElement.style.border = '2px dashed #ccc';
-            mediaElement.style.display = 'flex';
-            mediaElement.style.alignItems = 'center';
-            mediaElement.style.justifyContent = 'center';
-            mediaElement.style.fontSize = '14px';
-            mediaElement.style.color = '#666';
-        }
-
-        const nameLabel = document.createElement('div');
-        nameLabel.textContent = file.name;
-        nameLabel.className = 'file-name';
-        nameLabel.style.fontSize = '12px';
-        nameLabel.style.color = '#333';
-        nameLabel.style.marginTop = '5px';
-        nameLabel.style.wordBreak = 'break-word';
-
-        // Create object URL and set source
-        if (isVideo || isImage) {
-            const objectUrl = URL.createObjectURL(file);
-            mediaElement.src = objectUrl;
-
-            // Clean up object URL when element loads
-            mediaElement.onload = mediaElement.onloadeddata = () => {
-                URL.revokeObjectURL(objectUrl);
-            };
-
-            // Handle errors
-            mediaElement.onerror = () => {
-                console.error(`Failed to load ${isVideo ? 'video' : 'image'}:`, file.name);
-                mediaElement.style.border = '2px solid #ff4444';
-                mediaElement.alt = `Failed to load ${file.name}`;
-            };
-        }
-
-        previewContainer.appendChild(mediaElement);
-        previewContainer.appendChild(nameLabel);
-        previewDiv.appendChild(previewContainer);
-    });
-
-    // Upload files via Worker
-    uploadViaWorker(files);
+    // Show notification
+    const notification = document.createElement('div');
+    notification.id = 'ai-processing-notification';
+    notification.className = 'ai-processing-notification';
+    notification.innerHTML = `
+        <div class="ai-processing-spinner"></div>
+        <span>AI is analyzing material images...</span>
+    `;
+    document.body.appendChild(notification);
+    console.log('AI processing state activated');
 }
 
-function evaluateOCRQuality(extractedText) {
-    if (!extractedText || extractedText.trim().length < 10) {
-        return { isGood: false, reason: "Too short or empty" };
+function hideAIProcessingState(success = true) {
+    aiProcessingInProgress = false;
+
+    // Hide notification
+    const notification = document.getElementById('ai-processing-notification');
+    if (notification) {
+        notification.remove();
     }
-    
-    // Check for meaningful patterns
-    const bookIndicators = [
-        /isbn/i, /author/i, /title/i, /publisher/i, /edition/i, /copyright/i,
-        /\b\d{13}\b/, /\b\d{10}\b/, // ISBN patterns
-        /\d{4}/, // Years
-        /by\s+[A-Z][a-z]+/i, // "by Author"
-        /[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}/ // Proper names
-    ];
-    
-    // Count meaningful words (not garbled like "eee aaa")
-    const words = extractedText.split(/\s+/);
-    const meaningfulWords = words.filter(word => 
-        word.length > 2 && 
-        /^[a-zA-Z0-9\-'.,;:!?]+$/.test(word) &&
-        !/(ee|aa|oo){2,}/.test(word.toLowerCase()) // Avoid "eee", "aaa" patterns
-    );
-    
-    // Calculate quality score
-    const meaningfulRatio = meaningfulWords.length / words.length;
-    const hasBookIndicators = bookIndicators.some(pattern => pattern.test(extractedText));
-    const hasProperStructure = /[.!?]/.test(extractedText); // Has sentence structure
-    
-    const isGood = meaningfulRatio > 0.6 && (hasBookIndicators || hasProperStructure);
-    
-    return {
-        isGood,
-        score: meaningfulRatio,
-        meaningfulWords: meaningfulWords.length,
-        totalWords: words.length,
-        hasBookIndicators,
-        reason: isGood ? "Good quality" : "Low quality or garbled text"
+
+    if (success) {
+        showSuccessNotification('Material analysis completed successfully!');
+    }
+
+    console.log(`AI processing state deactivated (success: ${success})`);
+}
+
+function showSuccessNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'ai-processing-notification';
+    notification.style.background = '#4CAF50';
+    notification.innerHTML = `<span>${message}</span>`;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        if (document.body.contains(notification)) {
+            notification.remove();
+        }
+    }, 3000);
+
+    console.log('Success notification shown:', message);
+}
+
+// Material Image Processing Functions
+function materialSampleImageSearch() {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.multiple = true;
+
+    fileInput.onchange = async function (e) {
+        const files = Array.from(e.target.files);
+        if (!files || files.length === 0) return;
+
+        console.log(`Selected ${files.length} material image(s)`);
+
+        // Store images for AI processing
+        window.materialImages = files;
+
+        // Show preview and AI button
+        displayMaterialImagePreview(files);
+    };
+
+    fileInput.click();
+}
+
+function displayMaterialImagePreview(files) {
+    const progressDiv = document.getElementById('material-progress') || createMaterialProgressDiv();
+
+    // Clear previous content
+    progressDiv.innerHTML = '';
+
+    // Show image previews
+    const previewContainer = document.createElement('div');
+    previewContainer.style.cssText = 'display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0;';
+
+    files.forEach((file, index) => {
+        const preview = document.createElement('div');
+        preview.style.cssText = 'text-align: center;';
+
+        const img = document.createElement('img');
+        img.style.cssText = 'max-width: 150px; max-height: 150px; border: 1px solid #ddd; border-radius: 5px;';
+        img.src = URL.createObjectURL(file);
+
+        const label = document.createElement('div');
+        label.textContent = file.name;
+        label.style.cssText = 'font-size: 12px; color: #666; margin-top: 5px; word-break: break-word; max-width: 150px;';
+
+        preview.appendChild(img);
+        preview.appendChild(label);
+        previewContainer.appendChild(preview);
+    });
+
+    progressDiv.appendChild(previewContainer);
+
+    // Add AI analysis button
+    const instructionDiv = document.createElement('div');
+    instructionDiv.innerHTML = `
+        <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border: 1px solid #b0d4f1; border-radius: 5px;">
+            <p style="margin: 0 0 10px 0; font-weight: bold;">Images uploaded successfully!</p>
+            <p style="margin: 0 0 15px 0;">AI will analyze the images to generate material sample information.</p>
+            <button id="material-ai-btn" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold;">
+                Generate Materials Data with AI
+            </button>
+        </div>
+    `;
+
+    progressDiv.appendChild(instructionDiv);
+
+    // Add click handler
+    document.getElementById('material-ai-btn').onclick = function () {
+        if (aiProcessingInProgress) {
+            console.log('AI processing already in progress');
+            return;
+        }
+        generateMaterialMetadataWithAI();
     };
 }
 
+function createMaterialProgressDiv() {
+    let progressDiv = document.getElementById('material-progress');
+    if (!progressDiv) {
+        progressDiv = document.createElement('div');
+        progressDiv.id = 'material-progress';
+        progressDiv.style.cssText = 'margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;';
+
+        // Insert after the image upload section or at end of body
+        const imageSection = document.querySelector('[name="images"], .image-upload-section, #image-upload');
+        if (imageSection) {
+            imageSection.parentNode.insertBefore(progressDiv, imageSection.nextSibling);
+        } else {
+            document.body.appendChild(progressDiv);
+        }
+    }
+    return progressDiv;
+}
+
+// AI Processing Function
+async function generateMaterialMetadataWithAI() {
+    console.log('generateMaterialMetadataWithAI() called');
+
+    if (aiProcessingInProgress) {
+        console.log('AI processing already in progress');
+        return;
+    }
+
+    if (!window.materialImages || window.materialImages.length === 0) {
+        alert('No images available. Please upload images first.');
+        return;
+    }
+
+    console.log('Starting AI processing for material sample');
+    showAIProcessingState();
+
+    try {
+        // Get form inputs
+        const itemName = document.querySelector('#title')?.value?.trim() || '';
+        const manufacturer = document.querySelector('input[name="manufacturer"], #manufacturer')?.value?.trim() || '';
+        const serialNumber = document.querySelector('input[name="serial_number"], #serial_no')?.value?.trim() || '';
+
+        console.log('Material inputs:', { itemName, manufacturer, serialNumber });
+
+        // Convert images to base64
+        console.log('Converting images to base64...');
+        const base64Images = await convertImagesToBase64(window.materialImages);
+        console.log(`Converted ${base64Images.length} images`);
+
+        // Build AI query
+        let textQuery = `Analyze these material sample images and provide detailed information.
+
+Item Information:
+${itemName ? `Item Name: ${itemName}` : ''}
+${manufacturer ? `Manufacturer: ${manufacturer}` : ''}
+${serialNumber ? `Serial Number: ${serialNumber}` : ''}
+
+Please analyze the uploaded images and the item name as it is search for information about this material/item. Look for:
+- Material composition and properties, item name.
+- Description of the material from the source.
+- Title and alternative title.
+- Material Category
+- Manufacturer details and product information
+
+Return the information in this exact JSON format:
+{
+    "Name_of_Item": "[Official material name from manufacturer or catalog]",
+    "Alternative_Title": "[Trade/common names, abbreviations if any]", 
+    "Name_of_Manufacturer": "[Exact manufacturer/designer as officially listed]",
+    "Country_State_Province_of_Manufacturer": "[Geographic origin of manufacturer]",
+    "Material_Category": "[]",
+    "Description_of_Item": "[Description of the material from the source in detail talking about the item and it's nature that helps in cataloguing.]",
+    "References": "[Direct URLs for catalog entries or official sources]"
+}
+
+CRITICAL: Return ONLY the JSON object. No explanations or additional text.`;
+
+        console.log('Calling AI with material analysis query...');
+
+        const perplexityData = await fetchFromPerplexityWithImages(textQuery, base64Images);
+
+        if (perplexityData && !perplexityData.error && perplexityData.choices?.[0]?.message?.content) {
+            const content = perplexityData.choices[0].message.content;
+            console.log('Raw response received');
+
+            const materialData = tryParseWithFallbacks(content);
+
+            if (materialData && !materialData.error) {
+                console.log('Success! Displaying material data...');
+                displayMaterialResults(materialData);
+                hideAIProcessingState(true);
+            } else {
+                throw new Error('Could not extract valid material data from response');
+            }
+        } else {
+            throw new Error(perplexityData?.error?.message || 'No valid response from AI');
+        }
+
+    } catch (error) {
+        console.error('Error:', error);
+        showMaterialErrorPopup(`Error: ${error.message}`);
+        hideAIProcessingState(false);
+    }
+}
+
+// Results Display Functions
+function displayMaterialResults(materialData) {
+    const progressDiv = document.getElementById('material-progress');
+
+    // Remove existing results
+    const existingResults = document.getElementById('material-results');
+    if (existingResults) {
+        existingResults.remove();
+    }
+
+    // Create results display box
+    const resultsBox = document.createElement('div');
+    resultsBox.id = 'material-results';
+    resultsBox.style.cssText = `
+        margin-top: 20px;
+        padding: 20px;
+        border: 2px solid #4CAF50;
+        border-radius: 8px;
+        background-color: #f8fff8;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    `;
+
+    let resultsHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0; color: #2e7d32;">AI Material Analysis Results</h3>
+            <button onclick="copyMaterialResults()" style="background: #2196F3; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;">Copy Results</button>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+    `;
+
+    // Fields to display
+    const fieldsToDisplay = [
+        { key: 'Name_of_Item', label: 'Name of Item', important: true },
+        { key: 'Alternative_Title', label: 'Alternative Title' },
+        { key: 'Name_of_Manufacturer', label: 'Manufacturer', important: true },
+        { key: 'Country_State_Province_of_Manufacturer', label: 'Country/State/Province' },
+        { key: 'Material_Category', label: 'Material Category', important: true },
+        { key: 'Description_of_Item', label: 'Description', fullWidth: true },
+        { key: 'References', label: 'References', fullWidth: true }
+    ];
+
+    fieldsToDisplay.forEach(field => {
+        const value = materialData[field.key];
+        if (value && value !== 'null' && value !== null) {
+            const gridClass = field.fullWidth ? 'grid-column: 1 / -1;' : '';
+            const importantStyle = field.important ? 'background-color: #fff3e0; border-left: 4px solid #ff9800;' : '';
+
+            resultsHTML += `
+                <div style="margin-bottom: 12px; ${gridClass} ${importantStyle} padding: 10px; border-radius: 4px;">
+                    <strong style="color: #333; display: block; margin-bottom: 5px;">${field.label}:</strong>
+                    <span style="color: #555; line-height: 1.4;">${value}</span>
+                </div>
+            `;
+        }
+    });
+
+    resultsHTML += `
+        </div>
+        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 12px; color: #666;">
+            Analysis completed at: ${new Date().toLocaleString()}
+        </div>
+        <div style="margin-top: 10px;">
+            <button onclick="hideMaterialResults()" style="background: #f44336; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Hide Results</button>
+        </div>
+    `;
+
+    resultsBox.innerHTML = resultsHTML;
+
+    // Store data for copy function
+    window.currentMaterialData = materialData;
+
+    progressDiv.appendChild(resultsBox);
+}
+
+function copyMaterialResults() {
+    if (window.currentMaterialData) {
+        const textToCopy = JSON.stringify(window.currentMaterialData, null, 2);
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            alert('Material analysis results copied to clipboard!');
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+        });
+    }
+}
+
+function hideMaterialResults() {
+    const resultsBox = document.getElementById('material-results');
+    if (resultsBox) {
+        resultsBox.remove();
+    }
+}
+
+function showMaterialErrorPopup(message) {
+    alert(message);
+}
+
+// Utility Functions
 async function convertImagesToBase64(files) {
     const base64Images = [];
-    
+
     for (const file of files) {
         try {
             const base64 = await new Promise((resolve, reject) => {
@@ -155,7 +339,7 @@ async function convertImagesToBase64(files) {
                 reader.onerror = reject;
                 reader.readAsDataURL(file);
             });
-            
+
             base64Images.push({
                 filename: file.name,
                 data: base64
@@ -164,253 +348,76 @@ async function convertImagesToBase64(files) {
             console.error(`Failed to convert ${file.name} to base64:`, error);
         }
     }
-    
+
     return base64Images;
 }
 
+function tryParseWithFallbacks(content) {
+    try {
+        return JSON.parse(content);
+    } catch (error) {
+        console.log('Direct parsing failed, trying to extract JSON...');
+
+        // Try to extract JSON from response
+        const startBrace = content.indexOf('{');
+        const lastBrace = content.lastIndexOf('}');
+
+        if (startBrace !== -1 && lastBrace !== -1 && lastBrace > startBrace) {
+            const jsonStr = content.substring(startBrace, lastBrace + 1);
+            try {
+                return JSON.parse(jsonStr);
+            } catch (error2) {
+                console.log('Extracted JSON parsing failed:', error2);
+            }
+        }
+
+        console.error('All JSON parsing methods failed');
+        return null;
+    }
+}
+
+// Initialize when button is clicked
+document.addEventListener('DOMContentLoaded', function () {
+    const uploadBtn = document.querySelector('#upload-images-btn, .upload-btn');
+    if (uploadBtn) {
+        uploadBtn.addEventListener('click', materialSampleImageSearch);
+    }
+});
+
+
 async function fetchFromPerplexityWithImages(textQuery, base64Images = []) {
     try {
-        const content = [];
-        
-        // Always add text query
-        if (textQuery) {
-            content.push({
-                type: "text",
-                text: textQuery
-            });
-        }
-        
+        console.log('Sending request to worker:', {
+            hasText: !!textQuery,
+            imageCount: base64Images.length
+        });
+
+        const requestBody = {
+            query: textQuery
+        };
+
         // Add images if provided
-        for (const image of base64Images) {
-            content.push({
-                type: "image_url",
-                image_url: {
-                    url: image.data // This should be "data:image/jpeg;base64,..."
-                }
-            });
+        if (base64Images && base64Images.length > 0) {
+            requestBody.images = base64Images;
+            console.log('Including images in request');
         }
-        
+
         const response = await fetch('https://metadata-maker.adb-aditya.workers.dev/perplexity', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                messages: [{
-                    role: "user",
-                    content: content
-                }]
-            })
+            body: JSON.stringify(requestBody)
         });
 
         const data = await response.json();
-        console.log('Perplexity Multi-modal Response:', data);
+        console.log('Perplexity Response:', data);
 
-        if (data && data.success && data.result) {
-            if (data.result.choices && 
-                data.result.choices[0] && 
-                data.result.choices[0].message && 
-                data.result.choices[0].message.content) {
-
-                let responseContent = data.result.choices[0].message.content;
-                responseContent = responseContent.replace(/```json\n*/g, '').replace(/```/g, '').trim();
-
-                try {
-                    const parsedData = JSON.parse(responseContent);
-                    console.log('✅ Successfully parsed Perplexity multi-modal data:', parsedData);
-                    return {
-                        choices: [{ message: { content: JSON.stringify(parsedData) } }],
-                        citations: data.result.citations
-                    };
-                } catch (parseError) {
-                    console.error('Error parsing multi-modal content:', parseError);
-                    return { error: 'parse_error', message: 'Could not parse response' };
-                }
-            }
+        // Check for error first
+        if (data.error || !data.success) {
+            console.error('Perplexity API Error:', data.error);
+            return { error: 'api_error', message: data.error?.message || 'API request failed' };
         }
-        return null;
-    } catch (error) {
-        console.error('Perplexity Multi-modal API error:', error);
-        return null;
-    }
-}
-
-async function uploadViaWorker(files) {
-    const progressDiv = document.getElementById('upload-progress');
-    const formData = new FormData();
-
-    files.forEach(file => {
-        formData.append('files', file);
-    });
-
-    try {
-        progressDiv.innerHTML = 'Uploading files...';
-
-        const response = await fetch('https://metadata-maker.adb-aditya.workers.dev/upload', {
-            method: 'POST',
-            body: formData
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(result.error || 'Upload failed');
-        }
-
-        if (result.success) {
-            progressDiv.innerHTML = 'All files uploaded successfully!';
-        } else {
-            throw new Error(result.error);
-        }
-    } catch (error) {
-        progressDiv.innerHTML = `Upload error: ${error.message}`;
-        console.error('Upload failed:', error);
-    }
-}
-
-
-async function preFetchFromAI() {
-    const title = document.getElementById('title').value; // Name of Item
-    const serial = document.getElementById('serial').value; // Serial No
-
-    if (!title && !serial) {
-        console.log('Please enter either a title or serial number');
-        const noInputAlert = document.querySelector(".no-input-alert");
-        const noInputBackdrop = document.querySelector(".no-input-backdrop");
-        const noInputCloseBtn = noInputAlert.querySelector(".close-btn");
-
-        noInputAlert.style.display = "block";
-        noInputBackdrop.style.display = "block";
-
-        function hideNoInputAlert() {
-            noInputAlert.style.display = "none";
-            noInputBackdrop.style.display = "none";
-        }
-
-        noInputCloseBtn.addEventListener("click", hideNoInputAlert);
-        noInputBackdrop.addEventListener("click", hideNoInputAlert);
-        return;
-    }
-
-    try {
-        let metadata = null;
-
-        // Dummy eBay API call (always fails/returns no data)
-        console.log('Attempting eBay API call...');
-        try {
-            // This is a dummy call that will fail/return no data
-            const ebayResponse = await fetch('https://dummy-ebay-api.com/search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, serial })
-            });
-            // This will always fail, so we'll catch and continue to Perplexity
-        } catch (ebayError) {
-            console.log('eBay API unavailable, proceeding to Perplexity search...');
-        }
-
-        // Perplexity search for equipment
-        console.log('Searching Perplexity for equipment data...');
-        let searchQuery = title;
-        if (serial) {
-            searchQuery = `${title} serial number ${serial}`;
-        }
-
-        const perplexityData = await fetchFromPerplexityEquipment(searchQuery);
-        if (perplexityData && perplexityData.choices?.[0]?.message?.content) {
-            try {
-                metadata = JSON.parse(perplexityData.choices[0].message.content);
-                console.log('Parsed equipment metadata:', metadata);
-            } catch (error) {
-                console.error('Error parsing Perplexity content:', error);
-            }
-        }
-
-        // Populate form fields if we have metadata
-        if (metadata) {
-            console.log('Final Equipment Metadata:', metadata);
-            
-            // Populate equipment-specific fields
-            document.getElementById('title').value = metadata.title || '';
-            document.getElementById('subtitle').value = metadata.subtitle || '';
-            document.getElementById('manufacturer').value = metadata.manufacturer || '';
-            document.getElementById('serial').value = metadata.serial || serial; // Keep original if not found
-            document.getElementById('dimensions').value = metadata.dimensions || '';
-            document.getElementById('notes').value = metadata.notes || '';
-            document.getElementById('product_manual').value = metadata.productLink;
-            
-            // Handle manufacturer country dropdown
-            const countrySelect = document.querySelector('select[name="country"]'); // Your country dropdown
-            if (countrySelect && metadata.manufacturerCountry) {
-                Array.from(countrySelect.options).forEach(option => {
-                    if (option.text.toLowerCase().includes(metadata.manufacturerCountry.toLowerCase())) {
-                        countrySelect.value = option.value;
-                    }
-                });
-            }
-            
-            // Handle product manual/site link
-            if (metadata.productLink) {
-                // You can display this or store it in a hidden field
-                console.log('Product link found:', metadata.productLink);
-                // If you have a field for this:
-                // document.getElementById('product_link').value = metadata.productLink;
-            }
-        }
-
-    } catch (error) {
-        console.error('Error fetching equipment data:', error);
-    }
-}
-
-async function fetchFromPerplexityEquipment(searchQuery) {
-    try {
-        const response = await fetch('https://metadata-maker.adb-aditya.workers.dev/perplexity', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                query: `Find comprehensive equipment/product metadata for: "${searchQuery}". 
-                
-                Search these sources in order of priority:
-                1. Manufacturer's official website
-                2. Amazon.com / Amazon.ae / Amazon.in product listings
-                3. eBay completed listings
-                4. Ubuy.ae electronics/equipment section
-                5. Noon.com electronics
-                6. Equipment specification databases
-                7. Product manual repositories
-                8. Technical specification sites
-
-                Return the data in this exact JSON format:
-                {
-                    "title": "Product/Equipment name",
-                    "subtitle": "Model number or variant",
-                    "manufacturer": "Manufacturer company name",
-                    "manufacturerCountry": "Country where manufactured",
-                    "serial": "Serial number if found, otherwise null",
-                    "dimensions": "Physical dimensions in cm format (L x W x H)",
-                    "notes": "Product description, key features, or technical summary",
-                    "productLink": "Link to product manual, specification sheet, or official product page"
-                }
-                
-                Search instructions:
-                1. Look for official product pages first
-                2. Cross-reference with retailer listings for specifications
-                3. Find product manuals or specification sheets
-                4. Convert all measurements to centimeters
-                5. Provide comprehensive product description in notes
-                6. Find official documentation links when possible
-                
-                Use null for truly unknown values only after thorough searching.
-                Only return the JSON and nothing else. Do not start with "json", just return the JSON.
-                Remove any citation indicators like [1][2][3] from the response.`
-            })
-        });
-
-        const data = await response.json();
-        console.log('Perplexity Equipment Response:', data);
 
         if (data && data.success && data.result) {
             if (data.result.choices &&
@@ -418,581 +425,28 @@ async function fetchFromPerplexityEquipment(searchQuery) {
                 data.result.choices[0].message &&
                 data.result.choices[0].message.content) {
 
-                let content = data.result.choices[0].message.content;
-                content = content.replace(/```json\n*/g, '').replace(/```/g, '').trim();
+                let responseContent = data.result.choices[0].message.content;
+                responseContent = responseContent.replace(/```json\n*/g, '').replace(/```/g, '').trim();
 
                 try {
-                    const parsedData = JSON.parse(content);
-                    console.log('Successfully parsed equipment data:', parsedData);
-                    return { choices: [{ message: { content: JSON.stringify(parsedData) } }] };
+                    const parsedData = JSON.parse(responseContent);
+                    console.log('Successfully parsed response:', parsedData);
+                    return {
+                        choices: [{ message: { content: JSON.stringify(parsedData) } }],
+                        citations: data.result.citations,
+                        isMultiModal: base64Images.length > 0
+                    };
                 } catch (parseError) {
-                    console.error('Error parsing equipment data:', parseError);
-                    console.log('Content that failed to parse:', content);
+                    console.error('Error parsing response:', parseError);
+                    return { error: 'parse_error', message: 'Could not parse response' };
                 }
             }
         }
-        return null;
-    } catch (error) {
-        console.error('Perplexity Equipment API error:', error);
-        return null;
-    }
-}
 
-
-/*function ocrSearch() {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
-    fileInput.multiple = true;
-
-    fileInput.onchange = async function (e) {
-        const files = Array.from(e.target.files);
-        if (!files || files.length === 0) return;
-
-        console.log(`Processing ${files.length} image(s)...`);
-        
-        const progressDiv = document.getElementById('ocr-progress');
-        if (progressDiv) {
-            progressDiv.innerHTML = `Processing ${files.length} image(s) with OCR...`;
-        }
-
-        let allExtractedText = '';
-        let processedCount = 0;
-
-        // Process each image sequentially
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            console.log(`Processing image ${i + 1}/${files.length}:`, file.name);
-            console.log('Original size:', file.size / 1024 / 1024, 'MB');
-
-            try {
-                const compressedImage = await compressImage(file);
-                console.log('Compressed size:', compressedImage.size / 1024 / 1024, 'MB');
-
-                const formData = new FormData();
-                formData.append('image', compressedImage, file.name);
-
-                if (progressDiv) {
-                    progressDiv.innerHTML = `Processing image ${i + 1}/${files.length}: ${file.name}...`;
-                }
-
-                const response = await fetch('https://metadata-maker.adb-aditya.workers.dev/ocr', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-                console.log(`OCR Result for image ${i + 1}:`, result);
-
-                if (result.success && result.result && result.result.ParsedResults) {
-                    const extractedText = result.result.ParsedResults[0].ParsedText;
-                    console.log(`Extracted Text from image ${i + 1}:`, extractedText);
-                    
-                    allExtractedText += `\n\n--- Text from ${file.name} ---\n${extractedText}`;
-                    processedCount++;
-                } else {
-                    console.error(`OCR failed for image ${i + 1}: ${file.name}`);
-                    allExtractedText += `\n\n--- Failed to extract text from ${file.name} ---\n`;
-                }
-
-            } catch (error) {
-                console.error(`Error processing image ${i + 1}:`, error);
-                allExtractedText += `\n\n--- Error processing ${file.name}: ${error.message} ---\n`;
-            }
-        }
-
-        // Display results after processing all images
-        if (progressDiv) {
-            progressDiv.innerHTML = `OCR completed for ${processedCount}/${files.length} image(s). Extracted text:`;
-            
-            const textDisplay = document.createElement('div');
-            textDisplay.style.maxHeight = '200px';
-            textDisplay.style.overflow = 'auto';
-            textDisplay.style.border = '1px solid #ccc';
-            textDisplay.style.padding = '10px';
-            textDisplay.style.marginTop = '10px';
-            textDisplay.style.whiteSpace = 'pre-wrap';
-            textDisplay.textContent = allExtractedText.trim();
-            
-            progressDiv.appendChild(textDisplay);
-            
-            // Store extracted text for later use
-            window.extractedOCRText = allExtractedText.trim();
-            
-            // Add instruction message and AI search button
-            const instructionMsg = document.createElement('div');
-            instructionMsg.innerHTML = `
-                <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border: 1px solid #b0d4f1; border-radius: 5px; margin-bottom: 15px">
-                    <p style="margin: 0 0 10px 0; font-weight: bold;">OCR text extracted successfully!</p>
-                    <p style="margin: 0 0 15px 0;">Enter ISBN, Author (Last name,First name) or Title if needed for more accurate results, then click the button below to generate metadata with AI.</p>
-                    <button id="ai-search-btn" style="
-                        background-color: #4CAF50; 
-                        color: white; 
-                        padding: 10px 20px; 
-                        border: none; 
-                        border-radius: 5px; 
-                        cursor: pointer; 
-                        font-size: 14px;
-                        font-weight: bold;
-                    ">🤖 Generate Metadata with AI</button>
-                    <i class="info-icon" data-tooltip="Use this option to search by image of the item to be catalogued. Enter ISBN, Author (Last name,First name) or Title if needed for more accurate results, then click the button below to generate metadata with AI">ⓘ</i>
-                </div>
-            `;
-            
-            progressDiv.appendChild(instructionMsg);
-            
-            // Add click handler for the AI search button
-            document.getElementById('ai-search-btn').onclick = function() {
-                generateMetadataWithAI();
-            };
-        }
-    };
-
-    fileInput.click();
-}*/
-
-function ocrSearch() {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
-    fileInput.multiple = true;
-
-    fileInput.onchange = async function (e) {
-        const files = Array.from(e.target.files);
-        if (!files || files.length === 0) return;
-
-        console.log(`Processing ${files.length} image(s)...`);
-
-        const progressDiv = document.getElementById('ocr-progress');
-        if (progressDiv) {
-            progressDiv.innerHTML = `Processing ${files.length} image(s) with OCR...`;
-        }
-
-        let allExtractedText = '';
-        let processedCount = 0;
-        
-        // Store original files for later use
-        window.ocrImageFiles = files;
-
-        // Process each image sequentially with Tesseract.js
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            console.log(`Processing image ${i + 1}/${files.length}:`, file.name);
-
-            try {
-                if (progressDiv) {
-                    progressDiv.innerHTML = `Processing image ${i + 1}/${files.length}: ${file.name}...`;
-                }
-
-                const { data: { text } } = await Tesseract.recognize(file, 'eng', {
-                    logger: m => {
-                        if (m.status === 'recognizing text') {
-                            const progress = Math.round(m.progress * 100);
-                            if (progressDiv) {
-                                progressDiv.innerHTML = `Processing image ${i + 1}/${files.length}: ${file.name} (${progress}%)...`;
-                            }
-                        }
-                    }
-                });
-
-                console.log(`Extracted Text from image ${i + 1}:`, text);
-
-                if (text.trim()) {
-                    allExtractedText += `\n\n--- Text from ${file.name} ---\n${text.trim()}`;
-                    processedCount++;
-                } else {
-                    console.log(`No text found in image ${i + 1}: ${file.name}`);
-                    allExtractedText += `\n\n--- No text found in ${file.name} ---\n`;
-                }
-
-            } catch (error) {
-                console.error(`Error processing image ${i + 1}:`, error);
-                allExtractedText += `\n\n--- Error processing ${file.name}: ${error.message} ---\n`;
-            }
-        }
-
-        // Evaluate OCR quality
-        const qualityCheck = evaluateOCRQuality(allExtractedText);
-        console.log('OCR Quality Assessment:', qualityCheck);
-
-        // Display results with quality assessment
-        if (progressDiv) {
-            let statusMessage = '';
-            let statusColor = '';
-            
-            if (qualityCheck.isGood) {
-                statusMessage = `✅ OCR completed for ${processedCount}/${files.length} image(s). Text quality: Good`;
-                statusColor = '#4CAF50';
-                window.extractedOCRText = allExtractedText.trim();
-                window.ocrQuality = 'good';
-            } else {
-                statusMessage = `⚠️ OCR completed for ${processedCount}/${files.length} image(s). Text quality: Poor (${qualityCheck.reason})`;
-                statusColor = '#ff9800';
-                window.extractedOCRText = allExtractedText.trim();
-                window.ocrQuality = 'poor';
-            }
-            
-            progressDiv.innerHTML = `<div style="color: ${statusColor}; font-weight: bold;">${statusMessage}</div>`;
-
-            // Show extracted text
-            const textDisplay = document.createElement('div');
-            textDisplay.style.maxHeight = '200px';
-            textDisplay.style.overflow = 'auto';
-            textDisplay.style.border = '1px solid #ccc';
-            textDisplay.style.padding = '10px';
-            textDisplay.style.marginTop = '10px';
-            textDisplay.style.whiteSpace = 'pre-wrap';
-            textDisplay.textContent = allExtractedText.trim();
-            progressDiv.appendChild(textDisplay);
-
-            // Add instruction message and AI search button
-            const instructionMsg = document.createElement('div');
-            
-            if (qualityCheck.isGood) {
-                instructionMsg.innerHTML = `
-                    <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border: 1px solid #b0d4f1; border-radius: 5px;">
-                        <p style="margin: 0 0 10px 0; font-weight: bold;">OCR text extracted successfully!</p>
-                        <p style="margin: 0 0 15px 0;">Good quality text detected. Enter additional details if needed, then click below to generate metadata with AI using both text and images.</p>
-                        <button id="ai-search-btn" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold;">🤖 Generate Metadata with AI (Text + Images)</button>
-                    </div>
-                `;
-            } else {
-                instructionMsg.innerHTML = `
-                    <div style="margin-top: 15px; padding: 10px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px;">
-                        <p style="margin: 0 0 10px 0; font-weight: bold;">Low quality OCR detected</p>
-                        <p style="margin: 0 0 15px 0;">Text appears garbled. AI will analyze only the images for book metadata. Enter ISBN, Author, or Title if known for better results.</p>
-                        <button id="ai-search-btn" style="background-color: #ff9800; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold;">🤖 Generate Metadata with AI (Images Only)</button>
-                    </div>
-                `;
-            }
-
-            progressDiv.appendChild(instructionMsg);
-
-            // Add click handler for the AI search button
-            document.getElementById('ai-search-btn').onclick = function () {
-                if (aiProcessingInProgress) {
-                    console.log('❌ AI processing already in progress');
-                    return;
-                }
-                console.log('🔍 generateMetadataWithAI() called');
-                generateMetadataWithAIImages();
-            };
-        }
-    };
-
-    fileInput.click();
-}
-
-async function generateMetadataWithAIImages() {
-    console.log('🔍 generateMetadataWithAI() called');
-    
-    if (aiProcessingInProgress) {
-        console.log('❌ AI processing already in progress');
-        return;
-    }
-
-    if (!window.extractedOCRText && !window.ocrImageFiles) {
-        console.log('❌ No OCR text or images available');
-        alert('No OCR data available. Please upload and process images first.');
-        return;
-    }
-
-    console.log('✅ Starting AI processing with OCR data');
-    
-    showAIProcessingState();
-
-    try {
-        // Get additional user inputs
-        const title = document.getElementById('title').value.trim();
-        const familyName = document.getElementById('family_name').value.trim();
-        const givenName = document.getElementById('given_name').value.trim();
-        const isbn = document.getElementById('isbn').value.trim();
-
-        console.log('📝 User inputs:', { title, familyName, givenName, isbn });
-
-        // Prepare query based on OCR quality
-        let textQuery = '';
-        let useImages = false;
-        
-        if (window.ocrQuality === 'good' && window.extractedOCRText) {
-            // Use both text and images
-            textQuery = `Book metadata extraction request:
-
-Additional provided information:
-${title ? `Title: ${title}` : ''}
-${familyName || givenName ? `Author: ${[givenName, familyName].filter(Boolean).join(' ')}` : ''}
-${isbn ? `ISBN: ${isbn}` : ''}
-
-Extracted OCR Text:
-${window.extractedOCRText}
-
-Please analyze both the OCR text above AND the uploaded images to extract comprehensive book metadata.`;
-            useImages = true;
-        } else {
-            // Use only images (poor OCR quality)
-            textQuery = `Book metadata extraction from images only:
-
-Additional provided information:
-${title ? `Title: ${title}` : ''}
-${familyName || givenName ? `Author: ${[givenName, familyName].filter(Boolean).join(' ')}` : ''}
-${isbn ? `ISBN: ${isbn}` : ''}
-
-The OCR text quality was poor, so please analyze only the uploaded book images to extract metadata. Look for title, author, ISBN, publisher, and other book details visible in the images.`;
-            useImages = true;
-        }
-
-        // Add the standard metadata extraction instructions
-        textQuery += `
-
-Please extract comprehensive book metadata and return it in this exact JSON format:
-{
-    "title": "Full book title",
-    "subtitle": "Subtitle if exists, otherwise null", 
-    "isbn": "ISBN if found, otherwise null",
-    "edition": "Edition information or null",
-    "language": "Language code (eng, fre, etc.)",
-    "publisher": ["Publisher name"],
-    "authors": [{"familyName": "Last name", "givenName": "First name"}],
-    "placeOfPublication": ["City names"],
-    "publicationCountry": "Full country name",
-    "publicationDate": "YYYY format",
-    "numberOfPages": "Exact page count or null",
-    "dimensions": "Book dimensions in cm (L x W x H) or empty string",
-    "synopsisOfBook": "Book description"
-}
-
-CRITICAL: Return ONLY the JSON object. No text before or after. No explanations.`;
-
-        // Convert images to base64 if needed
-        let base64Images = [];
-        if (useImages && window.ocrImageFiles) {
-            console.log('🖼️ Converting images to base64...');
-            base64Images = await convertImagesToBase64(window.ocrImageFiles);
-            console.log(`✅ Converted ${base64Images.length} images`);
-        }
-
-        // Call Perplexity with multi-modal support
-        console.log('🚀 Calling Perplexity with multi-modal data...');
-        
-        const perplexityData = await fetchFromPerplexityWithImages(textQuery, base64Images);
-        
-        if (perplexityData && perplexityData.choices?.[0]?.message?.content) {
-            let content = perplexityData.choices[0].message.content;
-            console.log('📄 Raw Perplexity content preview:', content.substring(0, 200) + '...');
-
-            const metadata = tryParseWithFallbacks(content);
-            console.log('🔧 Parsed metadata:', metadata);
-
-            if (metadata && !metadata.error) {
-                console.log('✅ Valid metadata found, populating form...');
-                
-                // Populate form (your existing form population code)
-                populateFormWithMetadata(metadata);
-                
-                hideAIProcessingState(true);
-            } else {
-                console.log('❌ Failed to parse metadata');
-                showOCRParseFailedPopup('AI response could not be parsed.');
-                hideAIProcessingState(false);
-            }
-        } else {
-            console.log('❌ No valid content in Perplexity response');
-            showOCRParseFailedPopup('No valid response received from AI service.');
-            hideAIProcessingState(false);
-        }
+        return { error: 'no_content', message: 'No valid content in response' };
 
     } catch (error) {
-        console.error('❌ Error in generateMetadataWithAI:', error);
-        showOCRParseFailedPopup(`Connection error: ${error.message}`);
-        hideAIProcessingState(false);
+        console.error('Network error:', error);
+        return { error: 'network_error', message: error.message };
     }
 }
-
-// New function to handle AI metadata generation with user input
-function generateMetadataWithAI() {
-    const aiSearchBtn = document.getElementById('ai-search-btn');
-    const progressDiv = document.getElementById('ocr-progress');
-    
-    if (!window.extractedOCRText) {
-        alert('No OCR text available. Please upload and process images first.');
-        return;
-    }
-    
-    // Disable button and show processing
-    aiSearchBtn.disabled = true;
-    aiSearchBtn.innerHTML = '🔄 Generating Metadata...';
-    
-    // Get additional user inputs
-    const title = document.getElementById('title').value.trim();
-    const familyName = document.getElementById('family_name').value.trim();
-    const givenName = document.getElementById('given_name').value.trim();
-    const isbn = document.getElementById('isbn').value.trim();
-    
-    // Prepare enhanced query for AI
-    let enhancedQuery = window.extractedOCRText;
-    
-    // Add user-provided details if available
-    const additionalInfo = [];
-    if (title) additionalInfo.push(`Title: ${title}`);
-    if (familyName || givenName) {
-        const author = `${givenName} ${familyName}`.trim();
-        additionalInfo.push(`Author: ${author}`);
-    }
-    if (isbn) additionalInfo.push(`ISBN: ${isbn}`);
-    
-    if (additionalInfo.length > 0) {
-        enhancedQuery = `Additional provided information:\n${additionalInfo.join('\n')}\n\nExtracted OCR Text:\n${window.extractedOCRText}`;
-    }
-    
-    console.log('Enhanced query for AI:', enhancedQuery);
-    
-    // Add processing message
-    const processingMsg = document.createElement('div');
-    processingMsg.id = 'ai-processing-msg';
-    processingMsg.textContent = 'Analyzing text with additional details for book metadata...';
-    processingMsg.style.marginTop = '10px';
-    processingMsg.style.fontStyle = 'italic';
-    processingMsg.style.color = '#666';
-    
-    // Remove any existing processing message
-    const existingMsg = document.getElementById('ai-processing-msg');
-    if (existingMsg) existingMsg.remove();
-    
-    progressDiv.appendChild(processingMsg);
-    
-    // Send enhanced query to Perplexity for analysis
-    fetchFromPerplexity(enhancedQuery)
-        .then(perplexityData => {
-            if (perplexityData && perplexityData.choices?.[0]?.message?.content) {
-                try {
-                    const metadata = JSON.parse(perplexityData.choices[0].message.content);
-                    console.log('Book metadata from enhanced AI search:', metadata);
-                    
-                    processingMsg.textContent = '✅ Successfully generated book metadata with AI!';
-                    processingMsg.style.color = '#4CAF50';
-                    processingMsg.style.fontWeight = 'bold';
-                    
-                    // Populate form fields with the metadata
-                    document.getElementById('title').value = metadata.title || '';
-                    document.getElementById('isbn').value = metadata.isbn || '';
-                    document.getElementById('edition').value = metadata.edition || '';
-                    document.getElementById('language').value = metadata.language || '';
-                    document.getElementById('pages').value = metadata.numberOfPages || '';
-                    document.getElementById('dimensions').value = metadata.dimensions || '';
-                    document.getElementById('subtitle').value = metadata.subtitle || '';
-
-                    // NEW: Handle transliteration fields
-                    const translitTitleField = document.getElementById('translit_title');
-                    const translitSubtitleField = document.getElementById('translit_subtitle');
-
-                    if (metadata.translit_title) {
-                        translitTitleField.value = metadata.translit_title;
-                        translitTitleField.style.display = 'inline-block';
-                    } else {
-                        translitTitleField.style.display = 'none';
-                    }
-
-                    if (metadata.translit_subtitle) {
-                        translitSubtitleField.value = metadata.translit_subtitle;
-                        translitSubtitleField.style.display = 'inline-block';
-                    } else {
-                        translitSubtitleField.style.display = 'none';
-                    }
-
-
-                    document.getElementById('place').value = Array.isArray(metadata.placeOfPublication)
-                        ? metadata.placeOfPublication[0]
-                        : (metadata.placeOfPublication || '');
-
-                    document.getElementById('publisher').value = Array.isArray(metadata.publisher)
-                        ? metadata.publisher[0]
-                        : (metadata.publisher || '');
-
-                    document.getElementById('year').value = metadata.publicationDate || '';
-                    document.getElementById('notes').value = metadata.synopsisOfBook || '';
-
-                    if (metadata.authors?.length > 0) {
-                        document.getElementById('family_name').value = metadata.authors[0].familyName || '';
-                        document.getElementById('given_name').value = metadata.authors[0].givenName || '';
-                    }
-
-                    // Handle country dropdown
-                    const countrySelect = document.querySelector('select[name="country"]');
-                    if (countrySelect && metadata.publicationCountry) {
-                        Array.from(countrySelect.options).forEach(option => {
-                            if (option.text.toLowerCase() === metadata.publicationCountry.toLowerCase()) {
-                                countrySelect.value = option.value;
-                            }
-                        });
-                    }
-                    
-                } catch (error) {
-                    console.error('Error parsing Perplexity content:', error);
-                    processingMsg.textContent = '❌ Error parsing book metadata from AI response.';
-                    processingMsg.style.color = '#f44336';
-                }
-            } else {
-                processingMsg.textContent = '❌ Could not identify book metadata from the provided information.';
-                processingMsg.style.color = '#f44336';
-            }
-        })
-        .catch(error => {
-            console.error('Error analyzing text with Perplexity:', error);
-            processingMsg.textContent = '❌ Error connecting to AI service for metadata generation.';
-            processingMsg.style.color = '#f44336';
-        })
-        .finally(() => {
-            // Re-enable button
-            aiSearchBtn.disabled = false;
-            aiSearchBtn.innerHTML = '🤖 Generate Metadata with AI';
-        });
-}
-
-function compressImage(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        
-        reader.onload = function(event) {
-            const img = new Image();
-            img.src = event.target.result;
-            
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Calculate new dimensions while maintaining aspect ratio
-                let width = img.width;
-                let height = img.height;
-                const maxDim = 2000; // Maximum dimension
-                
-                if (width > height && width > maxDim) {
-                    height *= maxDim / width;
-                    width = maxDim;
-                } else if (height > maxDim) {
-                    width *= maxDim / height;
-                    height = maxDim;
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                
-                // Draw and compress
-                ctx.drawImage(img, 0, 0, width, height);
-                
-                // Convert to blob with compression
-                canvas.toBlob((blob) => {
-                    resolve(blob);
-                }, 'image/jpeg', 0.7); // Adjust quality (0.7 = 70% quality)
-            };
-            
-            img.onerror = function(error) {
-                reject(error);
-            };
-        };
-        
-        reader.onerror = function(error) {
-            reject(error);
-        };
-    });
-} 
