@@ -1,0 +1,124 @@
+DECLARE target_url STRING DEFAULT '{{ $('On form submission').item.json.Link }}';
+DECLARE current_period_start DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY);
+DECLARE previous_period_start DATE DEFAULT DATE_SUB(current_period_start, INTERVAL 30 DAY);
+
+WITH 
+-- Current period query performance (last 30 days)
+current_period AS (
+  SELECT
+    query,
+    SUM(clicks) AS current_clicks,
+    SUM(impressions) AS current_impressions,
+    SAFE_DIVIDE(SUM(clicks), SUM(impressions)) AS current_ctr,
+    SAFE_DIVIDE(SUM(sum_position), SUM(impressions)) AS current_avg_position
+  FROM `whichvoip_n8n.search_data`
+  WHERE 
+    url = target_url
+    AND data_date >= current_period_start
+    AND data_date < CURRENT_DATE()
+    AND is_anonymized_query = False
+  GROUP BY query
+),
+
+-- Previous period query performance (30-60 days ago)
+previous_period AS (
+  SELECT
+    query,
+    SUM(clicks) AS previous_clicks,
+    SUM(impressions) AS previous_impressions,
+    SAFE_DIVIDE(SUM(clicks), SUM(impressions)) AS previous_ctr,
+    SAFE_DIVIDE(SUM(sum_position), SUM(impressions)) AS previous_avg_position
+  FROM `whichvoip_n8n.search_data`
+  WHERE 
+    url = target_url
+    AND data_date >= previous_period_start
+    AND data_date < current_period_start
+    AND is_anonymized_query = False
+  GROUP BY query
+),
+
+-- Combined data with differences
+combined_data AS (
+  SELECT
+    COALESCE(c.query, p.query) AS query,
+    
+    -- Current period metrics
+    IFNULL(c.current_clicks, 0) AS current_clicks,
+    IFNULL(p.previous_clicks, 0) AS previous_clicks,
+    
+    IFNULL(c.current_impressions, 0) AS current_impressions,
+    IFNULL(p.previous_impressions, 0) AS previous_impressions,
+    
+    IFNULL(c.current_ctr, 0) AS current_ctr,
+    IFNULL(p.previous_ctr, 0) AS previous_ctr,
+    
+    IFNULL(c.current_avg_position, 0) AS current_avg_position,
+    IFNULL(p.previous_avg_position, 0) AS previous_avg_position,
+    
+    -- Absolute differences
+    IFNULL(c.current_clicks, 0) - IFNULL(p.previous_clicks, 0) AS clicks_diff,
+    IFNULL(c.current_impressions, 0) - IFNULL(p.previous_impressions, 0) AS impressions_diff,
+    IFNULL(c.current_ctr, 0) - IFNULL(p.previous_ctr, 0) AS ctr_diff,
+    IFNULL(p.previous_avg_position, 0) - IFNULL(c.current_avg_position, 0) AS position_diff,
+    
+    -- Percentage differences
+    CASE 
+      WHEN IFNULL(p.previous_clicks, 0) = 0 AND IFNULL(c.current_clicks, 0) > 0 THEN 100
+      WHEN IFNULL(p.previous_clicks, 0) = 0 THEN 0
+      ELSE ROUND((IFNULL(c.current_clicks, 0) - IFNULL(p.previous_clicks, 0)) / IFNULL(p.previous_clicks, 0) * 100, 2)
+    END AS clicks_diff_pct,
+    
+    CASE 
+      WHEN IFNULL(p.previous_impressions, 0) = 0 AND IFNULL(c.current_impressions, 0) > 0 THEN 100
+      WHEN IFNULL(p.previous_impressions, 0) = 0 THEN 0
+      ELSE ROUND((IFNULL(c.current_impressions, 0) - IFNULL(p.previous_impressions, 0)) / IFNULL(p.previous_impressions, 0) * 100, 2)
+    END AS impressions_diff_pct,
+    
+    CASE 
+      WHEN IFNULL(p.previous_ctr, 0) = 0 AND IFNULL(c.current_ctr, 0) > 0 THEN 100
+      WHEN IFNULL(p.previous_ctr, 0) = 0 THEN 0
+      ELSE ROUND((IFNULL(c.current_ctr, 0) - IFNULL(p.previous_ctr, 0)) / IFNULL(p.previous_ctr, 0) * 100, 2)
+    END AS ctr_diff_pct
+  FROM current_period c
+  FULL OUTER JOIN previous_period p ON c.query = p.query
+)
+
+-- Main query with categorization
+SELECT
+  query,
+  
+  -- Paired metrics (current next to previous)
+  current_clicks,
+  previous_clicks,
+  clicks_diff,
+  clicks_diff_pct,
+  
+  current_impressions,
+  previous_impressions,
+  impressions_diff,
+  impressions_diff_pct,
+  
+  current_ctr,
+  previous_ctr,
+  ctr_diff,
+  ctr_diff_pct,
+  
+  current_avg_position,
+  previous_avg_position,
+  position_diff,
+  
+  -- Categorization
+  CASE
+    WHEN clicks_diff > 0 THEN 'Gaining'
+    WHEN clicks_diff < 0 THEN 'Declining'
+    ELSE 'Stable'
+  END AS trend_category
+
+FROM combined_data
+WHERE 
+  -- Filter to include only keywords with meaningful data
+  (current_clicks > 0 OR previous_clicks > 0 OR current_impressions > 10 OR previous_impressions > 10)
+ORDER BY 
+  -- Default ordering by absolute click difference (biggest gains/losses first)
+  ABS(clicks_diff) DESC,
+  current_impressions DESC;

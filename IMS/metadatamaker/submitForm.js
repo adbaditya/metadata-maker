@@ -94,7 +94,7 @@ function generateInstitutionInfo() {
         //040 $a, 040 $c
         marc: 'VCU',
         mods: {
-            physicalLocation: 'Art & Design Library',
+            physicalLocation: 'IMS',
             recordContentSource: 'D@A'
         },
         //"seller" info
