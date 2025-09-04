@@ -1355,14 +1355,14 @@ function downloadMARC(record,institution_info) {
 	var keywords = fillKeywords(record,head,createContentFill,createSubfield);
 	head = keywords[2];
 
-	var resourceType = fillResourceType(record, head, createContentFill, createSubfield);
-	head += getByteLength(resourceType[1]);
-
 	var fast = fillFAST(record,head,createContentFill,createSubfield);
 	head = fast[2];
 
 	var product_manual = fillProductManual(record,head,createContentFill,createSubfield);
     head += getByteLength(product_manual[1]);
+
+	var resourceType = fillResourceType(record, head, createContentFill, createSubfield);
+	head += getByteLength(resourceType[1]);
 
 	var title880 = fillTranslitTitle(record,head,createContentFill,createSubfield);
 	head += getByteLength(title880[1]);
