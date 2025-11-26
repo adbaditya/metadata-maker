@@ -1282,6 +1282,18 @@ function fillTranslitAdditionalAuthors(record,head,fieldFunc,subfieldFunc) {
 	}
 }
 
+function returnSingleEntry(tag, content, head) {
+    //MARC
+    if (head !== null) {
+        var directory = createDirectory(tag, content, head);
+        return [directory, content];
+    }
+    //MARCXML
+    else {
+        return content;
+    }
+}
+
 function fillResourceType(record, head, fieldFunc, subfieldFunc) {
     var resourceType = fieldFunc('945', ' ', ' ', [subfieldFunc('a', 'Mixed material')]);
 
@@ -1302,6 +1314,17 @@ function fillAlternativeTitle(record, head, createContentFill, createSubfield) {
     } else {
         return ['', ''];
     }
+}
+
+function fillGenAI(record, head, fieldFunc, subfieldFunc) {
+    var tag = '588';
+    
+    // Always include this field for all records
+    var genai = fieldFunc(tag, ' ', ' ', [
+        subfieldFunc('a', 'Record created with Gen AI assistance.')
+    ]);
+    
+    return returnSingleEntry(tag, genai, head);
 }
 
 /*
@@ -1366,14 +1389,17 @@ function downloadMARC(record,institution_info) {
 	var resourceType = fillResourceType(record, head, createContentFill, createSubfield);
 	head += getByteLength(resourceType[1]);
 
+	var genai = fillGenAI(record, head, createContentFill, createSubfield);
+	head += getByteLength(genai[1]);
+
 	var title880 = fillTranslitTitle(record,head,createContentFill,createSubfield);
 	head += getByteLength(title880[1]);
 
 	var end = String.fromCharCode(30) + String.fromCharCode(29);
-	var text = timestamp_directory + controlfield008_directory + default1_directory + title[0] + altTitle[0] + manuf[0] + serial[0] + physical[0] + default2_directory + default3_directory + default4_directory + notes[0] + keywords[0] + product_manual[0] + resourceType[0] + title880[0] + timestamp_content + controlfield008_content + default1_content + title[1] + altTitle[1] + manuf[1] + serial[1] + physical[1] + default2_content + default3_content + default4_content + notes[1] + keywords[1] + product_manual[1] + resourceType[1] + title880[1] + end;
+	var text = timestamp_directory + controlfield008_directory + default1_directory + title[0] + altTitle[0] + manuf[0] + serial[0] + physical[0] + default2_directory + default3_directory + default4_directory + notes[0] + keywords[0] + product_manual[0] + resourceType[0] + genai[0] + title880[0] + timestamp_content + controlfield008_content + default1_content + title[1] + altTitle[1] + manuf[1] + serial[1] + physical[1] + default2_content + default3_content + default4_content + notes[1] + keywords[1] + product_manual[1] + resourceType[1] + genai[1] + title880[1] + end;
 
 	var leader_len = getByteLength(text) + 24;
-    var directory_len = 25 + timestamp_directory.length + controlfield008_directory.length + default1_directory.length + title[0].length + altTitle[0].length + manuf[0].length + serial[0].length + physical[0].length + default2_directory.length + default3_directory.length + default4_directory.length + notes[0].length + keywords[0].length + product_manual[0].length + resourceType[0].length + title880[0].length;
+    var directory_len = 25 + timestamp_directory.length + controlfield008_directory.length + default1_directory.length + title[0].length + altTitle[0].length + manuf[0].length + serial[0].length + physical[0].length + default2_directory.length + default3_directory.length + default4_directory.length + notes[0].length + keywords[0].length + product_manual[0].length + resourceType[0].length + genai[0].length + title880[0].length;
 	var leader = addZeros(leader_len,'leader') + 'npm a22' + addZeros(directory_len,'leader') + 'ki 4500';
 	text = leader + text;
 	downloadFile2(text,'mrc');
