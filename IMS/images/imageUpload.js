@@ -1,4 +1,298 @@
+let aiProcessingInProgress = false;
+let originalButtonStates = {};
+
+function showAIProcessingState() {
+    if (aiProcessingInProgress) return;
+    aiProcessingInProgress = true;
+
+    const aiButton = document.getElementById('ai-generate-btn');
+    if (aiButton) {
+        originalButtonStates['ai-generate-btn'] = {
+            innerHTML: aiButton.innerHTML,
+            disabled: aiButton.disabled
+        };
+        aiButton.disabled = true;
+        aiButton.classList.add('ai-processing');
+        aiButton.innerHTML = '🔄 Processing...';
+    }
+
+    const aiSearchBtn = document.getElementById('ai-search-btn');
+    if (aiSearchBtn) {
+        originalButtonStates['ai-search-btn'] = {
+            innerHTML: aiSearchBtn.innerHTML,
+            disabled: aiSearchBtn.disabled
+        };
+        aiSearchBtn.disabled = true;
+        aiSearchBtn.classList.add('ai-processing');
+        aiSearchBtn.innerHTML = '🔄 Processing...';
+    }
+
+    const notification = document.createElement('div');
+    notification.id = 'ai-processing-notification';
+    notification.className = 'ai-processing-notification';
+    notification.innerHTML = `
+        <div class="ai-processing-spinner"></div>
+        <span>AI is analyzing and generating equipment metadata...</span>
+    `;
+    document.body.appendChild(notification);
+    console.log('AI processing state activated');
+}
+
+function hideAIProcessingState(success = true) {
+    aiProcessingInProgress = false;
+
+    // Restore main AI button
+    const aiButton = document.getElementById('ai-generate-btn');
+    if (aiButton && originalButtonStates['ai-generate-btn']) {
+        aiButton.disabled = false;
+        aiButton.classList.remove('ai-processing');
+        aiButton.innerHTML = originalButtonStates['ai-generate-btn'].innerHTML;
+        aiButton.style.position = '';
+    }
+
+    // Restore OCR AI button
+    const aiSearchBtn = document.getElementById('ai-search-btn');
+    if (aiSearchBtn && originalButtonStates['ai-search-btn']) {
+        aiSearchBtn.disabled = false;
+        aiSearchBtn.classList.remove('ai-processing');
+        aiSearchBtn.innerHTML = originalButtonStates['ai-search-btn'].innerHTML;
+        aiSearchBtn.style.position = '';
+    }
+
+    // Clear stored states
+    originalButtonStates = {};
+
+    // Hide notification
+    const notification = document.getElementById('ai-processing-notification');
+    if (notification) {
+        notification.remove();
+    }
+
+    if (success) {
+        showSuccessNotification('✅ Equipment metadata generated successfully!');
+    }
+
+    console.log(`AI processing state deactivated (success: ${success})`);
+}
+
+function showSuccessNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'ai-processing-notification';
+    notification.style.background = '#4CAF50';
+    notification.innerHTML = `<span>${message}</span>`;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        if (document.body.contains(notification)) {
+            notification.remove();
+        }
+    }, 3000);
+
+    console.log('Success notification shown:', message);
+}
+
+function showAIErrorPopup(errorMessage, canRetry = true) {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'ai-error-backdrop';
+    backdrop.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+
+    const popup = document.createElement('div');
+    popup.className = 'ai-error-popup';
+    popup.style.cssText = `
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        margin: 20px;
+        text-align: center;
+        border: 2px solid #ff4444;
+        animation: popupSlideIn 0.3s ease-out;
+    `;
+
+    let retryButton = '';
+    if (canRetry) {
+        retryButton = `
+            <button id="ai-retry-btn" style="
+                background: #4CAF50; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                border-radius: 5px; 
+                cursor: pointer;
+                margin: 5px;
+                font-size: 14px;
+            ">🔄 Try Again</button>
+        `;
+    }
+
+    popup.innerHTML = `
+        <h3 style="color: #ff4444; margin-top: 0;">⚠️ AI Processing Error</h3>
+        <p style="margin: 15px 0; color: #333; line-height: 1.5;">
+            ${errorMessage}
+        </p>
+        <div style="margin: 20px 0;">
+            ${retryButton}
+            <button id="ai-manual-btn" style="
+                background: #2196F3; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                border-radius: 5px; 
+                cursor: pointer;
+                margin: 5px;
+                font-size: 14px;
+            ">✏️ Enter Manually</button>
+            <button id="ai-close-btn" style="
+                background: #666; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                border-radius: 5px; 
+                cursor: pointer;
+                margin: 5px;
+                font-size: 14px;
+            ">❌ Close</button>
+        </div>
+    `;
+
+    backdrop.appendChild(popup);
+    document.body.appendChild(backdrop);
+
+    if (canRetry) {
+        document.getElementById('ai-retry-btn').onclick = function () {
+            backdrop.remove();
+            preFetchFromAI();
+        };
+    }
+
+    document.getElementById('ai-manual-btn').onclick = function () {
+        backdrop.remove();
+        document.getElementById('title').focus();
+    };
+
+    document.getElementById('ai-close-btn').onclick = function () {
+        backdrop.remove();
+    };
+
+    backdrop.onclick = function (e) {
+        if (e.target === backdrop) {
+            backdrop.remove();
+        }
+    };
+
+    console.log('AI error popup shown:', errorMessage);
+}
+
+function showOCRParseFailedPopup(message) {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'json-error-backdrop';
+    backdrop.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+
+    const popup = document.createElement('div');
+    popup.className = 'json-error-popup';
+    popup.style.cssText = `
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        margin: 20px;
+        text-align: center;
+        border: 2px solid #ff4444;
+    `;
+
+    popup.innerHTML = `
+        <h3 style="color: #ff4444; margin-top: 0;">⚠️ OCR AI Processing Failed</h3>
+        <p style="margin: 15px 0; color: #333; line-height: 1.5;">
+            ${message}<br><br>
+            The OCR text analysis could not be completed. You can:
+        </p>
+        <div style="margin: 20px 0;">
+            <button id="ocr-retry-btn" style="
+                background: #4CAF50; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                border-radius: 5px; 
+                cursor: pointer;
+                margin: 5px;
+                font-size: 14px;
+            ">🔄 Try OCR Analysis Again</button>
+            <button id="manual-btn" style="
+                background: #2196F3; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                border-radius: 5px; 
+                cursor: pointer;
+                margin: 5px;
+                font-size: 14px;
+            ">✏️ Enter Manually</button>
+            <button id="close-btn" style="
+                background: #666; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                border-radius: 5px; 
+                cursor: pointer;
+                margin: 5px;
+                font-size: 14px;
+            ">❌ Close</button>
+        </div>
+    `;
+
+    backdrop.appendChild(popup);
+    document.body.appendChild(backdrop);
+
+    document.getElementById('ocr-retry-btn').onclick = function () {
+        backdrop.remove();
+        generateMetadataWithAI();
+    };
+
+    document.getElementById('manual-btn').onclick = function () {
+        backdrop.remove();
+        document.getElementById('title').focus();
+    };
+
+    document.getElementById('close-btn').onclick = function () {
+        backdrop.remove();
+    };
+
+    backdrop.onclick = function (e) {
+        if (e.target === backdrop) {
+            backdrop.remove();
+        }
+    };
+}
+
 function processImages() {
+    if (aiProcessingInProgress) return;
+    aiProcessingInProgress = true;
+
     console.log('IMS Template Loaded');
     const fileInput = document.getElementById('image-upload');
     const files = Array.from(fileInput.files);
@@ -140,8 +434,12 @@ async function uploadViaWorker(files) {
 
 
 async function preFetchFromAI() {
-    const title = document.getElementById('title').value; // Name of Item
-    const serial = document.getElementById('serial').value; // Serial No
+    if (aiProcessingInProgress) {
+        return;
+    }
+
+    const title = document.getElementById('title').value;
+    const serial = document.getElementById('serial').value;
 
     if (!title && !serial) {
         console.log('Please enter either a title or serial number');
@@ -162,10 +460,11 @@ async function preFetchFromAI() {
         return;
     }
 
+    showAIProcessingState();
+
     try {
         let metadata = null;
 
-        // Perplexity search for equipment
         console.log('Searching Perplexity for equipment data...');
         let searchQuery = title;
         if (serial) {
@@ -179,24 +478,32 @@ async function preFetchFromAI() {
                 console.log('Parsed equipment metadata:', metadata);
             } catch (error) {
                 console.error('Error parsing Perplexity content:', error);
+                hideAIProcessingState(false);
+                showAIErrorPopup('Could not parse equipment metadata. Please try again or enter details manually.', true);
+                return;
             }
+        } else {
+            hideAIProcessingState(false);
+            showAIErrorPopup('No equipment data found. Please verify the product name/serial number and try again.', true);
+            return;
         }
 
-        // Populate form fields if we have metadata
         if (metadata) {
             console.log('Final Equipment Metadata:', metadata);
             
-            // Populate equipment-specific fields
             document.getElementById('title').value = metadata.title || '';
             document.getElementById('subtitle').value = metadata.subtitle || '';
             document.getElementById('manufacturer').value = metadata.manufacturer || '';
-            document.getElementById('serial').value = metadata.serial || serial; // Keep original if not found
+            document.getElementById('serial').value = metadata.serial || serial;
             document.getElementById('dimensions').value = metadata.dimensions || '';
             document.getElementById('notes').value = metadata.notes || '';
-            document.getElementById('product_manual').value = metadata.productLink;
             
-            // Handle manufacturer country dropdown
-            const countrySelect = document.querySelector('select[name="country"]'); // Your country dropdown
+            const productManualField = document.getElementById('product_manual');
+            if (productManualField && metadata.productLink) {
+                productManualField.value = metadata.productLink;
+            }
+            
+            const countrySelect = document.querySelector('select[name="country"]');
             if (countrySelect && metadata.manufacturerCountry) {
                 Array.from(countrySelect.options).forEach(option => {
                     if (option.text.toLowerCase().includes(metadata.manufacturerCountry.toLowerCase())) {
@@ -204,18 +511,17 @@ async function preFetchFromAI() {
                     }
                 });
             }
-            
-            // Handle product manual/site link
-            if (metadata.productLink) {
-                // You can display this or store it in a hidden field
-                console.log('Product link found:', metadata.productLink);
-                // If you have a field for this:
-                // document.getElementById('product_link').value = metadata.productLink;
-            }
+
+            hideAIProcessingState(true);
+        } else {
+            hideAIProcessingState(false);
+            showAIErrorPopup('Could not extract equipment metadata. Please enter details manually.', false);
         }
 
     } catch (error) {
         console.error('Error fetching equipment data:', error);
+        hideAIProcessingState(false);
+        showAIErrorPopup(`Error: ${error.message}. Please try again or enter details manually.`, true);
     }
 }
 
@@ -409,35 +715,25 @@ function ocrSearch() {
 
 // New function to handle AI metadata generation with user input
 function generateMetadataWithAI() {
-    const aiSearchBtn = document.getElementById('ai-search-btn');
-    const progressDiv = document.getElementById('ocr-progress');
-    
-    if (!window.extractedOCRText) {
-        alert('No OCR text available. Please upload and process images first.');
+    if (aiProcessingInProgress) {
         return;
     }
-    
-    // Disable button and show processing
-    aiSearchBtn.disabled = true;
-    aiSearchBtn.innerHTML = '🔄 Generating Metadata...';
-    
-    // Get additional user inputs
+
+    if (!window.extractedOCRText) {
+        showAIErrorPopup('No OCR text available. Please upload and process images first.', false);
+        return;
+    }
+
+    showAIProcessingState();
+
     const title = document.getElementById('title').value.trim();
-    const familyName = document.getElementById('family_name').value.trim();
-    const givenName = document.getElementById('given_name').value.trim();
-    const isbn = document.getElementById('isbn').value.trim();
+    const serial = document.getElementById('serial').value.trim();
     
-    // Prepare enhanced query for AI
     let enhancedQuery = window.extractedOCRText;
     
-    // Add user-provided details if available
     const additionalInfo = [];
-    if (title) additionalInfo.push(`Title: ${title}`);
-    if (familyName || givenName) {
-        const author = `${givenName} ${familyName}`.trim();
-        additionalInfo.push(`Author: ${author}`);
-    }
-    if (isbn) additionalInfo.push(`ISBN: ${isbn}`);
+    if (title) additionalInfo.push(`Product Name: ${title}`);
+    if (serial) additionalInfo.push(`Serial Number: ${serial}`);
     
     if (additionalInfo.length > 0) {
         enhancedQuery = `Additional provided information:\n${additionalInfo.join('\n')}\n\nExtracted OCR Text:\n${window.extractedOCRText}`;
@@ -445,105 +741,74 @@ function generateMetadataWithAI() {
     
     console.log('Enhanced query for AI:', enhancedQuery);
     
-    // Add processing message
-    const processingMsg = document.createElement('div');
-    processingMsg.id = 'ai-processing-msg';
-    processingMsg.textContent = 'Analyzing text with additional details for book metadata...';
-    processingMsg.style.marginTop = '10px';
-    processingMsg.style.fontStyle = 'italic';
+    const progressDiv = document.getElementById('ocr-progress');
+    let processingMsg = document.getElementById('ai-processing-msg');
+
+    if (!processingMsg) {
+        processingMsg = document.createElement('div');
+        processingMsg.id = 'ai-processing-msg';
+        processingMsg.style.marginTop = '10px';
+        processingMsg.style.fontStyle = 'italic';
+        progressDiv.appendChild(processingMsg);
+    }
+    
+    processingMsg.textContent = 'Analyzing OCR text with AI for equipment metadata...';
     processingMsg.style.color = '#666';
     
-    // Remove any existing processing message
-    const existingMsg = document.getElementById('ai-processing-msg');
-    if (existingMsg) existingMsg.remove();
-    
-    progressDiv.appendChild(processingMsg);
-    
-    // Send enhanced query to Perplexity for analysis
-    fetchFromPerplexity(enhancedQuery)
+    fetchFromPerplexityEquipment(enhancedQuery)
         .then(perplexityData => {
             if (perplexityData && perplexityData.choices?.[0]?.message?.content) {
                 try {
                     const metadata = JSON.parse(perplexityData.choices[0].message.content);
-                    console.log('Book metadata from enhanced AI search:', metadata);
+                    console.log('Equipment metadata from enhanced AI search:', metadata);
                     
-                    processingMsg.textContent = '✅ Successfully generated book metadata with AI!';
+                    processingMsg.textContent = '✅ Successfully generated equipment metadata with AI!';
                     processingMsg.style.color = '#4CAF50';
                     processingMsg.style.fontWeight = 'bold';
                     
-                    // Populate form fields with the metadata
                     document.getElementById('title').value = metadata.title || '';
-                    document.getElementById('isbn').value = metadata.isbn || '';
-                    document.getElementById('edition').value = metadata.edition || '';
-                    document.getElementById('language').value = metadata.language || '';
-                    document.getElementById('pages').value = metadata.numberOfPages || '';
-                    document.getElementById('dimensions').value = metadata.dimensions || '';
                     document.getElementById('subtitle').value = metadata.subtitle || '';
-
-                    // NEW: Handle transliteration fields
-                    const translitTitleField = document.getElementById('translit_title');
-                    const translitSubtitleField = document.getElementById('translit_subtitle');
-
-                    if (metadata.translit_title) {
-                        translitTitleField.value = metadata.translit_title;
-                        translitTitleField.style.display = 'inline-block';
-                    } else {
-                        translitTitleField.style.display = 'none';
+                    document.getElementById('manufacturer').value = metadata.manufacturer || '';
+                    document.getElementById('serial').value = metadata.serial || '';
+                    document.getElementById('dimensions').value = metadata.dimensions || '';
+                    document.getElementById('notes').value = metadata.notes || '';
+                    
+                    const productManualField = document.getElementById('product_manual');
+                    if (productManualField && metadata.productLink) {
+                        productManualField.value = metadata.productLink;
                     }
 
-                    if (metadata.translit_subtitle) {
-                        translitSubtitleField.value = metadata.translit_subtitle;
-                        translitSubtitleField.style.display = 'inline-block';
-                    } else {
-                        translitSubtitleField.style.display = 'none';
-                    }
-
-
-                    document.getElementById('place').value = Array.isArray(metadata.placeOfPublication)
-                        ? metadata.placeOfPublication[0]
-                        : (metadata.placeOfPublication || '');
-
-                    document.getElementById('publisher').value = Array.isArray(metadata.publisher)
-                        ? metadata.publisher[0]
-                        : (metadata.publisher || '');
-
-                    document.getElementById('year').value = metadata.publicationDate || '';
-                    document.getElementById('notes').value = metadata.synopsisOfBook || '';
-
-                    if (metadata.authors?.length > 0) {
-                        document.getElementById('family_name').value = metadata.authors[0].familyName || '';
-                        document.getElementById('given_name').value = metadata.authors[0].givenName || '';
-                    }
-
-                    // Handle country dropdown
                     const countrySelect = document.querySelector('select[name="country"]');
-                    if (countrySelect && metadata.publicationCountry) {
+                    if (countrySelect && metadata.manufacturerCountry) {
                         Array.from(countrySelect.options).forEach(option => {
-                            if (option.text.toLowerCase() === metadata.publicationCountry.toLowerCase()) {
+                            if (option.text.toLowerCase().includes(metadata.manufacturerCountry.toLowerCase())) {
                                 countrySelect.value = option.value;
                             }
                         });
                     }
+
+                    hideAIProcessingState(true);
                     
                 } catch (error) {
                     console.error('Error parsing Perplexity content:', error);
-                    processingMsg.textContent = '❌ Error parsing book metadata from AI response.';
+                    processingMsg.textContent = '❌ Error parsing equipment metadata from AI response.';
                     processingMsg.style.color = '#f44336';
+                    hideAIProcessingState(false);
+                    showOCRParseFailedPopup('Could not parse equipment metadata. Please verify and enter details manually.');
                 }
             } else {
-                processingMsg.textContent = '❌ Could not identify book metadata from the provided information.';
+                processingMsg.textContent = '❌ Could not identify equipment metadata from the provided information.';
                 processingMsg.style.color = '#f44336';
+                hideAIProcessingState(false);
+                showOCRParseFailedPopup('No valid equipment data found. Please enter details manually.');
             }
         })
         .catch(error => {
             console.error('Error analyzing text with Perplexity:', error);
             processingMsg.textContent = '❌ Error connecting to AI service for metadata generation.';
             processingMsg.style.color = '#f44336';
-        })
-        .finally(() => {
-            // Re-enable button
-            aiSearchBtn.disabled = false;
-            aiSearchBtn.innerHTML = '🤖 Generate Metadata with AI';
+            hideAIProcessingState(false);
+            showOCRParseFailedPopup(`Connection error: ${error.message}`);
         });
 }
 
