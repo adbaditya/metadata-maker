@@ -642,17 +642,17 @@ async function fetchFromPerplexityWithImages(textQuery, base64Images = []) {
             hasText: !!textQuery,
             imageCount: base64Images.length
         });
-        
+
         const requestBody = {
             query: textQuery
         };
-        
+
         // Add images if provided
         if (base64Images && base64Images.length > 0) {
             requestBody.images = base64Images;
             console.log('📸 Including images in request');
         }
-        
+
         const response = await fetch('https://metadata-maker.adb-aditya.workers.dev/perplexity', {
             method: 'POST',
             headers: {
@@ -667,20 +667,20 @@ async function fetchFromPerplexityWithImages(textQuery, base64Images = []) {
         // Check for error first
         if (data.error || !data.success) {
             console.error('❌ Perplexity API Error:', data.error);
-            
+
             // If multi-modal fails, try text-only fallback
             if (base64Images.length > 0) {
                 console.log('🔄 Multi-modal failed, trying text-only fallback...');
                 return await fetchFromPerplexityWithImages(textQuery, []); // Retry without images
             }
-            
+
             return { error: 'api_error', message: data.error?.message || 'API request failed' };
         }
 
         if (data && data.success && data.result) {
-            if (data.result.choices && 
-                data.result.choices[0] && 
-                data.result.choices[0].message && 
+            if (data.result.choices &&
+                data.result.choices[0] &&
+                data.result.choices[0].message &&
                 data.result.choices[0].message.content) {
 
                 let responseContent = data.result.choices[0].message.content;
@@ -701,18 +701,18 @@ async function fetchFromPerplexityWithImages(textQuery, base64Images = []) {
                 }
             }
         }
-        
+
         return { error: 'no_content', message: 'No valid content in response' };
-        
+
     } catch (error) {
         console.error('Network error:', error);
-        
+
         // Fallback to text-only on network errors
         if (base64Images.length > 0) {
             console.log('🔄 Network error, trying text-only fallback...');
             return await fetchFromPerplexityWithImages(textQuery, []);
         }
-        
+
         return { error: 'network_error', message: error.message };
     }
 }
@@ -956,7 +956,7 @@ async function preFetchFromAI() {
 
                 console.log('Enhancing with Perplexity using all available data...');
 
-
+                //prompt
                 const enhancedQuery = `
                     Book search with multiple data sources:
                     Title: ${title || 'Not provided'}
@@ -1007,7 +1007,7 @@ async function preFetchFromAI() {
                     "authors": [
                         {"familyName": "Last name", "givenName": "First name"}
                     ],
-                    "placeOfPublication": ["City names"],
+                    "placeOfPublication": ["City of publciation or where the book was published"],
                     "publicationCountry": "Full country name",
                     "publicationDate": "YYYY format",
                     "copyrightDate": "YYYY format or null",
@@ -1080,6 +1080,7 @@ async function preFetchFromAI() {
                             console.log('ISBN search data:', isbnData);
 
                             if (isbnData && (isbnData.title || isbnData.author)) {
+                                //prompt
                                 const contextQuery = `
                                 I found this book information from ISBN database:
                                 Find comprehensive book metadata for the book with these details:
@@ -1113,17 +1114,17 @@ async function preFetchFromAI() {
                     {
                         "title": "Full book title",
                         "translit_title": "Transliterated title if original is non-English, otherwise null",
-                        "subtitle": "Subtitle or if exists, otherwise null",
+                        "subtitle": "Full Subtitle of the book, otherwise null",
                         "translit_subtitle": "Transliterated subtitle if original is non-English, otherwise null",
-                        "isbn": "ISBN if found, otherwise null",
-                        "edition": "Edition information or null",
-                        "language": "Language code (eng, fre, etc.)",
-                        "publisher": ["Publisher name"],
-                        "authors": [{"familyName": "Last name", "givenName": "First name"}],
-                        "placeOfPublication": ["City names"],
-                        "publicationCountry": "Full country name",
-                        "publicationDate": "YYYY format",
-                        "copyrightDate": "YYYY format or null",
+                        "isbn": "ISBN of the book if found, otherwise null",
+                        "edition": "Edition information of the book or null",
+                        "language": "Language code of the book (eng, fre, etc.)",
+                        "publisher": ["Publisher name of the book"],
+                        "authors": [{"familyName": "Last name of author", "givenName": "First name of author"}],
+                        "placeOfPublication": ["City of publciation or where the book was published"],
+                        "publicationCountry": "Full country name of publication",
+                        "publicationDate": "YYYY format of publication date",
+                        "copyrightDate": "YYYY format or copyright date",
                         "numberOfPages": "Exact page count as a number (e.g., 256) found in product listings, publisher data, or book specifications. Look specifically for 'Pages:', 'Page Count:', 'Length:', or 'Print Length:' in source materials. If page count not explicitly stated in any verified source, return null. DO NOT estimate or calculate page count - only use exact numbers from official sources.",
                         "dimensions": "Book dimensions in centimeters using format: Length x Width x Height (e.g., 22.86 x 15.24 x 3.00). Convert from inches/other units to cm if needed (1 inch = 2.54 cm). Search specifically for 'Product Dimensions', 'Book Dimensions', or 'Size' in product listings. If no dimensions found in any source, return empty string. CRITICAL: Only use dimensions from verified product pages or publisher specifications - do not estimate or guess.",
                         "synopsisOfBook": "Book description"
@@ -1164,6 +1165,7 @@ async function preFetchFromAI() {
                         const givenName = document.getElementById("#given_name").value;
                         const isbn = document.getElementById("isbn").value;
 
+                        //prompt
                         const enhancedQuery = `
                             Book search with multiple data sources:
                             Title: ${title || 'Not provided'}
@@ -1214,7 +1216,7 @@ async function preFetchFromAI() {
                             "authors": [
                                 {"familyName": "Last name", "givenName": "First name"}
                             ],
-                            "placeOfPublication": ["City names"],
+                            "placeOfPublication": ["City of publciation or where the book was published"],
                             "publicationCountry": "Full country name",
                             "publicationDate": "YYYY format",
                             "copyrightDate": "YYYY format or null",
@@ -1376,6 +1378,7 @@ async function preFetchFromAI() {
                     const searchTerm = searchDetails.join(', ');
                     console.log('Comprehensive search term:', searchTerm);
 
+                    //prompt
                     const enhancedQuery = `
                     Find comprehensive book metadata for the book with these details: ${searchTerm}
                     
@@ -1411,7 +1414,7 @@ async function preFetchFromAI() {
                         "language": "Language code (eng, fre, etc.)",
                         "publisher": ["Publisher name"],
                         "authors": [{"familyName": "Last name", "givenName": "First name"}],
-                        "placeOfPublication": ["City names"],
+                        "placeOfPublication": ["City of publciation or where the book was published"],
                         "publicationCountry": "Full country name",
                         "publicationDate": "YYYY format",
                         "copyrightDate": "YYYY format or null",
@@ -1485,6 +1488,7 @@ async function preFetchFromAI() {
                 : (metadata.publisher || '');
 
             document.getElementById('year').value = metadata.publicationDate || '';
+            document.getElementById('cyear').value = metadata.copyrightDate || '';
             document.getElementById('notes').value = metadata.synopsisOfBook || '';
 
             if (metadata.authors?.length > 0) {
@@ -1556,6 +1560,7 @@ async function fetchFromPerplexity(title) {
             headers: {
                 'Content-Type': 'application/json'
             },
+            //prompt
             body: JSON.stringify({
                 query: `Find comprehensive book metadata for the book with these details: "${title}". 
 Map data such as print length and dimensions from ALL cited source pages, not just publisher sites.
@@ -1616,7 +1621,7 @@ Return the data in this exact JSON format: {
 "authors": [
     {"familyName": "Last name", "givenName": "First name"}
 ],
-"placeOfPublication": ["City names"],
+"placeOfPublication": ["City of publciation or where the book was published"],
 "publicationCountry": "Full country name",
 "publicationDate": "YYYY format",
 "copyrightDate": "YYYY format or null",
@@ -2039,7 +2044,7 @@ function showJSONParseFailedPopup(message) {
 
 function populateFormWithMetadata(metadata) {
     console.log('📝 Populating form with metadata:', metadata);
-    
+
     // Basic fields
     document.getElementById('title').value = metadata.title || '';
     document.getElementById('isbn').value = metadata.isbn || '';
@@ -2082,6 +2087,7 @@ function populateFormWithMetadata(metadata) {
 
     // Date and notes
     document.getElementById('year').value = metadata.publicationDate || '';
+    document.getElementById('cyear').value = metadata.copyrightDate || '';
     document.getElementById('notes').value = metadata.synopsisOfBook || '';
 
     // Authors
@@ -2131,7 +2137,7 @@ async function generateMetadataWithAiImages() {
         processingMsg.style.fontStyle = 'italic';
         progressDiv.appendChild(processingMsg);
     }
-    
+
     processingMsg.textContent = 'Analyzing images with AI for book metadata...';
     processingMsg.style.color = '#666';
 
@@ -2151,30 +2157,69 @@ async function generateMetadataWithAiImages() {
         }
         if (isbn) additionalInfo.push(`ISBN: ${isbn}`);
 
-        let textQuery = `Find book metadata from the uploaded images.
+        let textQuery = `CRITICAL INSTRUCTION: You are analyzing uploaded IMAGES of a book. Your PRIMARY task is to carefully examine these images and extract ALL visible text and information.
 
-${additionalInfo.length > 0 ? 'Additional information provided:\n' + additionalInfo.join('\n') + '\n\n' : ''}
+STEP 1 - IMAGE ANALYSIS (HIGHEST PRIORITY):
+Examine the uploaded images carefully and extract:
+- Book title (from cover, spine, or title page)
+- Author name(s) (from cover or title page)
+- ISBN number (look for barcodes, typically 13 digits)
+- Publisher name (from cover, spine, or copyright page)
+- Edition information (if visible)
+- Publication year (from copyright page if visible)
+- Any visible dimensions or page count information
 
-${window.ocrQuality === 'good' && window.extractedOCRText ? 
-  `OCR extracted this text: "${window.extractedOCRText}"\n\n` : 
-  'OCR text extraction had poor quality.\n\n'}
+${additionalInfo.length > 0 ?
+                `STEP 2 - CROSS-REFERENCE WITH PROVIDED DATA:
+User also provided these details for verification:
+${additionalInfo.join('\n')}
+Use this to confirm or enhance what you see in the images.\n\n` : ''}
 
-Please analyze the book images and search for this book on Amazon, Google Books, etc.
+${window.ocrQuality === 'good' && window.extractedOCRText ?
+                `STEP 3 - OCR EXTRACTED TEXT (USE AS SUPPLEMENTARY):
+OCR detected this text: "${window.extractedOCRText}"
+Note: OCR may contain errors. Prioritize what you SEE in the images over OCR text.\n\n` :
+                'Note: OCR extraction had poor quality - rely entirely on visual analysis of images.\n\n'}
 
-Return JSON format:
+STEP 4 - SEARCH AND VERIFY:
+After extracting information from images, search Amazon.com, Google Books, WorldCat, and other sources using the title/author/ISBN you found to:
+1. Verify the book identity
+2. Fill in missing metadata (page count, dimensions, synopsis, etc.)
+3. Ensure accuracy of all fields
+
+SEARCH PRIORITY:
+1. Amazon.com / Amazon.ae - for complete product details and dimensions
+2. Google Books - for preview and metadata
+3. WorldCat.org - for bibliographic data
+4. Publisher's website - for official specifications
+
+METADATA REQUIREMENTS:
+- numberOfPages: Only use exact page counts from Amazon ("Print length: X pages") or publisher specs
+- dimensions: Format as "Length x Width x Height" in cm (convert from inches: 1 inch = 2.54 cm)
+- Look for "Product Dimensions" in Amazon listings
+- Return null if data not found - DO NOT estimate
+
+Return ONLY this JSON format (no extra text, no citations like [1][2]):
 {
-    "title": "Full book title",
-    "subtitle": "Subtitle if exists, otherwise null",
-    "isbn": "ISBN-13 if found, otherwise null",
-    "authors": [{"familyName": "Last name", "givenName": "First name"}],
-    "publisher": ["Publisher name"],
-    "publicationDate": "YYYY format",
-    "numberOfPages": "Exact page count or null",
-    "dimensions": "Book dimensions in cm or empty string",
-    "synopsisOfBook": "Book description"
+    "title": "Full book title as seen on cover/title page",
+    "subtitle": "Subtitle of the book, otherwise null",
+    "translit_title": "Transliterated title if non-English, otherwise null",
+    "translit_subtitle": "Transliterated subtitle if non-English, otherwise null",
+    "isbn": "ISBN-13 of the book or isbn number of the book",
+    "authors": [{"familyName": "Last name of author", "givenName": "First name of author"}],
+    "publisher": ["Publisher name from cover/copyright page" or the pubkisher of the book],
+    "edition": "Edition info / statement of the book",
+    "language": "Language code (eng, ara, etc.)",
+    "placeOfPublication": ["City of publciation or where the book was published"],
+    "publicationCountry": "Country name of publication",
+    "publicationDate": " YYYY format | publication year of the book",
+    "copyrightDate": "YYYY format | copyright date of the book",
+    "numberOfPages": "xact page count as a number (e.g., 256) found in product listings, publisher data, or book specifications. Look specifically for 'Pages:', 'Page Count:', 'Length:', or 'Print Length:' in source materials. If page count not explicitly stated in any verified source, return null. DO NOT estimate or calculate page count - only use exact numbers from official sources.",
+    "dimensions": "Book dimensions in centimeters using format: Length x Width x Height (e.g., 22.86 x 15.24 x 3.00). Convert from inches/other units to cm if needed (1 inch = 2.54 cm). Search specifically for 'Product Dimensions', 'Book Dimensions', or 'Size' in product listings. If no dimensions found in any source, return empty string. CRITICAL: Only use dimensions from verified product pages or publisher specifications - do not estimate or guess."",
+    "synopsisOfBook": "Book description from sources or synposis of the book"
 }
 
-Return ONLY JSON, no other text.`;
+CRITICAL: Return ONLY the JSON object. No explanations. No text before or after. No citations [1][2]. Just pure JSON.`;
 
         // Convert images to base64
         console.log('🖼️ Converting images to base64...');
@@ -2184,20 +2229,20 @@ Return ONLY JSON, no other text.`;
         // Call the worker
         console.log('🚀 Sending to worker with images...');
         const perplexityData = await fetchFromPerplexityWithImages(textQuery, base64Images);
-        
+
         // Handle response
         if (perplexityData && !perplexityData.error && perplexityData.choices?.[0]?.message?.content) {
             const content = perplexityData.choices[0].message.content;
             console.log('📄 Raw response:', content.substring(0, 200) + '...');
 
             const metadata = tryParseWithFallbacks(content);
-            
+
             if (metadata && !metadata.error && (metadata.title || metadata.isbn || metadata.authors?.length > 0)) {
                 console.log('✅ Success! Populating form...');
                 processingMsg.textContent = '✅ Successfully generated metadata from images!';
                 processingMsg.style.color = '#4CAF50';
                 processingMsg.style.fontWeight = 'bold';
-                
+
                 populateFormWithMetadata(metadata);
                 hideAIProcessingState(true);
             } else {
