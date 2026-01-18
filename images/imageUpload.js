@@ -968,6 +968,13 @@ async function preFetchFromAI() {
 
                     Please analyze ALL this information from OpenLibrary along with fresh searches from Amazon, bookstores, and other sources to provide the most accurate and complete book metadata. Use OpenLibrary data as reference but prioritize more complete information from current retail sources for fields. 
                     Prefer the source which mentions product dimensions and pages or book length or print length to be most accurate
+
+                    CRITICAL TRANSLITERATION RULES:
+                    - If title/subtitle contains ANY non-Latin characters (Arabic, Hindi, Chinese, Russian, etc.), you MUST provide BOTH fields
+                    - Original field: Keep the original script
+                    - Translit field: Provide romanized version using Latin alphabet
+                    - Example: Title: "الأسود يليق بك", translit_title: "Al-Aswad Yaleeq Bik"
+                    - If text is already in Latin script, set translit_title to null
                     
                     Find comprehensive book metadata for the book titled: "${title}". 
                     Primary search sources/citations (in order of priority):
@@ -1041,10 +1048,29 @@ async function preFetchFromAI() {
                         throw new Error(`Perplexity validation failed: ${perplexityData.error}`);
                     }
 
-                    // NEW: Check for empty citations (hallucination indicator)
-                    if (perplexityData.citations && perplexityData.citations.length === 0) {
-                        console.log('⚠️ Perplexity returned no citations - likely hallucinating, triggering fallback');
-                        throw new Error('No citations found - potential hallucination');
+                    if (perplexityData?.choices?.[0]?.message?.content) {
+                        const content = perplexityData.choices[0].message.content;
+                        content = content.replace(/```json\n*/g, '').replace(/```/g, '').trim();
+
+                        try {
+                            const parsedData = JSON.parse(content);
+                            console.log('✅ Successfully parsed Perplexity data:', parsedData);
+
+                            // ✅ NEW: Only warn about citations, don't throw error
+                            if (!perplexityData.citations || perplexityData.citations.length === 0) {
+                                console.log('⚠️ No citations, but got valid JSON response');
+                            }
+
+                            return {
+                                choices: [{ message: { content: JSON.stringify(parsedData) } }],
+                                citations: perplexityData.citations || [] // Include empty array if no citations
+                            };
+                        } catch (parseError) {
+                            console.error('Error parsing cleaned content:', parseError);
+                            throw new Error('Could not parse response');
+                        }
+                    } else {
+                        throw new Error('No valid content in response');
                     }
 
                     metadata = JSON.parse(perplexityData.choices[0].message.content);
@@ -1261,18 +1287,48 @@ async function preFetchFromAI() {
                                             const translitTitleField = document.getElementById('translit_title');
                                             const translitSubtitleField = document.getElementById('translit_subtitle');
 
-                                            if (metadata.translit_title) {
-                                                translitTitleField.value = metadata.translit_title;
-                                                translitTitleField.style.display = 'inline-block';
-                                            } else {
-                                                translitTitleField.style.display = 'none';
+                                            if (translitTitleField) {
+                                                if (metadata.translit_title && metadata.translit_title.trim() !== '') {
+                                                    translitTitleField.value = metadata.translit_title;
+
+                                                    const translitTitleBlock = document.getElementById('translit-title-block');
+                                                    if (translitTitleBlock) {
+                                                        translitTitleBlock.classList.remove('hidden');
+                                                    }
+
+                                                    translitTitleField.classList.remove('hidden');
+                                                    translitTitleField.style.display = 'inline-block';
+                                                    translitTitleField.style.visibility = 'visible';
+
+                                                } else {
+                                                    const translitTitleBlock = document.getElementById('translit-title-block');
+                                                    if (translitTitleBlock) {
+                                                        translitTitleBlock.classList.add('hidden');
+                                                    }
+                                                    translitTitleField.value = '';
+                                                }
                                             }
 
-                                            if (metadata.translit_subtitle) {
-                                                translitSubtitleField.value = metadata.translit_subtitle;
-                                                translitSubtitleField.style.display = 'inline-block';
-                                            } else {
-                                                translitSubtitleField.style.display = 'none';
+                                            if (translitSubtitleField) {
+                                                if (metadata.translit_subtitle && metadata.translit_subtitle.trim() !== '') {
+                                                    translitSubtitleField.value = metadata.translit_subtitle;
+
+                                                    const translitSubtitleBlock = document.getElementById('translit-subtitle-block');
+                                                    if (translitSubtitleBlock) {
+                                                        translitSubtitleBlock.classList.remove('hidden');
+                                                    }
+
+                                                    translitSubtitleField.classList.remove('hidden');
+                                                    translitSubtitleField.style.display = 'inline-block';
+                                                    translitSubtitleField.style.visibility = 'visible';
+
+                                                } else {
+                                                    const translitSubtitleBlock = document.getElementById('translit-subtitle-block');
+                                                    if (translitSubtitleBlock) {
+                                                        translitSubtitleBlock.classList.add('hidden');
+                                                    }
+                                                    translitSubtitleField.value = '';
+                                                }
                                             }
 
                                             document.getElementById('place').value = Array.isArray(metadata.placeOfPublication)
@@ -1461,22 +1517,51 @@ async function preFetchFromAI() {
             document.getElementById('dimensions').value = metadata.dimensions || '';
             document.getElementById('subtitle').value = metadata.subtitle || '';
 
-            // NEW: Handle transliteration fields
             const translitTitleField = document.getElementById('translit_title');
             const translitSubtitleField = document.getElementById('translit_subtitle');
 
-            if (metadata.translit_title) {
-                translitTitleField.value = metadata.translit_title;
-                translitTitleField.style.display = 'inline-block';
-            } else {
-                translitTitleField.style.display = 'none';
+            if (translitTitleField) {
+                if (metadata.translit_title && metadata.translit_title.trim() !== '') {
+                    translitTitleField.value = metadata.translit_title;
+
+                    const translitTitleBlock = document.getElementById('translit-title-block');
+                    if (translitTitleBlock) {
+                        translitTitleBlock.classList.remove('hidden');
+                    }
+
+                    translitTitleField.classList.remove('hidden');
+                    translitTitleField.style.display = 'inline-block';
+                    translitTitleField.style.visibility = 'visible';
+
+                } else {
+                    const translitTitleBlock = document.getElementById('translit-title-block');
+                    if (translitTitleBlock) {
+                        translitTitleBlock.classList.add('hidden');
+                    }
+                    translitTitleField.value = '';
+                }
             }
 
-            if (metadata.translit_subtitle) {
-                translitSubtitleField.value = metadata.translit_subtitle;
-                translitSubtitleField.style.display = 'inline-block';
-            } else {
-                translitSubtitleField.style.display = 'none';
+            if (translitSubtitleField) {
+                if (metadata.translit_subtitle && metadata.translit_subtitle.trim() !== '') {
+                    translitSubtitleField.value = metadata.translit_subtitle;
+
+                    const translitSubtitleBlock = document.getElementById('translit-subtitle-block');
+                    if (translitSubtitleBlock) {
+                        translitSubtitleBlock.classList.remove('hidden');
+                    }
+
+                    translitSubtitleField.classList.remove('hidden');
+                    translitSubtitleField.style.display = 'inline-block';
+                    translitSubtitleField.style.visibility = 'visible';
+
+                } else {
+                    const translitSubtitleBlock = document.getElementById('translit-subtitle-block');
+                    if (translitSubtitleBlock) {
+                        translitSubtitleBlock.classList.add('hidden');
+                    }
+                    translitSubtitleField.value = '';
+                }
             }
 
             document.getElementById('place').value = Array.isArray(metadata.placeOfPublication)
@@ -2059,20 +2144,46 @@ function populateFormWithMetadata(metadata) {
     const translitSubtitleField = document.getElementById('translit_subtitle');
 
     if (translitTitleField) {
-        if (metadata.translit_title) {
+        if (metadata.translit_title && metadata.translit_title.trim() !== '') {
             translitTitleField.value = metadata.translit_title;
+
+            const translitTitleBlock = document.getElementById('translit-title-block');
+            if (translitTitleBlock) {
+                translitTitleBlock.classList.remove('hidden');
+            }
+
+            translitTitleField.classList.remove('hidden');
             translitTitleField.style.display = 'inline-block';
+            translitTitleField.style.visibility = 'visible';
+
         } else {
-            translitTitleField.style.display = 'none';
+            const translitTitleBlock = document.getElementById('translit-title-block');
+            if (translitTitleBlock) {
+                translitTitleBlock.classList.add('hidden');
+            }
+            translitTitleField.value = '';
         }
     }
 
     if (translitSubtitleField) {
-        if (metadata.translit_subtitle) {
+        if (metadata.translit_subtitle && metadata.translit_subtitle.trim() !== '') {
             translitSubtitleField.value = metadata.translit_subtitle;
+
+            const translitSubtitleBlock = document.getElementById('translit-subtitle-block');
+            if (translitSubtitleBlock) {
+                translitSubtitleBlock.classList.remove('hidden');
+            }
+
+            translitSubtitleField.classList.remove('hidden');
             translitSubtitleField.style.display = 'inline-block';
+            translitSubtitleField.style.visibility = 'visible';
+
         } else {
-            translitSubtitleField.style.display = 'none';
+            const translitSubtitleBlock = document.getElementById('translit-subtitle-block');
+            if (translitSubtitleBlock) {
+                translitSubtitleBlock.classList.add('hidden');
+            }
+            translitSubtitleField.value = '';
         }
     }
 
@@ -2109,6 +2220,45 @@ function populateFormWithMetadata(metadata) {
     console.log('✅ Form populated successfully');
 }
 
+async function extractBasicInfoFromImages(base64Images) {
+    console.log('🔍 Stage 1: Extracting ISBN, title, author from images...');
+
+    const quickPrompt = `You are analyzing book cover images. Look at what is VISUALLY PRESENT in the images and extract:
+
+1. ISBN - Look for the 13-digit barcode number (usually on back cover, bottom right)
+2. Title - Read the main title text from the front cover
+3. Author - Read the author name from the front cover
+
+IMPORTANT: 
+- Only extract what you can SEE in the images
+- Do not search the web or use external information
+- If something is not visible in the image, return null for that field
+
+Return ONLY this JSON format (no explanations, no citations):
+{
+    "isbn": "13-digit number if visible, otherwise null",
+    "title": "Title text if visible, otherwise null",
+    "author": "Author name if visible, otherwise null"
+}`;
+
+    try {
+        const response = await fetchFromPerplexityWithImages(quickPrompt, base64Images);
+
+        if (response && response.choices?.[0]?.message?.content) {
+            const content = response.choices[0].message.content;
+            const basicInfo = tryParseWithFallbacks(content);
+
+            console.log('✅ Stage 1 extracted:', basicInfo);
+            return basicInfo;
+        }
+
+        return null;
+    } catch (error) {
+        console.error('❌ Stage 1 extraction failed:', error);
+        return null;
+    }
+}
+
 async function generateMetadataWithAiImages() {
     console.log('🔍 generateMetadataWithAiImages() called');
 
@@ -2126,7 +2276,6 @@ async function generateMetadataWithAiImages() {
     console.log('✅ Starting AI processing with images');
     showAIProcessingState();
 
-    // Set up processing message
     const progressDiv = document.getElementById('ocr-progress');
     let processingMsg = document.getElementById('ai-processing-msg');
 
@@ -2148,92 +2297,206 @@ async function generateMetadataWithAiImages() {
         const givenName = document.getElementById('given_name').value.trim();
         const isbn = document.getElementById('isbn').value.trim();
 
-        // Build query
-        const additionalInfo = [];
-        if (title) additionalInfo.push(`Title: ${title}`);
-        if (familyName || givenName) {
-            const author = `${givenName} ${familyName}`.trim();
-            additionalInfo.push(`Author: ${author}`);
-        }
-        if (isbn) additionalInfo.push(`ISBN: ${isbn}`);
-
-        let textQuery = `CRITICAL INSTRUCTION: You are analyzing uploaded IMAGES of a book. Your PRIMARY task is to carefully examine these images and extract ALL visible text and information.
-
-STEP 1 - IMAGE ANALYSIS (HIGHEST PRIORITY):
-Examine the uploaded images carefully and extract:
-- Book title (from cover, spine, or title page)
-- Author name(s) (from cover or title page)
-- ISBN number (look for barcodes, typically 13 digits)
-- Publisher name (from cover, spine, or copyright page)
-- Edition information (if visible)
-- Publication year (from copyright page if visible)
-- Any visible dimensions or page count information
-
-${additionalInfo.length > 0 ?
-                `STEP 2 - CROSS-REFERENCE WITH PROVIDED DATA:
-User also provided these details for verification:
-${additionalInfo.join('\n')}
-Use this to confirm or enhance what you see in the images.\n\n` : ''}
-
-${window.ocrQuality === 'good' && window.extractedOCRText ?
-                `STEP 3 - OCR EXTRACTED TEXT (USE AS SUPPLEMENTARY):
-OCR detected this text: "${window.extractedOCRText}"
-Note: OCR may contain errors. Prioritize what you SEE in the images over OCR text.\n\n` :
-                'Note: OCR extraction had poor quality - rely entirely on visual analysis of images.\n\n'}
-
-STEP 4 - SEARCH AND VERIFY:
-After extracting information from images, search Amazon.com, Google Books, WorldCat, and other sources using the title/author/ISBN you found to:
-1. Verify the book identity
-2. Fill in missing metadata (page count, dimensions, synopsis, etc.)
-3. Ensure accuracy of all fields
-
-SEARCH PRIORITY:
-1. Amazon.com / Amazon.ae - for complete product details and dimensions
-2. Google Books - for preview and metadata
-3. WorldCat.org - for bibliographic data
-4. Publisher's website - for official specifications
-
-METADATA REQUIREMENTS:
-- numberOfPages: Only use exact page counts from Amazon ("Print length: X pages") or publisher specs
-- dimensions: Format as "Length x Width x Height" in cm (convert from inches: 1 inch = 2.54 cm)
-- Look for "Product Dimensions" in Amazon listings
-- Return null if data not found - DO NOT estimate
-
-Return ONLY this JSON format (no extra text, no citations like [1][2]):
-{
-    "title": "Full book title as seen on cover/title page",
-    "subtitle": "Subtitle of the book, otherwise null",
-    "translit_title": "Transliterated title if non-English, otherwise null",
-    "translit_subtitle": "Transliterated subtitle if non-English, otherwise null",
-    "isbn": "ISBN-13 of the book or isbn number of the book",
-    "authors": [{"familyName": "Last name of author", "givenName": "First name of author"}],
-    "publisher": ["Publisher name from cover/copyright page" or the pubkisher of the book],
-    "edition": "Edition info / statement of the book",
-    "language": "Language code (eng, ara, etc.)",
-    "placeOfPublication": ["City of publciation or where the book was published"],
-    "publicationCountry": "Country name of publication",
-    "publicationDate": " YYYY format | publication year of the book",
-    "copyrightDate": "YYYY format | copyright date of the book",
-    "numberOfPages": "xact page count as a number (e.g., 256) found in product listings, publisher data, or book specifications. Look specifically for 'Pages:', 'Page Count:', 'Length:', or 'Print Length:' in source materials. If page count not explicitly stated in any verified source, return null. DO NOT estimate or calculate page count - only use exact numbers from official sources.",
-    "dimensions": "Book dimensions in centimeters using format: Length x Width x Height (e.g., 22.86 x 15.24 x 3.00). Convert from inches/other units to cm if needed (1 inch = 2.54 cm). Search specifically for 'Product Dimensions', 'Book Dimensions', or 'Size' in product listings. If no dimensions found in any source, return empty string. CRITICAL: Only use dimensions from verified product pages or publisher specifications - do not estimate or guess."",
-    "synopsisOfBook": "Book description from sources or synposis of the book"
-}
-
-CRITICAL: Return ONLY the JSON object. No explanations. No text before or after. No citations [1][2]. Just pure JSON.`;
-
-        // Convert images to base64
         console.log('🖼️ Converting images to base64...');
         const base64Images = await convertImagesToBase64(window.ocrImageFiles);
         console.log(`✅ Converted ${base64Images.length} images`);
+        
+        if (base64Images.length > 0) {
+            console.log('📸 First image sample:', base64Images[0].data.substring(0, 100) + '...');
+        }
 
-        // Call the worker
-        console.log('🚀 Sending to worker with images...');
-        const perplexityData = await fetchFromPerplexityWithImages(textQuery, base64Images);
+        // 🔥 STAGE 1: Quick extraction from images
+        processingMsg.textContent = '🔍 Stage 1: Reading ISBN, title, author from images...';
+        const basicInfo = await extractBasicInfoFromImages(base64Images);
+
+        if (!basicInfo || (!basicInfo.isbn && !basicInfo.title)) {
+            throw new Error('Could not extract ISBN or title from images');
+        }
+
+        console.log('✅ Stage 1 complete:', basicInfo);
+
+        // 🔥 NEW LOGIC: If we got ISBN, use existing ISBN search flow
+        if (basicInfo.isbn && basicInfo.isbn.length >= 10) {
+            console.log('📚 ISBN found! Using existing ISBN search flow for better data...');
+            processingMsg.textContent = '📚 ISBN found! Searching comprehensive databases...';
+            
+            try {
+                // Use your existing ISBN search from preFetchFromAI
+                const isbnResponse = await fetch('https://metadata-maker.adb-aditya.workers.dev/isbn-search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        isbn: basicInfo.isbn
+                    })
+                });
+
+                const isbnResult = await isbnResponse.json();
+                console.log('ISBN search result:', isbnResult);
+
+                if (isbnResult.success && isbnResult.data) {
+                    const isbnData = isbnResult.data;
+                    console.log('ISBN search data:', isbnData);
+
+                    if (isbnData && (isbnData.title || isbnData.author)) {
+                        // Now use Perplexity with ISBN context for complete metadata
+                        const contextQuery = `
+I found this book information from ISBN database:
+Find comprehensive book metadata for the book with these details:
+- Title: ${isbnData.title || 'Unknown'}
+- Author: ${isbnData.author || 'Unknown'}
+- ISBN: ${basicInfo.isbn}
+
+Prefer the source which mentions product dimensions and pages or book length or print length to be most accurate
+
+Primary search sources (in order of priority):
+1. Amazon.com / Amazon.ae / Amazon.in
+2. Google Books
+3. WorldCat.org
+4. Barnes & Noble (barnesandnoble.com)
+5. Book Depository (bookdepository.com)
+6. Ubay.ae
+7. Jamalon.com
+8. Noon.com books section
+9. ThriftBooks
+
+TRANSLITERATION RULE:
+IF title contains non-Latin script (Arabic, Hindi, Chinese, etc.):
+  - "title" = original script (e.g., "गोदान")
+  - "translit_title" = romanized (e.g., "Godan")
+IF title already in English:
+  - "title" = English title
+  - "translit_title" = null
+
+PAGE COUNT REQUIREMENT: Only use page numbers explicitly stated in:
+- Amazon product details ("Print length: X pages")
+- Publisher specifications
+- Official bookstore listings
+- Library catalog records (WorldCat, etc.)
+- Google Books "About this book" section
+
+DO NOT estimate pages based on book thickness, genre, or other books by the same author. If no exact page count is found in verified sources, return null.
+
+Return data in this exact JSON format:
+{
+    "title": "Full book title",
+    "translit_title": "Transliterated title if original is non-English, otherwise null",
+    "subtitle": "Full Subtitle of the book, otherwise null",
+    "translit_subtitle": "Transliterated subtitle if original is non-English, otherwise null",
+    "isbn": "ISBN of the book if found, otherwise null",
+    "edition": "Edition information of the book or null",
+    "language": "Language code of the book (eng, fre, etc.)",
+    "publisher": ["Publisher name of the book"],
+    "authors": [{"familyName": "Last name of author", "givenName": "First name of author"}],
+    "placeOfPublication": ["City of publication or where the book was published"],
+    "publicationCountry": "Full country name of publication",
+    "publicationDate": "YYYY format of publication date",
+    "copyrightDate": "YYYY format or copyright date",
+    "numberOfPages": "Exact page count as a number (e.g., 256) found in product listings, publisher data, or book specifications. Look specifically for 'Pages:', 'Page Count:', 'Length:', or 'Print Length:' in source materials. If page count not explicitly stated in any verified source, return null. DO NOT estimate or calculate page count - only use exact numbers from official sources.",
+    "dimensions": "Book dimensions in centimeters using format: Length x Width x Height (e.g., 22.86 x 15.24 x 3.00). Convert from inches/other units to cm if needed (1 inch = 2.54 cm). Search specifically for 'Product Dimensions', 'Book Dimensions', or 'Size' in product listings. If no dimensions found in any source, return empty string. CRITICAL: Only use dimensions from verified product pages or publisher specifications - do not estimate or guess.",
+    "synopsisOfBook": "Book description"
+}
+
+Only return JSON, nothing else.
+CRITICAL: Return ONLY the JSON object. No text before or after. No explanations. No citations like [1][2]. Just pure JSON.`;
+
+                        console.log('🚀 Using ISBN-based search for complete metadata...');
+                        
+                        const perplexityData = await fetchFromPerplexityDirect(contextQuery);
+                        
+                        if (perplexityData?.choices?.[0]?.message?.content) {
+                            const metadata = tryParseWithFallbacks(perplexityData.choices[0].message.content);
+                            
+                            if (metadata && !metadata.error) {
+                                console.log('✅ Success with ISBN flow! Populating form...');
+                                processingMsg.textContent = '✅ Successfully generated metadata using ISBN!';
+                                processingMsg.style.color = '#4CAF50';
+                                processingMsg.style.fontWeight = 'bold';
+
+                                populateFormWithMetadata(metadata);
+                                hideAIProcessingState(true);
+                                return; // Exit successfully
+                            }
+                        }
+                    }
+                }
+            } catch (isbnError) {
+                console.log('⚠️ ISBN search failed, falling back to title/author search:', isbnError);
+                // Fall through to Stage 2 below
+            }
+        }
+
+        // 🔥 STAGE 2: If no ISBN or ISBN search failed, use title/author search
+        processingMsg.textContent = '📚 Stage 2: Searching for complete metadata...';
+        
+        // Build additional context from user inputs
+        const additionalInfo = [];
+        if (title && title !== basicInfo.title) additionalInfo.push(`User also provided title: ${title}`);
+        if (familyName || givenName) {
+            const author = `${givenName} ${familyName}`.trim();
+            if (author !== basicInfo.author) additionalInfo.push(`User also provided author: ${author}`);
+        }
+        if (isbn && isbn !== basicInfo.isbn) additionalInfo.push(`User also provided ISBN: ${isbn}`);
+
+        // Enhanced query with Stage 1 results
+        let textQuery = `You have extracted the following information from book cover images:
+- ISBN: ${basicInfo.isbn || 'Not found'}
+- Title: ${basicInfo.title || 'Not found'}
+- Author: ${basicInfo.author || 'Not found'}
+
+${additionalInfo.length > 0 ? `Additional context:\n${additionalInfo.join('\n')}\n\n` : ''}
+
+IMPORTANT: The title and author may be in non-English script (Hindi: गोदान, Arabic, etc.)
+- If the title is in non-English, search using both the original script AND common transliterations
+- For Hindi "गोदान", also search "Godan" or "Godaan"
+- For author "प्रेमचंद", also search "Premchand" or "Munshi Premchand"
+
+Now search for COMPLETE metadata using this information.
+
+SEARCH PRIORITY:
+1. Amazon.com / Amazon.ae / Amazon.in
+2. Google Books
+3. WorldCat.org
+4. Publisher's official website
+
+TRANSLITERATION RULE:
+IF title contains non-Latin script (Arabic, Hindi, Chinese, etc.):
+  - "title" = original script (e.g., "गोदान")
+  - "translit_title" = romanized (e.g., "Godan")
+IF title already in English:
+  - "title" = English title
+  - "translit_title" = null
+
+Return ONLY this JSON (no markdown, no explanations):
+{
+    "title": "${basicInfo.title || 'Title in original script'}",
+    "subtitle": "Subtitle or null",
+    "translit_title": "Romanized if non-Latin, else null",
+    "translit_subtitle": "Romanized subtitle if non-Latin, else null",
+    "isbn": "${basicInfo.isbn || 'null'}",
+    "authors": [{"familyName": "Last", "givenName": "First"}],
+    "publisher": ["Publisher name"],
+    "edition": "Edition statement or null",
+    "language": "3-letter code (eng, ara, hin)",
+    "placeOfPublication": ["City name"],
+    "publicationCountry": "Country name",
+    "publicationDate": "YYYY",
+    "copyrightDate": "YYYY or null",
+    "numberOfPages": 308,
+    "dimensions": "23.50 x 15.49 x 0.61",
+    "synopsisOfBook": "Book description"
+}`;
+
+        console.log('🚀 Stage 2: Sending detailed search query...');
+        
+        // Call Perplexity for detailed search
+        const perplexityData = await fetchFromPerplexity(textQuery);
 
         // Handle response
-        if (perplexityData && !perplexityData.error && perplexityData.choices?.[0]?.message?.content) {
+        if (perplexityData && perplexityData.choices?.[0]?.message?.content) {
             const content = perplexityData.choices[0].message.content;
-            console.log('📄 Raw response:', content.substring(0, 200) + '...');
+            console.log('📄 Stage 2 raw response:', content.substring(0, 200) + '...');
 
             const metadata = tryParseWithFallbacks(content);
 
@@ -2249,7 +2512,7 @@ CRITICAL: Return ONLY the JSON object. No explanations. No text before or after.
                 throw new Error('Could not extract valid book metadata from response');
             }
         } else {
-            throw new Error(perplexityData?.error?.message || 'No valid response from AI');
+            throw new Error('No valid response from AI');
         }
 
     } catch (error) {
@@ -2355,25 +2618,51 @@ function generateMetadataWithAI() {
                         document.getElementById('dimensions').value = metadata.dimensions || '';
                         document.getElementById('subtitle').value = metadata.subtitle || '';
 
-                        // Handle transliteration fields
                         const translitTitleField = document.getElementById('translit_title');
                         const translitSubtitleField = document.getElementById('translit_subtitle');
 
                         if (translitTitleField) {
-                            if (metadata.translit_title) {
+                            if (metadata.translit_title && metadata.translit_title.trim() !== '') {
                                 translitTitleField.value = metadata.translit_title;
+
+                                const translitTitleBlock = document.getElementById('translit-title-block');
+                                if (translitTitleBlock) {
+                                    translitTitleBlock.classList.remove('hidden');
+                                }
+
+                                translitTitleField.classList.remove('hidden');
                                 translitTitleField.style.display = 'inline-block';
+                                translitTitleField.style.visibility = 'visible';
+
                             } else {
-                                translitTitleField.style.display = 'none';
+                                const translitTitleBlock = document.getElementById('translit-title-block');
+                                if (translitTitleBlock) {
+                                    translitTitleBlock.classList.add('hidden');
+                                }
+                                translitTitleField.value = '';
                             }
                         }
 
                         if (translitSubtitleField) {
-                            if (metadata.translit_subtitle) {
+                            if (metadata.translit_subtitle && metadata.translit_subtitle.trim() !== '') {
                                 translitSubtitleField.value = metadata.translit_subtitle;
+
+                                const translitSubtitleBlock = document.getElementById('translit-subtitle-block');
+                                if (translitSubtitleBlock) {
+                                    translitSubtitleBlock.classList.remove('hidden');
+                                }
+
+                                translitSubtitleField.classList.remove('hidden');
                                 translitSubtitleField.style.display = 'inline-block';
+                                translitSubtitleField.style.visibility = 'visible';
+
+                                console.log('✅ Showing translit_subtitle:', metadata.translit_subtitle);
                             } else {
-                                translitSubtitleField.style.display = 'none';
+                                const translitSubtitleBlock = document.getElementById('translit-subtitle-block');
+                                if (translitSubtitleBlock) {
+                                    translitSubtitleBlock.classList.add('hidden');
+                                }
+                                translitSubtitleField.value = '';
                             }
                         }
 
