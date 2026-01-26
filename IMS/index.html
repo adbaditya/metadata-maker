@@ -29,6 +29,18 @@
 		gtag('config', 'G-B2N7KWSB17');
 	</script>
 	<style>
+		#save-status-persistent.success {
+			background-color: #d4edda;
+			border: 1px solid #c3e6cb;
+			color: #155724;
+		}
+
+		#save-status-persistent.partial {
+			background-color: #fff3cd;
+			border: 1px solid #ffeeba;
+			color: #856404;
+		}
+
 		.ai-processing-notification {
 			position: fixed;
 			top: 20px;
@@ -901,11 +913,15 @@
 			<div id="image-upload-block" class="standard-block">
 				<label for="image-upload" class="heading">Select images/videos</label><br>
 				<input type="file" id="image-upload" accept="image/*,video/*" multiple>
-				<button type="button" id="process-image-button" style="margin: 20px 0;" onclick="processImages()">Upload
+				<button type="button" id="process-image-button" style="margin: 20px 0;"
+					onclick="processImagesLocally()">Upload
 					Image(s) / Video(s)</button>
 				<div id="image-preview"></div>
 				<div id="upload-progress"></div>
 				<input type="hidden" id="image-data">
+			</div>
+
+			<div id="save-status-persistent" style="display: none; padding: 10px; margin: 10px 0; border-radius: 5px;">
 			</div>
 
 			<div id="save-as-block">
@@ -929,7 +945,8 @@
 				* Required field
 			</div>
 		</form>
-		<div id="disclaimer">This project builds on a manual cataloging entry form developed by the University of Illinois at Urbana-Champaign Library .</div>
+		<div id="disclaimer">This project builds on a manual cataloging entry form developed by the University of
+			Illinois at Urbana-Champaign Library .</div>
 		<div id="disclaimer2">AI integration is supported by an ongoing grant from VCUarts Qatar.</div>
 		<div id="version">Version 1.2 – Updated on 31/07/2025</div>
 		<a id="code" href="https://github.com/adbaditya/metadata-maker">GitHub</a>

@@ -860,3 +860,271 @@ function compressImage(file) {
         };
     });
 } 
+
+
+async function processImagesLocally() {
+    const fileInput = document.getElementById('image-upload');
+    const files = Array.from(fileInput.files);
+    const previewDiv = document.getElementById('image-preview');
+    const progressDiv = document.getElementById('upload-progress');
+    const persistentStatus = document.getElementById('save-status-persistent');
+
+    // Clear previous previews
+    previewDiv.innerHTML = '';
+    
+    if (persistentStatus) {
+        persistentStatus.style.display = 'none';
+        persistentStatus.className = '';
+    }
+
+    if (files.length === 0) {
+        progressDiv.innerHTML = 'Please select at least one image';
+        return;
+    }
+
+    // Show previews
+    files.forEach(file => {
+        const previewContainer = document.createElement('div');
+        previewContainer.className = 'preview-container';
+
+        const isVideo = file.type.startsWith('video/');
+        const isImage = file.type.startsWith('image/');
+
+        let mediaElement;
+
+        if (isVideo) {
+            mediaElement = document.createElement('video');
+            mediaElement.controls = true;
+            mediaElement.style.maxWidth = '200px';
+            mediaElement.style.maxHeight = '200px';
+            mediaElement.style.margin = '10px';
+
+            const videoIcon = document.createElement('div');
+            videoIcon.innerHTML = '🎥 Video';
+            videoIcon.style.fontSize = '12px';
+            videoIcon.style.color = '#666';
+            videoIcon.style.marginBottom = '5px';
+            previewContainer.appendChild(videoIcon);
+
+        } else if (isImage) {
+            mediaElement = document.createElement('img');
+            mediaElement.style.maxWidth = '200px';
+            mediaElement.style.maxHeight = '200px';
+            mediaElement.style.margin = '10px';
+
+            const imageIcon = document.createElement('div');
+            imageIcon.innerHTML = '🖼️ Image';
+            imageIcon.style.fontSize = '12px';
+            imageIcon.style.color = '#666';
+            imageIcon.style.marginBottom = '5px';
+            previewContainer.appendChild(imageIcon);
+
+        } else {
+            mediaElement = document.createElement('div');
+            mediaElement.innerHTML = `📄 ${file.type || 'Unknown file type'}`;
+            mediaElement.style.width = '200px';
+            mediaElement.style.height = '100px';
+            mediaElement.style.margin = '10px';
+            mediaElement.style.border = '2px dashed #ccc';
+            mediaElement.style.display = 'flex';
+            mediaElement.style.alignItems = 'center';
+            mediaElement.style.justifyContent = 'center';
+            mediaElement.style.fontSize = '14px';
+            mediaElement.style.color = '#666';
+        }
+
+        const nameLabel = document.createElement('div');
+        nameLabel.textContent = file.name;
+        nameLabel.className = 'file-name';
+        nameLabel.style.fontSize = '12px';
+        nameLabel.style.color = '#333';
+        nameLabel.style.marginTop = '5px';
+        nameLabel.style.wordBreak = 'break-word';
+
+        if (isVideo || isImage) {
+            const objectUrl = URL.createObjectURL(file);
+            mediaElement.src = objectUrl;
+            mediaElement.onload = mediaElement.onloadeddata = () => URL.revokeObjectURL(objectUrl);
+            mediaElement.onerror = () => {
+                console.error(`Failed to load ${isVideo ? 'video' : 'image'}:`, file.name);
+                mediaElement.style.border = '2px solid #ff4444';
+            };
+        }
+
+        previewContainer.appendChild(mediaElement);
+        previewContainer.appendChild(nameLabel);
+        previewDiv.appendChild(previewContainer);
+    });
+
+    // Save files locally
+    await saveFilesLocally(files, progressDiv);
+}
+
+async function saveFilesLocally(files, progressDiv) {
+    const persistentStatus = document.getElementById('save-status-persistent');
+
+    try {
+        if (persistentStatus) {
+            persistentStatus.style.display = 'none';
+            persistentStatus.className = '';
+        }
+
+        // Check browser support
+        if (!window.showSaveFilePicker) {
+            await fallbackDownload(files, progressDiv);
+            return;
+        }
+
+        let savedCount = 0;
+        let skippedCount = 0;
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+
+            try {
+                progressDiv.innerHTML = `Saving file ${i + 1}/${files.length}: ${file.name}...`;
+
+                const extension = file.name.split('.').pop().toLowerCase();
+                const fileHandle = await showSaveFilePicker({
+                    suggestedName: file.name,
+                    types: [{
+                        description: 'Image/Video files',
+                        accept: {
+                            [file.type || 'application/octet-stream']: [`.${extension}`]
+                        }
+                    }]
+                });
+
+                const writable = await fileHandle.createWritable();
+                await writable.write(file);
+                await writable.close();
+
+                savedCount++;
+
+            } catch (fileError) {
+                if (fileError.name === 'AbortError') {
+                    skippedCount++;
+                    // User cancelled, ask if they want to continue
+                    if (i < files.length - 1) {
+                        const continueDownload = confirm(
+                            `Skipped ${file.name}.\n\nContinue with remaining ${files.length - i - 1} file(s)?`
+                        );
+                        if (!continueDownload) {
+                            break;
+                        }
+                    }
+                } else {
+                    console.error(`Error saving ${file.name}:`, fileError);
+                    skippedCount++;
+                }
+            }
+        }
+
+        // Show results
+        progressDiv.innerHTML = '';
+
+        if (savedCount > 0 && persistentStatus) {
+            persistentStatus.className = skippedCount === 0 ? 'success' : 'partial';
+            persistentStatus.innerHTML = `✅ Saved ${savedCount} file(s)${skippedCount > 0 ? `, ${skippedCount} skipped` : ''}`;
+            persistentStatus.style.display = 'block';
+            showLocalSaveSuccessPopup(savedCount, 'selected location', skippedCount);
+        } else if (savedCount === 0) {
+            progressDiv.innerHTML = '<span style="color: #666;">No files were saved</span>';
+        }
+
+    } catch (error) {
+        console.error('Error in saveFilesLocally:', error);
+        await fallbackDownload(files, progressDiv);
+    }
+}
+
+async function fallbackDownload(files, progressDiv) {
+    progressDiv.innerHTML = 'Using standard download method...';
+
+    let downloadedCount = 0;
+
+    for (const file of files) {
+        try {
+            const url = URL.createObjectURL(file);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            downloadedCount++;
+
+            // Small delay between downloads
+            if (files.length > 1) {
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        } catch (err) {
+            console.error(`Fallback download failed for ${file.name}:`, err);
+        }
+    }
+
+    progressDiv.innerHTML = `<span style="color: #4CAF50;">✅ Downloaded ${downloadedCount} file(s) to your Downloads folder</span>`;
+}
+
+function showLocalSaveSuccessPopup(savedCount, location, errorCount = 0) {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'success-popup-backdrop';
+    backdrop.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        z-index: 9999;
+    `;
+
+    const popup = document.createElement('div');
+    popup.className = 'success-popup';
+    popup.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        z-index: 10000;
+        text-align: center;
+        min-width: 300px;
+    `;
+
+    if (errorCount === 0) {
+        popup.innerHTML = `
+            <h3 style="color: #4CAF50; margin-top: 0;">✅ Success!</h3>
+            <p>Saved <strong>${savedCount} file(s)</strong> to:</p>
+            <p style="font-weight: bold; color: #4CAF50;">${location}</p>
+            <div style="color: #666; font-size: 12px; margin-top: 15px;">Closing in 3 seconds...</div>
+        `;
+    } else {
+        popup.innerHTML = `
+            <h3 style="color: #ff9800; margin-top: 0;">⚠️ Partially Complete</h3>
+            <p>Saved <strong>${savedCount} file(s)</strong></p>
+            <p style="color: #ff9800;"><strong>${errorCount} file(s)</strong> skipped</p>
+            <div style="color: #666; font-size: 12px; margin-top: 15px;">Closing in 4 seconds...</div>
+        `;
+    }
+
+    document.body.appendChild(backdrop);
+    document.body.appendChild(popup);
+
+    const closeTime = errorCount === 0 ? 3000 : 4000;
+
+    setTimeout(() => {
+        if (document.body.contains(backdrop)) backdrop.remove();
+        if (document.body.contains(popup)) popup.remove();
+    }, closeTime);
+
+    backdrop.onclick = () => {
+        backdrop.remove();
+        popup.remove();
+    };
+}
