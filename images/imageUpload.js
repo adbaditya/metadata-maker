@@ -3060,78 +3060,118 @@ async function processImagesLocally() {
     await saveFilesLocally(files, progressDiv);
 }
 
-// Simplified local file saving function - always ask user where to save
-// Simplified local file saving function with success popup
 async function saveFilesLocally(files, progressDiv) {
     const persistentStatus = document.getElementById('save-status-persistent');
+    
     try {
         persistentStatus.style.display = 'none';
         persistentStatus.className = '';
 
-        // Check if File System Access API is supported
-        if (!window.showDirectoryPicker) {
-            progressDiv.innerHTML = '<span style="color: #ff4444;">File System Access API not supported in this browser. Please use Chrome 86+ or Edge 86+</span>';
+        // Check browser support
+        if (!window.showSaveFilePicker) {
+            await fallbackDownload(files, progressDiv);
             return;
         }
 
-        // Always show directory picker - let user choose where to save
-        progressDiv.innerHTML = 'Please choose a folder to save the files...';
-
-        const directoryHandle = await showDirectoryPicker();
-
-        progressDiv.innerHTML = `Saving ${files.length} file(s) to: ${directoryHandle.name}...`;
-
         let savedCount = 0;
         let errorCount = 0;
+        let lastDirectory = null;
 
-        // Save each file
         for (const file of files) {
             try {
-                // Create file handle
-                const fileHandle = await directoryHandle.getFileHandle(file.name, {
-                    create: true
-                });
+                progressDiv.innerHTML = `Saving file ${savedCount + 1}/${files.length}: ${file.name}...`;
 
-                // Create writable stream
+                // Use showSaveFilePicker for each file (like your MARC download)
+                const options = {
+                    suggestedName: file.name,
+                    types: [{
+                        description: 'Image/Video files',
+                        accept: {
+                            'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
+                            'video/*': ['.mp4', '.webm', '.mov', '.avi']
+                        }
+                    }]
+                };
+
+                // If we saved a file before, try to start in the same directory
+                if (lastDirectory) {
+                    options.startIn = lastDirectory;
+                }
+
+                const fileHandle = await showSaveFilePicker(options);
+                
+                // Remember the directory for next file
+                lastDirectory = fileHandle;
+
                 const writable = await fileHandle.createWritable();
-
-                // Write file content
                 await writable.write(file);
                 await writable.close();
 
                 savedCount++;
 
-                // Update progress
-                progressDiv.innerHTML = `Saved ${savedCount}/${files.length} files to: ${directoryHandle.name}`;
-
-            } catch (error) {
-                console.error(`Error saving ${file.name}:`, error);
-                errorCount++;
+            } catch (fileError) {
+                if (fileError.name === 'AbortError') {
+                    // User cancelled, ask if they want to continue
+                    if (files.length > 1 && savedCount < files.length - 1) {
+                        const continueDownload = confirm(`Skipped ${file.name}. Continue with remaining files?`);
+                        if (!continueDownload) {
+                            break;
+                        }
+                    }
+                } else {
+                    console.error(`Error saving ${file.name}:`, fileError);
+                    errorCount++;
+                }
             }
         }
 
-        // Clear the progress div
+        // Show results
         progressDiv.innerHTML = '';
-
-        // Show success popup instead of inline message
-        if (errorCount === 0) {
-            persistentStatus.className = 'success';
-            persistentStatus.innerHTML = `✅ Successfully saved ${savedCount} file(s) to: <strong>${directoryHandle.name}</strong>`;
-            showSuccessPopup(savedCount, directoryHandle.name);
+        
+        if (savedCount > 0) {
+            persistentStatus.className = errorCount === 0 ? 'success' : 'partial';
+            persistentStatus.innerHTML = `✅ Saved ${savedCount} file(s)${errorCount > 0 ? `, ${errorCount} skipped` : ''}`;
+            persistentStatus.style.display = 'block';
+            showSuccessPopup(savedCount, 'selected location', errorCount);
         } else {
-            persistentStatus.className = 'partial';
-            persistentStatus.innerHTML = `⚠️ Saved ${savedCount} file(s), ${errorCount} failed. Folder: <strong>${directoryHandle.name}</strong>`;
-            showSuccessPopup(savedCount, directoryHandle.name, errorCount);
+            progressDiv.innerHTML = '<span style="color: #666;">No files were saved</span>';
         }
 
     } catch (error) {
-        if (error.name === 'AbortError') {
-            progressDiv.innerHTML = '<span style="color: #666;">Save cancelled by user</span>';
-        } else {
-            console.error('Error saving files locally:', error);
-            progressDiv.innerHTML = `<span style="color: #ff4444;">Error saving files: ${error.message}</span>`;
+        console.error('Error in saveFilesLocally:', error);
+        await fallbackDownload(files, progressDiv);
+    }
+}
+
+// Fallback using traditional download (works on all browsers including Mac Safari)
+async function fallbackDownload(files, progressDiv) {
+    progressDiv.innerHTML = 'Using standard download method...';
+    
+    let downloadedCount = 0;
+    
+    for (const file of files) {
+        try {
+            const url = URL.createObjectURL(file);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            downloadedCount++;
+            
+            // Small delay between downloads to prevent browser blocking
+            if (files.length > 1) {
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        } catch (err) {
+            console.error(`Fallback download failed for ${file.name}:`, err);
         }
     }
+    
+    progressDiv.innerHTML = `<span style="color: #4CAF50;">✅ Downloaded ${downloadedCount} file(s) to your Downloads folder</span>`;
 }
 
 // Function to show success popup

@@ -617,11 +617,14 @@ async function convertImagesToBase64(files) {
 
     for (const file of files) {
         try {
+            // ✅ Compress image before converting
+            const compressedBlob = await compressImage(file);
+            
             const base64 = await new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve(reader.result);
                 reader.onerror = reject;
-                reader.readAsDataURL(file);
+                reader.readAsDataURL(compressedBlob);
             });
 
             base64Images.push({
@@ -634,6 +637,47 @@ async function convertImagesToBase64(files) {
     }
 
     return base64Images;
+}
+
+// ✅ Add this compression helper
+async function compressImage(file, maxWidth = 1024, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        
+        reader.onload = function(event) {
+            const img = new Image();
+            img.src = event.target.result;
+            
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Calculate new dimensions
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > maxWidth) {
+                    height *= maxWidth / width;
+                    width = maxWidth;
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Draw and compress
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                canvas.toBlob((blob) => {
+                    resolve(blob);
+                }, 'image/jpeg', quality);
+            };
+            
+            img.onerror = reject;
+        };
+        
+        reader.onerror = reject;
+    });
 }
 
 async function fetchFromPerplexityWithImages(textQuery, base64Images = []) {
