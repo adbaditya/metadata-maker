@@ -302,6 +302,8 @@
 
 	<div id="content">
 		<form id="marc-maker">
+			<button type="button" id="voice-btn" onclick="startVoiceInput()" title="Voice input — speak your title, author, or ISBN">🎤</button>
+
 			<div id="title-block">
 				<label for="title" class="heading">Title<span class="required_marker">*</span></label><label for="title"
 					class="insert insert_normal" onClick='insertMenu("title");'>Insert Diacritics</label><br>
@@ -337,6 +339,23 @@
 					onClick='insertMenu("translit_subtitle");'>Insert Diacritics</label><br>
 				<div id="insert-translit_subtitle" class="hidden translit translit-title"></div>
 				<input type="text" id="translit_subtitle" class="hidden translit translit-title">
+			</div>
+
+			<div id="translation-language-block" class="standard-block">
+				<label for="translation_language" class="heading">Translation</label>
+				<label title="Select a language to add a translated title in field 246"><span class="question-mark">?</span></label><br>
+				<select id="translation_language" onchange="toggleTranslationTitle()">
+					<option value="">-- No translation --</option>
+					<option value="English">English</option>
+					<option value="Arabic">Arabic</option>
+				</select>
+			</div>
+
+			<div id="translation-title-block" class="hidden standard-block">
+				<label for="translation_title" class="heading">Translated Title</label><label for="translation_title"
+					class="insert insert_normal" onClick='insertMenu("translation_title");'>Insert Diacritics</label><br>
+				<div id="insert-translation_title"></div>
+				<input type="text" id="translation_title">
 			</div>
 
 			<div id="author-block">
@@ -1493,6 +1512,18 @@
 			});
 		</script>
 		<script>
+			function toggleTranslationTitle() {
+				const lang = document.getElementById('translation_language').value;
+				const block = document.getElementById('translation-title-block');
+				if (lang) {
+					block.classList.remove('hidden');
+				} else {
+					block.classList.add('hidden');
+					document.getElementById('translation_title').value = '';
+				}
+			}
+		</script>
+		<script>
 			// Add this CSS to your stylesheet
 			const style = document.createElement("style");
 			style.textContent = `
@@ -1541,7 +1572,6 @@
 `;
 			document.head.appendChild(style);
 
-			// Add this HTML to your document body
 			const alertsHTML = `
     <div class="custom-alert-backdrop-common isbn-unlisted-backdrop"></div>
     <div class="custom-alert-common isbn-unlisted-alert">
@@ -1588,6 +1618,75 @@
 				isbnUnlistedCloseBtn.addEventListener("click", hideIsbnUnlistedAlert);
 				isbnUnlistedBackdrop.addEventListener("click", hideIsbnUnlistedAlert);
 			});
+
+		let activeRecognition = null;
+
+		function startVoiceInput() {
+			const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+			if (!SpeechRecognition) {
+				alert('Voice input requires Chrome or Edge.');
+				return;
+			}
+			const btn = document.getElementById('voice-btn');
+
+			if (activeRecognition) {
+				activeRecognition.stop();
+				activeRecognition = null;
+				return;
+			}
+
+			navigator.mediaDevices.getUserMedia({ audio: true })
+				.then(function(stream) {
+					stream.getTracks().forEach(t => t.stop());
+					launchRecognition();
+				})
+				.catch(function(err) {
+					alert('Microphone access was denied. Please allow microphone access in your browser settings and try again.');
+					console.warn('Mic permission error:', err);
+				});
+		}
+
+		function launchRecognition() {
+			const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+			const btn = document.getElementById('voice-btn');
+			const recognition = new SpeechRecognition();
+			recognition.lang = 'en-US';
+			recognition.continuous = true;
+			recognition.interimResults = true;
+			recognition.maxAlternatives = 1;
+			activeRecognition = recognition;
+
+			btn.classList.add('recording');
+			btn.textContent = '🔴';
+			recognition.start();
+
+			recognition.onresult = function(event) {
+				let transcript = '';
+				for (let i = 0; i < event.results.length; i++) {
+					transcript += event.results[i][0].transcript;
+				}
+				const titleField = document.getElementById('title');
+				titleField.value = transcript;
+				$(titleField).trigger('input').trigger('change');
+			};
+
+			recognition.onend = function() {
+				btn.classList.remove('recording');
+				btn.textContent = '🎤';
+				activeRecognition = null;
+			};
+
+			recognition.onerror = function(event) {
+				btn.classList.remove('recording');
+				btn.textContent = '🎤';
+				activeRecognition = null;
+				if (event.error === 'not-allowed') {
+					alert('Microphone access was denied. Please allow microphone access in your browser settings and try again.');
+				} else if (event.error !== 'no-speech') {
+					console.warn('Voice input error:', event.error);
+				}
+			};
+		}
 		</script>
 	</div>
 </body>

@@ -1,5 +1,14 @@
 let aiProcessingInProgress = false;
 
+// Returns JSON schema field for translated_title based on currently selected translation language
+function getTranslationSchemaField() {
+    var lang = (document.getElementById('translation_language') || {}).value || '';
+    if (lang) {
+        return '"translated_title": "The book title translated into ' + lang + '"';
+    }
+    return '"translated_title": null';
+}
+
 let originalButtonStates = {};
 
 function showAIProcessingState() {
@@ -1020,10 +1029,11 @@ async function preFetchFromAI() {
                     "copyrightDate": "YYYY format or null",
                     "numberOfPages": "Exact page count as a number (e.g., 256) found in product listings, publisher data, or book specifications. Look specifically for 'Pages:', 'Page Count:', 'Length:', or 'Print Length:' in source materials. If page count not explicitly stated in any verified source, return null. DO NOT estimate or calculate page count - only use exact numbers from official sources.",
                     "dimensions": "Book dimensions in centimeters using format: Length x Width x Height (e.g., 22.86 x 15.24 x 3.00). Convert from inches/other units to cm if needed (1 inch = 2.54 cm). Search specifically for 'Product Dimensions', 'Book Dimensions', or 'Size' in product listings. If no dimensions found in any source, return empty string. CRITICAL: Only use dimensions from verified product pages or publisher specifications - do not estimate or guess.",
-                    "synopsisOfBook": Synopsis of the book
+                    "synopsisOfBook": "Book synopsis written in the SAME LANGUAGE as the original title (e.g. if title is Hindi write synopsis in Hindi, if Arabic write in Arabic, if English write in English)",
+                    ${getTranslationSchemaField()}
                     }
                             IMPORTANT: If the title or subtitle contains non-English characters (Arabic, Chinese, Russian, etc.), provide both the original AND a transliterated version using Latin characters. For example:
-                    - Original Arabic: "الأسود يليق بك" 
+                    - Original Arabic: "الأسود يليق بك"
                     - Transliterated: "Al-Aswad Yaleeq Bik"
                     Use null for truly unknown values only after thorough searching. Only return the json and nothing else. Do not start with words json, just return the json and nothing else.
                     Search instructions:
@@ -1153,9 +1163,10 @@ async function preFetchFromAI() {
                         "copyrightDate": "YYYY format or copyright date",
                         "numberOfPages": "Exact page count as a number (e.g., 256) found in product listings, publisher data, or book specifications. Look specifically for 'Pages:', 'Page Count:', 'Length:', or 'Print Length:' in source materials. If page count not explicitly stated in any verified source, return null. DO NOT estimate or calculate page count - only use exact numbers from official sources.",
                         "dimensions": "Book dimensions in centimeters using format: Length x Width x Height (e.g., 22.86 x 15.24 x 3.00). Convert from inches/other units to cm if needed (1 inch = 2.54 cm). Search specifically for 'Product Dimensions', 'Book Dimensions', or 'Size' in product listings. If no dimensions found in any source, return empty string. CRITICAL: Only use dimensions from verified product pages or publisher specifications - do not estimate or guess.",
-                        "synopsisOfBook": "Book description"
+                        "synopsisOfBook": "Book synopsis written in the SAME LANGUAGE as the original title",
+                        ${getTranslationSchemaField()}
                     }
-                
+
                     Only return JSON, nothing else.
                     CRITICAL: Return ONLY the JSON object. No text before or after. No explanations. No citations like [1][2]. Just pure JSON.
                             `;
@@ -1248,10 +1259,11 @@ async function preFetchFromAI() {
                             "copyrightDate": "YYYY format or null",
                             "numberOfPages": "Exact page count as a number (e.g., 256) found in product listings, publisher data, or book specifications. Look specifically for 'Pages:', 'Page Count:', 'Length:', or 'Print Length:' in source materials. If page count not explicitly stated in any verified source, return null. DO NOT estimate or calculate page count - only use exact numbers from official sources.",
                             "dimensions": "Book dimensions in centimeters using format: Length x Width x Height (e.g., 22.86 x 15.24 x 3.00). Convert from inches/other units to cm if needed (1 inch = 2.54 cm). Search specifically for 'Product Dimensions', 'Book Dimensions', or 'Size' in product listings. If no dimensions found in any source, return empty string. CRITICAL: Only use dimensions from verified product pages or publisher specifications - do not estimate or guess.",
-                            "synopsisOfBook": Synopsis of the book
+                            "synopsisOfBook": "Book synopsis written in the SAME LANGUAGE as the original title (e.g. if title is Hindi write synopsis in Hindi, if Arabic write in Arabic, if English write in English)",
+                            ${getTranslationSchemaField()}
                             }
                                     IMPORTANT: If the title or subtitle contains non-English characters (Arabic, Chinese, Russian, etc.), provide both the original AND a transliterated version using Latin characters. For example:
-                            - Original Arabic: "الأسود يليق بك" 
+                            - Original Arabic: "الأسود يليق بك"
                             - Transliterated: "Al-Aswad Yaleeq Bik"
                             Use null for truly unknown values only after thorough searching. Only return the json and nothing else. Do not start with words json, just return the json and nothing else.
                             Search instructions:
@@ -1341,6 +1353,13 @@ async function preFetchFromAI() {
 
                                             document.getElementById('year').value = metadata.publicationDate || '';
                                             document.getElementById('notes').value = metadata.synopsisOfBook || '';
+
+                                            var translationTitleField = document.getElementById('translation_title');
+                                            var translationBlock = document.getElementById('translation-title-block');
+                                            if (translationTitleField && metadata.translated_title && metadata.translated_title !== 'null' && metadata.translated_title.trim() !== '') {
+                                                translationTitleField.value = metadata.translated_title;
+                                                if (translationBlock) translationBlock.classList.remove('hidden');
+                                            }
 
                                             if (metadata.authors?.length > 0) {
                                                 document.getElementById('family_name').value = metadata.authors[0].familyName || '';
@@ -1476,9 +1495,10 @@ async function preFetchFromAI() {
                         "copyrightDate": "YYYY format or null",
                         "numberOfPages": "Exact page count as a number (e.g., 256) found in product listings, publisher data, or book specifications. Look specifically for 'Pages:', 'Page Count:', 'Length:', or 'Print Length:' in source materials. If page count not explicitly stated in any verified source, return null. DO NOT estimate or calculate page count - only use exact numbers from official sources.",
                         "dimensions": "Book dimensions in centimeters using format: Length x Width x Height (e.g., 22.86 x 15.24 x 3.00). Convert from inches/other units to cm if needed (1 inch = 2.54 cm). Search specifically for 'Product Dimensions', 'Book Dimensions', or 'Size' in product listings. If no dimensions found in any source, return empty string. CRITICAL: Only use dimensions from verified product pages or publisher specifications - do not estimate or guess.",
-                        "synopsisOfBook": "Book description"
+                        "synopsisOfBook": "Book synopsis written in the SAME LANGUAGE as the original title",
+                        ${getTranslationSchemaField()}
                     }
-                    
+
                     CRITICAL: If no book matches these details exactly, return {"error": "Book not found", "searched_details": "${searchTerm}"}
                     Only return JSON, nothing else.
                 `;
@@ -1575,6 +1595,13 @@ async function preFetchFromAI() {
             document.getElementById('year').value = metadata.publicationDate || '';
             document.getElementById('cyear').value = metadata.copyrightDate || '';
             document.getElementById('notes').value = metadata.synopsisOfBook || '';
+
+            var translationTitleField = document.getElementById('translation_title');
+            var translationBlock = document.getElementById('translation-title-block');
+            if (translationTitleField && metadata.translated_title && metadata.translated_title !== 'null' && metadata.translated_title.trim() !== '') {
+                translationTitleField.value = metadata.translated_title;
+                if (translationBlock) translationBlock.classList.remove('hidden');
+            }
 
             if (metadata.authors?.length > 0) {
                 document.getElementById('family_name').value = metadata.authors[0].familyName || '';
@@ -1712,11 +1739,12 @@ Return the data in this exact JSON format: {
 "copyrightDate": "YYYY format or null",
 "numberOfPages": "Exact page count as a number (e.g., 256) found in product listings, publisher data, or book specifications. Look specifically for 'Pages:', 'Page Count:', 'Length:', or 'Print Length:' in source materials. If page count not explicitly stated in any verified source, return null. DO NOT estimate or calculate page count - only use exact numbers from official sources.",
 "dimensions": "Book dimensions in centimeters using format: Length x Width x Height (e.g., 22.86 x 15.24 x 3.00). Convert from inches/other units to cm if needed (1 inch = 2.54 cm). Search specifically for 'Product Dimensions', 'Book Dimensions', or 'Size' in product listings. If no dimensions found in any source, return empty string. CRITICAL: Only use dimensions from verified product pages or publisher specifications - do not estimate or guess.",
-"synopsisOfBook": "Synopsis of the book"
+"synopsisOfBook": "Book synopsis written in the SAME LANGUAGE as the original title (e.g. if title is Hindi write synopsis in Hindi, if Arabic write in Arabic, if English write in English)",
+${getTranslationSchemaField()}
 }
 
 IMPORTANT: If the title or subtitle contains non-English characters (Arabic, Chinese, Russian, etc.), provide both the original AND a transliterated version using Latin characters. For example:
-- Original Arabic: "الأسود يليق بك" 
+- Original Arabic: "الأسود يليق بك"
 - Transliterated: "Al-Aswad Yaleeq Bik"
 
 Use null for truly unknown values only after thorough searching. Only return the json and nothing else. Do not start with words json, just return the json and nothing else.
@@ -2201,6 +2229,14 @@ function populateFormWithMetadata(metadata) {
     document.getElementById('cyear').value = metadata.copyrightDate || '';
     document.getElementById('notes').value = metadata.synopsisOfBook || '';
 
+    // Handle translated title field
+    var translationTitleField = document.getElementById('translation_title');
+    var translationBlock = document.getElementById('translation-title-block');
+    if (translationTitleField && metadata.translated_title && metadata.translated_title.trim && metadata.translated_title.trim() !== '' && metadata.translated_title !== 'null') {
+        translationTitleField.value = metadata.translated_title;
+        if (translationBlock) translationBlock.classList.remove('hidden');
+    }
+
     // Authors
     if (metadata.authors?.length > 0) {
         document.getElementById('family_name').value = metadata.authors[0].familyName || '';
@@ -2395,7 +2431,8 @@ Return data in this exact JSON format:
     "copyrightDate": "YYYY format or copyright date",
     "numberOfPages": "Exact page count as a number (e.g., 256) found in product listings, publisher data, or book specifications. Look specifically for 'Pages:', 'Page Count:', 'Length:', or 'Print Length:' in source materials. If page count not explicitly stated in any verified source, return null. DO NOT estimate or calculate page count - only use exact numbers from official sources.",
     "dimensions": "Book dimensions in centimeters using format: Length x Width x Height (e.g., 22.86 x 15.24 x 3.00). Convert from inches/other units to cm if needed (1 inch = 2.54 cm). Search specifically for 'Product Dimensions', 'Book Dimensions', or 'Size' in product listings. If no dimensions found in any source, return empty string. CRITICAL: Only use dimensions from verified product pages or publisher specifications - do not estimate or guess.",
-    "synopsisOfBook": "Book description"
+    "synopsisOfBook": "Book synopsis written in the SAME LANGUAGE as the original title",
+    ${getTranslationSchemaField()}
 }
 
 Only return JSON, nothing else.
@@ -2485,7 +2522,8 @@ Return ONLY this JSON (no markdown, no explanations):
     "copyrightDate": "YYYY or null",
     "numberOfPages": 308,
     "dimensions": "23.50 x 15.49 x 0.61",
-    "synopsisOfBook": "Book description"
+    "synopsisOfBook": "Book synopsis written in the SAME LANGUAGE as the original title",
+    ${getTranslationSchemaField()}
 }`;
 
         console.log('🚀 Stage 2: Sending detailed search query...');

@@ -43,6 +43,35 @@ h1 {
 	-moz-border-radius: 10px;
 	border-radius: 10px;
 	min-width: 750px;
+	position: relative;
+}
+
+#voice-btn {
+	position: absolute;
+	top: 30px;
+	right: 35px;
+	background: none;
+	border: none;
+	font-size: 22px;
+	cursor: pointer;
+	padding: 5px 8px;
+	border-radius: 6px;
+	line-height: 1;
+	transition: background-color 0.2s;
+}
+
+#voice-btn:hover {
+	background-color: #d0d1d3;
+}
+
+#voice-btn.recording {
+	background-color: #ffcccc;
+	animation: mic-pulse 1s ease-in-out infinite;
+}
+
+@keyframes mic-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.4; }
 }
 
 input[type="text"], input[type="number"], textarea {

@@ -304,34 +304,31 @@ function getNonfilingCount(title,lang) {
 }
 
 function fillTitle(record,head,fieldFunc,subfieldFunc) {
-	var tag = '245';
+    var tag = '245';
+    var title_ind1 = checkExists(record.author[0]['family']) || checkExists(record.author[0]['given']) ? '1' : '0';
+    
+    var has_translit = checkExists(record.title[1]['title']) || checkExists(record.title[1]['subtitle']);
 
-	//author_array[0] contains the contents of the first author field
-	var title_ind1 = checkExists(record.author[0]['family']) || checkExists(record.author[0]['given']) ? '1' : '0';
-	var latin_index = checkExists(record.title[1]['title']) || checkExists(record.title[1]['subtitle']) ? 1 : 0;
+    if (record.language === 'eng' || record.language === 'fre') {
+        var title_ind2 = getNonfilingCount(record.title[0]['title'], record.language);
+    } else {
+        var title_ind2 = '0';
+    }
 
-	if (record.language === 'eng' || record.language === 'fre') {
-		var title_ind2 = getNonfilingCount(record.title[latin_index]['title'],record.language);
-	}
-	else {
-		var title_ind2 = '0';
-	}
+    var title_subfields = [];
+    if (checkExists(record.title[0]['subtitle'])) {
+        title_subfields.push(subfieldFunc('a', record.title[0]['title'] + ' :'), subfieldFunc('b', record.title[0]['subtitle'] + '.'));
+    } else {
+        title_subfields.push(subfieldFunc('a', record.title[0]['title'] + '.'));
+    }
 
-	var title_subfields = [];
-	if (checkExists(record.title[0]['subtitle'])) {
-		title_subfields.push(subfieldFunc('a',record.title[latin_index]['title'] + ' :'),subfieldFunc('b',record.title[latin_index]['subtitle'] + '.'));
-	}
-	else {
-		title_subfields.push(subfieldFunc('a',record.title[latin_index]['title'] + '.'));
-	}
+    // Add linkage to 880 only when transliteration exists
+    if (has_translit) {
+        title_subfields.push(subfieldFunc('6', '880-01'));
+    }
 
-	if (latin_index === 1) {
-		title_subfields.push(subfieldFunc('6','880-01'));
-	}
-
-	var title = fieldFunc(tag,title_ind1,title_ind2,title_subfields);
-
-	return returnSingleEntry(tag,title,head);
+    var title = fieldFunc(tag, title_ind1, title_ind2, title_subfields);
+    return returnSingleEntry(tag, title, head);
 }
 
 function fillEdition(record,head,fieldFunc,subfieldFunc) {
@@ -599,26 +596,21 @@ function fillAdditionalAuthors(record,head,fieldFunc,subfieldFunc) {
 }
 
 function fillTranslitTitle(record,head,fieldFunc,subfieldFunc) {
-	var tag = '880';
+    var tag = '880';
+    var title_ind1 = checkExists(record.author[0]['family']) || checkExists(record.author[0]['given']) ? '1' : '0';
 
-	//author_array[0] contains the contents of the first author field
-	var title_ind1 = checkExists(record.author[0]['family']) || checkExists(record.author[0]['given']) ? '1' : '0';
-
-	if (checkExists(record.title[1]['title'])) {
-		var translit_subfields = [];
-		if (checkExists(record.title[1]['subtitle'])) {
-			translit_subfields.push(subfieldFunc('6','245-01'),subfieldFunc('a',record.title[0]['title'] + ' :'),subfieldFunc('b',record.title[0]['subtitle'] + '.'));
-		}
-		else {
-			translit_subfields.push(subfieldFunc('6','245-01'),subfieldFunc('a',record.title[0]['title'] + '.'));
-		}
-		var title880 = fieldFunc(tag,title_ind1,'0',translit_subfields);
-
-		return returnSingleEntry(tag,title880,head);
-	}
-	else {
-		return head !== null ? ['',''] : '';
-	}
+    if (checkExists(record.title[1]['title'])) {
+        var translit_subfields = [];
+        if (checkExists(record.title[1]['subtitle'])) {
+            translit_subfields.push(subfieldFunc('6','245-01'), subfieldFunc('a', record.title[1]['title'] + ' :'), subfieldFunc('b', record.title[1]['subtitle'] + '.'));
+        } else {
+            translit_subfields.push(subfieldFunc('6','245-01'), subfieldFunc('a', record.title[1]['title'] + '.'));
+        }
+        var title880 = fieldFunc(tag, title_ind1, '0', translit_subfields);
+        return returnSingleEntry(tag, title880, head);
+    } else {
+        return head !== null ? ['',''] : '';
+    }
 }
 
 function fillTranslitEdition(record,head,fieldFunc,subfieldFunc) {
@@ -747,6 +739,28 @@ function fillTranslitAdditionalAuthors(record,head,fieldFunc,subfieldFunc) {
 	}
 }
 
+function fill246Translation(record, head, fieldFunc, subfieldFunc) {
+	var tag = '246';
+
+	// Read translation fields directly from DOM (not in record object)
+	var translationTitle = '';
+	var translationLanguage = '';
+	var titleEl = document.getElementById('translation_title');
+	var langEl = document.getElementById('translation_language');
+	if (titleEl) translationTitle = titleEl.value.trim();
+	if (langEl) translationLanguage = langEl.value.trim();
+
+	if (translationTitle !== '') {
+		var display = translationLanguage ? 'Translation (' + translationLanguage + '): ' : 'Translation: ';
+		var subfields = [subfieldFunc('i', display), subfieldFunc('a', translationTitle + '.')];
+		var field246 = fieldFunc(tag, '1', ' ', subfields);
+		return returnSingleEntry(tag, field246, head);
+	}
+	else {
+		return head !== null ? ['', ''] : '';
+	}
+}
+
 function fillGenAI(record, head, fieldFunc, subfieldFunc) {
     var tag = '588';
     
@@ -841,13 +855,16 @@ function downloadMARC(record,institution_info) {
 	var authors880 = fillTranslitAdditionalAuthors(record,head,createContentFill,createSubfield);
 	head = authors880[2];
 
+	var translation246 = fill246Translation(record,head,createContentFill,createSubfield);
+	head += getByteLength(translation246[1]);
+
 	var genai = fillGenAI(record, head, createContentFill, createSubfield);
 	head += getByteLength(genai[1]);
 
 	var end = String.fromCharCode(30) + String.fromCharCode(29);
-	var text = timestamp_directory + controlfield008_directory + isbn[0] + default1_directory + author[0] + title[0] + edition[0] + pub[0] + copyright[0] + physical[0] + default2_directory + default3_directory + default4_directory + notes[0] + keywords[0] + fast[0] + additional_authors[0] + title880[0] + edition880[0] + publisher880[0] + author880[0] + genai[0] + authors880[0] + timestamp_content + controlfield008_content + isbn[1] + default1_content + author[1] + title[1] + edition[1] + pub[1] + copyright[1] + physical[1] + default2_content + default3_content + default4_content + notes[1] + keywords[1] + fast[1] + additional_authors[1] + title880[1] + edition880[1] + publisher880[1] + author880[1] + genai[1] + authors880[1] + end;
+	var text = timestamp_directory + controlfield008_directory + isbn[0] + default1_directory + author[0] + title[0] + edition[0] + pub[0] + copyright[0] + physical[0] + default2_directory + default3_directory + default4_directory + notes[0] + keywords[0] + fast[0] + additional_authors[0] + title880[0] + edition880[0] + publisher880[0] + author880[0] + translation246[0] + genai[0] + authors880[0] + timestamp_content + controlfield008_content + isbn[1] + default1_content + author[1] + title[1] + edition[1] + pub[1] + copyright[1] + physical[1] + default2_content + default3_content + default4_content + notes[1] + keywords[1] + fast[1] + additional_authors[1] + title880[1] + edition880[1] + publisher880[1] + author880[1] + translation246[1] + genai[1] + authors880[1] + end;
 	var leader_len = getByteLength(text) + 24;
-	var directory_len = 25 + timestamp_directory.length + controlfield008_directory.length + isbn[0].length + default1_directory.length + author[0].length + title[0].length + edition[0].length + pub[0].length + copyright[0].length + physical[0].length + default2_directory.length + default3_directory.length + default4_directory.length + notes[0].length + keywords[0].length + fast[0].length + additional_authors[0].length + title880[0].length + edition880[0].length + publisher880[0].length + author880[0].length + authors880[0].length + genai[0].length;
+	var directory_len = 25 + timestamp_directory.length + controlfield008_directory.length + isbn[0].length + default1_directory.length + author[0].length + title[0].length + edition[0].length + pub[0].length + copyright[0].length + physical[0].length + default2_directory.length + default3_directory.length + default4_directory.length + notes[0].length + keywords[0].length + fast[0].length + additional_authors[0].length + title880[0].length + edition880[0].length + publisher880[0].length + author880[0].length + translation246[0].length + authors880[0].length + genai[0].length;
 	var leader = addZeros(leader_len,'leader') + 'nam a22' + addZeros(directory_len,'leader') + 'ki 4500';
 	text = leader + text;
 	downloadFile2(text,'mrc');
@@ -886,6 +903,7 @@ function downloadXML(record,institution_info) {
 	text += fillTranslitPublisher(record,null,createMARCXMLField,createMARCXMLSubfield);
 	text += fillTranslitAuthor(record,null,createMARCXMLField,createMARCXMLSubfield);
 	text += fillTranslitAdditionalAuthors(record,null,createMARCXMLField,createMARCXMLSubfield);
+	text += fill246Translation(record,null,createMARCXMLField,createMARCXMLSubfield);
 	text +='</record>\n';
 
 	downloadFile2(text,'xml');
