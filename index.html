@@ -1621,35 +1621,55 @@
 
 		let activeRecognition = null;
 
+		function getVoiceTargetField() {
+			const active = document.activeElement;
+			if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA') &&
+				active.type !== 'checkbox' && active.type !== 'button' && !active.disabled && !active.readOnly) {
+				return active;
+			}
+			return document.getElementById('title');
+		}
+
+		function resetVoiceButton() {
+			const btn = document.getElementById('voice-btn');
+			btn.classList.remove('recording');
+			btn.textContent = '🎤';
+		}
+
 		function startVoiceInput() {
 			const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 			if (!SpeechRecognition) {
 				alert('Voice input requires Chrome or Edge.');
 				return;
 			}
-			const btn = document.getElementById('voice-btn');
-
-			if (activeRecognition) {
-				activeRecognition.stop();
-				activeRecognition = null;
+			if (window.location.protocol === 'file:') {
+				alert('Voice input does not work reliably on file:// URLs. Run this page from localhost or HTTPS.');
+				return;
+			}
+			if (!window.isSecureContext) {
+				alert('Voice input requires HTTPS or localhost.');
+				return;
+			}
+			if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+				alert('Microphone access is not available in this browser context.');
 				return;
 			}
 
-			navigator.mediaDevices.getUserMedia({ audio: true })
-				.then(function(stream) {
-					stream.getTracks().forEach(t => t.stop());
-					launchRecognition();
-				})
-				.catch(function(err) {
-					alert('Microphone access was denied. Please allow microphone access in your browser settings and try again.');
-					console.warn('Mic permission error:', err);
-				});
+			if (activeRecognition) {
+				activeRecognition.stop();
+				return;
+			}
+
+			const targetField = getVoiceTargetField();
+			launchRecognition(targetField);
 		}
 
-		function launchRecognition() {
+		function launchRecognition(targetField) {
 			const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 			const btn = document.getElementById('voice-btn');
 			const recognition = new SpeechRecognition();
+			let finalTranscript = targetField.value ? targetField.value.trim() + ' ' : '';
+
 			recognition.lang = 'en-US';
 			recognition.continuous = true;
 			recognition.interimResults = true;
@@ -1661,27 +1681,37 @@
 			recognition.start();
 
 			recognition.onresult = function(event) {
-				let transcript = '';
-				for (let i = 0; i < event.results.length; i++) {
-					transcript += event.results[i][0].transcript;
+				let interimTranscript = '';
+				for (let i = event.resultIndex; i < event.results.length; i++) {
+					const spokenText = event.results[i][0].transcript;
+					if (event.results[i].isFinal) {
+						finalTranscript += spokenText + ' ';
+					} else {
+						interimTranscript += spokenText;
+					}
 				}
-				const titleField = document.getElementById('title');
-				titleField.value = transcript;
-				$(titleField).trigger('input').trigger('change');
+				targetField.value = (finalTranscript + interimTranscript).trim();
+				$(targetField).trigger('input').trigger('change');
 			};
 
 			recognition.onend = function() {
-				btn.classList.remove('recording');
-				btn.textContent = '🎤';
+				resetVoiceButton();
 				activeRecognition = null;
 			};
 
 			recognition.onerror = function(event) {
-				btn.classList.remove('recording');
-				btn.textContent = '🎤';
+				resetVoiceButton();
 				activeRecognition = null;
-				if (event.error === 'not-allowed') {
-					alert('Microphone access was denied. Please allow microphone access in your browser settings and try again.');
+				if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+					alert('Voice input is blocked for this site. In your browser settings, allow microphone access for this exact origin, then reload and try again.');
+				} else if (event.error === 'audio-capture') {
+					alert('No working microphone was found. Connect/select a mic in system settings and try again.');
+				} else if (event.error === 'network') {
+					if (window.location.protocol === 'file:') {
+						alert('Voice recognition failed because this page is opened as file://. Please run it on localhost or HTTPS.');
+					} else {
+						alert('Voice recognition network error. Check your connection and try again.');
+					}
 				} else if (event.error !== 'no-speech') {
 					console.warn('Voice input error:', event.error);
 				}
