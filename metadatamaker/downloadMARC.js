@@ -304,31 +304,29 @@ function getNonfilingCount(title,lang) {
 }
 
 function fillTitle(record,head,fieldFunc,subfieldFunc) {
-    var tag = '245';
-    var title_ind1 = checkExists(record.author[0]['family']) || checkExists(record.author[0]['given']) ? '1' : '0';
-    
-    var has_translit = checkExists(record.title[1]['title']) || checkExists(record.title[1]['subtitle']);
+	var tag = '245';
+	var title_ind1 = checkExists(record.author[0]['family']) || checkExists(record.author[0]['given']) ? '1' : '0';
+	var latin_index = checkExists(record.title[1]['title']) || checkExists(record.title[1]['subtitle']) ? 1 : 0;
 
-    if (record.language === 'eng' || record.language === 'fre') {
-        var title_ind2 = getNonfilingCount(record.title[0]['title'], record.language);
-    } else {
-        var title_ind2 = '0';
-    }
+	if (record.language === 'eng' || record.language === 'fre') {
+		var title_ind2 = getNonfilingCount(record.title[latin_index]['title'], record.language);
+	} else {
+		var title_ind2 = '0';
+	}
 
-    var title_subfields = [];
-    if (checkExists(record.title[0]['subtitle'])) {
-        title_subfields.push(subfieldFunc('a', record.title[0]['title'] + ' :'), subfieldFunc('b', record.title[0]['subtitle'] + '.'));
-    } else {
-        title_subfields.push(subfieldFunc('a', record.title[0]['title'] + '.'));
-    }
+	var title_subfields = [];
+	if (checkExists(record.title[0]['subtitle'])) {
+		title_subfields.push(subfieldFunc('a', record.title[latin_index]['title'] + ' :'), subfieldFunc('b', record.title[latin_index]['subtitle'] + '.'));
+	} else {
+		title_subfields.push(subfieldFunc('a', record.title[latin_index]['title'] + '.'));
+	}
 
-    // Add linkage to 880 only when transliteration exists
-    if (has_translit) {
-        title_subfields.push(subfieldFunc('6', '880-01'));
-    }
+	if (latin_index === 1) {
+		title_subfields.push(subfieldFunc('6', '880-01'));
+	}
 
-    var title = fieldFunc(tag, title_ind1, title_ind2, title_subfields);
-    return returnSingleEntry(tag, title, head);
+	var title = fieldFunc(tag, title_ind1, title_ind2, title_subfields);
+	return returnSingleEntry(tag, title, head);
 }
 
 function fillEdition(record,head,fieldFunc,subfieldFunc) {
@@ -596,21 +594,21 @@ function fillAdditionalAuthors(record,head,fieldFunc,subfieldFunc) {
 }
 
 function fillTranslitTitle(record,head,fieldFunc,subfieldFunc) {
-    var tag = '880';
-    var title_ind1 = checkExists(record.author[0]['family']) || checkExists(record.author[0]['given']) ? '1' : '0';
+	var tag = '880';
+	var title_ind1 = checkExists(record.author[0]['family']) || checkExists(record.author[0]['given']) ? '1' : '0';
 
-    if (checkExists(record.title[1]['title'])) {
-        var translit_subfields = [];
-        if (checkExists(record.title[1]['subtitle'])) {
-            translit_subfields.push(subfieldFunc('6','245-01'), subfieldFunc('a', record.title[1]['title'] + ' :'), subfieldFunc('b', record.title[1]['subtitle'] + '.'));
-        } else {
-            translit_subfields.push(subfieldFunc('6','245-01'), subfieldFunc('a', record.title[1]['title'] + '.'));
-        }
-        var title880 = fieldFunc(tag, title_ind1, '0', translit_subfields);
-        return returnSingleEntry(tag, title880, head);
-    } else {
-        return head !== null ? ['',''] : '';
-    }
+	if (checkExists(record.title[1]['title'])) {
+		var translit_subfields = [];
+		if (checkExists(record.title[1]['subtitle'])) {
+			translit_subfields.push(subfieldFunc('6','245-01'), subfieldFunc('a', record.title[0]['title'] + ' :'), subfieldFunc('b', record.title[0]['subtitle'] + '.'));
+		} else {
+			translit_subfields.push(subfieldFunc('6','245-01'), subfieldFunc('a', record.title[0]['title'] + '.'));
+		}
+		var title880 = fieldFunc(tag, title_ind1, '0', translit_subfields);
+		return returnSingleEntry(tag, title880, head);
+	} else {
+		return head !== null ? ['',''] : '';
+	}
 }
 
 function fillTranslitEdition(record,head,fieldFunc,subfieldFunc) {
@@ -904,6 +902,7 @@ function downloadXML(record,institution_info) {
 	text += fillTranslitAuthor(record,null,createMARCXMLField,createMARCXMLSubfield);
 	text += fillTranslitAdditionalAuthors(record,null,createMARCXMLField,createMARCXMLSubfield);
 	text += fill246Translation(record,null,createMARCXMLField,createMARCXMLSubfield);
+	text += fillGenAI(record,null,createMARCXMLField,createMARCXMLSubfield);
 	text +='</record>\n';
 
 	downloadFile2(text,'xml');

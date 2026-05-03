@@ -247,6 +247,57 @@ Equipment Template fixes
    • Added persistent status and progress indicators for file saving.
    • Improved preview for both images and videos, including icons and file names.
 
+**2025–2026 (Deployed Version — VCU)**
+
+The deployed version of the tool running on DigitalOcean includes the following major additions beyond the Cloudflare Pages release above.
+
+1. Backend Server (Node.js / Express)
+ • A dedicated Express backend was added, replacing the fully client-side architecture.
+ • The server handles authentication, file uploads, record storage, and proxying external API calls.
+ • Deployed on DigitalOcean with PM2 for process management and NGINX as a reverse proxy.
+
+2. Database & Record Persistence
+ • SQLite database added to persist created records across sessions.
+ • Records are saved per template type (Monograph, IMS, Materials Library) and can be retrieved, filtered, searched, and deleted through the dashboard.
+ • Pagination support for browsing large record sets.
+
+3. Image & File Storage on the Server
+ • Uploaded images and videos are stored on the server rather than saved locally to the user's machine.
+ • Files are associated with the record they belong to and retrievable from the saved records view.
+
+4. Authentication & Login
+ • Full login system added with session-based authentication.
+ • Users must log in before accessing any template or saved records.
+ • Password reset flow included.
+
+5. Two-Factor Authentication (2FA)
+ • TOTP-based 2FA available for all accounts, configurable per user.
+ • Setup flow generates a QR code for authenticator apps (e.g., Google Authenticator, Authy).
+
+6. User Management System
+ • Superadmin and department head roles with scoped access controls.
+ • Superadmins can create, edit, and delete any user; assign roles and per-template permissions.
+ • Department heads can manage users within their own department only.
+ • User permissions are set per template type (view, edit, or none).
+ • A dedicated user management UI is available at `/user-management.html`.
+
+7. Voice Input for Title Field (Monographs)
+ • A microphone button was added to the Monograph template.
+ • Uses the Web Speech API (`SpeechRecognition`) to dictate text directly into any focused input field, defaulting to the title field.
+ • Supports continuous recognition with interim results, session logging, and graceful error handling.
+ • Works best on Chrome and Edge (HTTPS required).
+
+8. Translation Field (MARC 246)
+ • A Translation dropdown and translated title input were added to the Monograph template.
+ • The translated title is exported as MARC field 246 with a display constant (`Translation (language):`) and linkage to field 245 via `$6`.
+
+9. Non-Latin Script Handling (MARC 245 / 880)
+ • When a transliterated title is entered alongside a script-form title, the romanized form is placed in MARC 245 and the script form in MARC 880 (linked via `$6 245-01`).
+ • The same pattern applies to author (100/880) and publisher (264/880) fields.
+
+10. 588 Source of Description Note
+ • All exported records (both `.mrc` and MARCXML) now include a 588 field: `Record created with Gen AI assistance.`
+
 ## Original Version of this Template
 This updated version builds on the original and is available on [GitHub](https://github.com/UIUCLibrary/metadata-maker).
 

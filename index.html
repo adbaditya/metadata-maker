@@ -1431,24 +1431,21 @@
 				* Required field
 			</div>
 		</form>
-		<div id="disclaimer">This project builds on a manual cataloging entry form developed by the University of Illinois at Urbana-Champaign Library .</div>
-		<div id="disclaimer2">AI integration is supported by an ongoing grant from VCUarts Qatar.</div>
-		<div id="version">Version 1.2 – Updated on 31/07/2025</div>
+		<div id="disclaimer">AI Integrated Metadata Maker was supported by a grant from VCUarts Qatar.</div>
+		<div id="disclaimer2">This project builds on a manual cataloging entry form developed by the University of Illinois at Urbana-Champaign Library.</div>
+		<div id="version">Version 1.3 – Updated on 03/05/2026</div>
 		<a id="code" href="https://github.com/adbaditya/metadata-maker">GitHub</a>
 
 		<!-- Modal for AI Template instructions -->
 		<div class="instructions-modal-backdrop"></div>
 		<div class="instructions-modal">
 			<h3>Instructions to use AI enriched template for metadata creation</h3>
-			<div class="note">
-				<strong>Note:</strong> Instructions to use AI enriched template for metadata creation
-			</div>
-			<ul>
+			<ul style="font-size:13px; line-height:1.55; padding-left:18px;">
 				<li>Enter ISBN, (only one) 13 digits or 10 digits if available, and click on AI Generate button to
-					retrieve information on the resource. <em>(note for i-icon)</em></li>
+					retrieve information on the resource.</li>
 				<li>If ISBN is not available, enter the Title and subtitle as seen on the title page in the field for
 					'Title' and enter the Author's first name and last name into the right fields. Click on AI Generate
-					button. <em>(note for i-icon)</em></li>
+					button.</li>
 				<li>Verify the AI generated fields against the details of the physical item. Any blank fields can be
 					completed manually. Check all boxes for the fields that will remain empty.</li>
 				<li>Use 'Search for book with an image' option to search by image of the item to be catalogued.</li>
@@ -1460,6 +1457,16 @@
 				<li>Save the record to your local computer or to a specific destination by checking the box for right
 					desired format and click on 'Create' button.</li>
 				<li>Refer to the GitHub link below to download and make changes to the template as required.</li>
+				<li>Click the microphone icon and place the cursor in the "Title" field to dictate and convert speech
+					to text, then select "Generate Metadata with AI" to retrieve item information
+					<em>(works best on Chrome)</em>.</li>
+				<li>For non-English title searches, manually enter or copy and paste the title into the "Title" field
+					(along with the ISBN, if available, or the author's name) and click "Generate Metadata with AI".
+					A transliterated version will appear below the Title field upon retrieval and will be saved in the
+					MARC 245 field.</li>
+				<li>Select the desired language (e.g., English or Arabic) from the Translation field dropdown
+					<em>before</em> clicking "Generate Metadata with AI" to translate the title; the result will be
+					saved in the MARC 800 field with a linkage to the 245 field via subfield 6.</li>
 			</ul>
 
 			<button class="instructions-close-btn">Close</button>
@@ -1620,6 +1627,8 @@
 			});
 
 		let activeRecognition = null;
+		let voiceStopRequested = false;
+		let voiceSessionId = 0;
 
 		function getVoiceTargetField() {
 			const active = document.activeElement;
@@ -1634,6 +1643,18 @@
 			const btn = document.getElementById('voice-btn');
 			btn.classList.remove('recording');
 			btn.textContent = '🎤';
+		}
+
+		function getSpeechRecognitionLang() {
+			return 'en-US';
+		}
+
+		function voiceLog(sessionId, stage, details) {
+			if (details) {
+				console.log('[Voice][' + sessionId + '] ' + stage + ':', details);
+			} else {
+				console.log('[Voice][' + sessionId + '] ' + stage);
+			}
 		}
 
 		function startVoiceInput() {
@@ -1656,11 +1677,13 @@
 			}
 
 			if (activeRecognition) {
+				voiceStopRequested = true;
 				activeRecognition.stop();
 				return;
 			}
 
 			const targetField = getVoiceTargetField();
+			voiceStopRequested = false;
 			launchRecognition(targetField);
 		}
 
@@ -1669,21 +1692,66 @@
 			const btn = document.getElementById('voice-btn');
 			const recognition = new SpeechRecognition();
 			let finalTranscript = targetField.value ? targetField.value.trim() + ' ' : '';
+			let hasResult = false;
+			const sessionId = ++voiceSessionId;
 
-			recognition.lang = 'en-US';
+			recognition.lang = getSpeechRecognitionLang();
 			recognition.continuous = true;
 			recognition.interimResults = true;
 			recognition.maxAlternatives = 1;
 			activeRecognition = recognition;
+			voiceLog(sessionId, 'init', {
+				fieldId: targetField.id || '(no-id)',
+				lang: recognition.lang,
+				continuous: recognition.continuous,
+				interimResults: recognition.interimResults,
+				secureContext: window.isSecureContext,
+				origin: window.location.origin
+			});
 
 			btn.classList.add('recording');
 			btn.textContent = '🔴';
 			recognition.start();
+			voiceLog(sessionId, 'recognition.start called');
+
+			recognition.onstart = function() {
+				voiceLog(sessionId, 'onstart');
+			};
+			recognition.onaudiostart = function() {
+				voiceLog(sessionId, 'onaudiostart');
+			};
+			recognition.onsoundstart = function() {
+				voiceLog(sessionId, 'onsoundstart');
+			};
+			recognition.onspeechstart = function() {
+				voiceLog(sessionId, 'onspeechstart');
+			};
+			recognition.onspeechend = function() {
+				voiceLog(sessionId, 'onspeechend');
+			};
+			recognition.onsoundend = function() {
+				voiceLog(sessionId, 'onsoundend');
+			};
+			recognition.onaudioend = function() {
+				voiceLog(sessionId, 'onaudioend');
+			};
+			recognition.onnomatch = function() {
+				voiceLog(sessionId, 'onnomatch');
+			};
 
 			recognition.onresult = function(event) {
+				hasResult = true;
 				let interimTranscript = '';
+				const resultSummary = [];
 				for (let i = event.resultIndex; i < event.results.length; i++) {
 					const spokenText = event.results[i][0].transcript;
+					const confidence = event.results[i][0].confidence;
+					resultSummary.push({
+						index: i,
+						isFinal: event.results[i].isFinal,
+						transcript: spokenText,
+						confidence: confidence
+					});
 					if (event.results[i].isFinal) {
 						finalTranscript += spokenText + ' ';
 					} else {
@@ -1692,16 +1760,35 @@
 				}
 				targetField.value = (finalTranscript + interimTranscript).trim();
 				$(targetField).trigger('input').trigger('change');
+				voiceLog(sessionId, 'onresult', {
+					resultIndex: event.resultIndex,
+					resultsSeen: event.results.length,
+					updates: resultSummary,
+					titleLength: targetField.value.length
+				});
 			};
 
 			recognition.onend = function() {
 				resetVoiceButton();
 				activeRecognition = null;
+				voiceLog(sessionId, 'onend', {
+					hasResult: hasResult,
+					stopRequested: voiceStopRequested,
+					finalValueLength: targetField.value.length
+				});
+				if (!voiceStopRequested && !hasResult) {
+					alert('No speech was captured. Click the mic, wait for the red icon, then speak clearly and pause.');
+				}
+				voiceStopRequested = false;
 			};
 
 			recognition.onerror = function(event) {
 				resetVoiceButton();
 				activeRecognition = null;
+				voiceLog(sessionId, 'onerror', {
+					error: event.error,
+					message: event.message || ''
+				});
 				if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
 					alert('Voice input is blocked for this site. In your browser settings, allow microphone access for this exact origin, then reload and try again.');
 				} else if (event.error === 'audio-capture') {
