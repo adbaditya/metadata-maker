@@ -868,6 +868,17 @@ function extractISBNData(html) {
 
 //v3 - with perplexity
 
+function hasAnyData(metadata) {
+    if (!metadata) return false;
+    return !!(
+        metadata.title ||
+        (metadata.authors && metadata.authors.length > 0 && (metadata.authors[0].familyName || metadata.authors[0].givenName)) ||
+        (Array.isArray(metadata.publisher) ? metadata.publisher[0] : metadata.publisher) ||
+        metadata.publicationDate ||
+        metadata.numberOfPages
+    );
+}
+
 async function preFetchFromAI() {
     if (aiProcessingInProgress) {
         return;
@@ -942,9 +953,9 @@ async function preFetchFromAI() {
 
                 if (isbn) {
                     const originalISBN = isbn;
-                    isbn = cleanISBN(isbn);
-                    console.log(`ISBN cleaned: "${originalISBN}" → "${isbn}"`);
-                    const isbnResponse = await fetch(`https://openlibrary.org/isbn/${isbn}.json`);
+                    const cleanedIsbn = cleanISBN(isbn);
+                    console.log(`ISBN cleaned: "${originalISBN}" → "${cleanedIsbn}"`);
+                    const isbnResponse = await fetch(`https://openlibrary.org/isbn/${cleanedIsbn}.json`);
                     const isbnText = await isbnResponse.text();
 
                     if (isbnText.trim().startsWith('<!DOCTYPE')) {
@@ -954,10 +965,10 @@ async function preFetchFromAI() {
                     isbnData = JSON.parse(isbnText);
                     console.log('Open Library ISBN API Response:', isbnData);
 
-                    if (isbn && isbnData) {
+                    if (cleanedIsbn && isbnData) {
                         const returnedISBN = isbnData.isbn_13?.[0] || isbnData.isbn_10?.[0];
-                        if (returnedISBN !== isbn) {
-                            console.log(`ISBN mismatch: searched for ${isbn}, got ${returnedISBN}`);
+                        if (returnedISBN !== cleanedIsbn) {
+                            console.log(`ISBN mismatch: searched for ${cleanedIsbn}, got ${returnedISBN}`);
                             throw new Error('OpenLibrary returned wrong book data');
                         }
                     }
@@ -1198,8 +1209,8 @@ async function preFetchFromAI() {
                     } catch (isbnError) {
                         console.log('ISBN search also failed:', isbnError);
                         const title = document.getElementById('title').value;
-                        const familyName = document.getElementById("#family_name").value;
-                        const givenName = document.getElementById("#given_name").value;
+                        const familyName = document.getElementById("family_name").value;
+                        const givenName = document.getElementById("given_name").value;
                         const isbn = document.getElementById("isbn").value;
 
                         //prompt
@@ -1412,7 +1423,12 @@ async function preFetchFromAI() {
                                             handleInput(familyNameInput);
                                             handleInput(givenNameInput);
 
-                                            hideAIProcessingState(true);
+                                            if (hasAnyData(metadata)) {
+                                                hideAIProcessingState(true);
+                                            } else {
+                                                hideAIProcessingState(false);
+                                                showAIErrorPopup('No data found for this book. Please enter details manually.');
+                                            }
 
                                         } else {
                                             showJSONParseFailedPopup('Could not parse enhanced search results.');

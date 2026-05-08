@@ -247,7 +247,7 @@ Equipment Template fixes
    • Added persistent status and progress indicators for file saving.
    • Improved preview for both images and videos, including icons and file names.
 
-**2025–2026 (Deployed Version — VCU)**
+**May 03 2026 (Deployed Version — With Database)**
 
 The deployed version of the tool running on DigitalOcean includes the following major additions beyond the Cloudflare Pages release above.
 
@@ -272,7 +272,7 @@ The deployed version of the tool running on DigitalOcean includes the following 
 
 5. Two-Factor Authentication (2FA)
  • TOTP-based 2FA available for all accounts, configurable per user.
- • Setup flow generates a QR code for authenticator apps (e.g., Google Authenticator, Authy).
+ • Setup flow generates a QR code for authenticator apps (e.g., Google Authenticator, Authy, DUO).
 
 6. User Management System
  • Superadmin and department head roles with scoped access controls.
